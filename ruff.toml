@@ -1,0 +1,6 @@
+extend = "backend/pyproject.toml"
+
+[lint.extend-per-file-ignores]
+# smoke checks, downloaders and the eval harness: long report strings, ML naming (X, Xp), subprocess use
+"scripts/**" = ["E501", "N806", "S603", "S607", "S310", "S608", "ASYNC110"]
+"eval/**" = ["N806", "N812", "E501", "SIM108"]
