@@ -1,0 +1,13 @@
+{
+  "attack_enterprise": "f857d8f78f2f0c0b7db321a711a39fba98546c1e3076a657684850c83d0962fb",
+  "aws_honeybucket": "ad36cc22814be99c45e59a71d40dda8b7bf90ea435d875cea7e129c9a17d7276",
+  "aws_s3_exfil": "83cc349afa5672ae46fc38a824946b470f2f3fa39f22889b59dce9fda43fe74d",
+  "lsass_comsvcs": "0af9e920220d746432f0972be83ad057629695540aecd68c15869d190786e1ae",
+  "lsass_dumpert": "a28dbf708685a80edfb0b3d2a00c9bf196dd394fc1d61a933878841f4872a7ed",
+  "lsass_mimikatz": "bb4c057b62d781be5426e011872ba1a15070c07afbb24848a14458f4b22b06fb",
+  "ntds_shadow_copy": "aed847c1571ec3ef906f2b844d343bb3897eec4cf856b8f0939e934646348378",
+  "psexec_lateral": "8f40e7fc86bbbf31ebd50b3ba537cf0f4378392ae3e74de84bee00aeb0de1fa5",
+  "psh_http_listener": "506ba862fd76e0f8d43396e705ec6eebb7a01a5a2954bd70c9f47802d32f4843",
+  "schtask_remote": "74394c64b660d5b229936d00ea8b3ceb900126cd9e261f58fa2be766579ec5de",
+  "sigma_core": "a398be98850181f6d97d1b101ecffef81b69a0661df2efc76427904fc269fac0"
+}
