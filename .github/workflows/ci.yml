@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: API, pipeline, agents and models
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      ENVIRONMENT: test
+      BUS: memory
+      AGENTS_TRANSPORT: inline
+      LLM_FAKE: "true"
+      INTEL_SOURCE: bundled
+      RULES_SOURCE: bundled
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - name: Install (pinned lock)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+          python -m pip install --no-deps -e ".[dev]"
+      - name: Lint
+        run: |
+          python -m ruff check . ../scripts
+          python -m ruff format --check . ../scripts
+          if [ -d ../eval ]; then python -m ruff check ../eval && python -m ruff format --check ../eval; fi
+      - name: Typecheck
+        run: python -m mypy nightjar
+      - name: Migrations apply cleanly and match the models
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./ci.db
+        run: |
+          python -m alembic upgrade head
+          python -m alembic check
+      - name: Tests
+        run: python -m pytest --cov=nightjar --cov-report=term-missing:skip-covered
+      - name: Toolchain smoke (NATS JetStream, A2A, MCP, Sigma, DuckDB + ML)
+        run: |
+          python ../scripts/fetch_nats.py
+          python ../scripts/smoke/nats_smoke.py
+          python ../scripts/smoke/a2a_smoke.py
+          python ../scripts/smoke/mcp_smoke.py
+          python ../scripts/smoke/sigma_smoke.py
+          python ../scripts/smoke/store_ml_smoke.py
+      - name: Demo seed runs offline
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./ci-seed.db
+          NIGHTJAR_DEMO_TODAY: "2025-11-20"
+        run: |
+          python -m nightjar.cli migrate
+          if grep -q "raise NotImplementedError" nightjar/seed/__init__.py; then echo "seed not implemented yet"; else python -m nightjar.cli seed; fi
+      - name: Evaluation gates
+        run: |
+          if [ -f ../eval/run.py ]; then python ../eval/run.py; else echo "eval harness not implemented yet"; fi
+
+  frontend:
+    name: Web app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+      - name: Install
+        run: if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm run check
+      - run: npm run build
