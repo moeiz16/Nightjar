@@ -1,0 +1,29 @@
+{
+  "name": "nightjar-soc-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite dev --port 3030 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 3030 --strictPort",
+    "start": "PORT=3030 node build",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --threshold error"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "5.5.8",
+    "@sveltejs/kit": "2.70.4",
+    "@sveltejs/vite-plugin-svelte": "4.0.4",
+    "@tailwindcss/vite": "4.1.18",
+    "svelte": "5.57.3",
+    "svelte-check": "4.7.8",
+    "tailwindcss": "4.1.18",
+    "tslib": "2.8.1",
+    "typescript": "5.9.3",
+    "vite": "5.4.21"
+  }
+}
