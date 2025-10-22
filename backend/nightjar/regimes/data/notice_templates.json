@@ -1,0 +1,396 @@
+{
+  "version": 1,
+  "types": {
+    "nis2.early_warning": {
+      "recipient": "nis2",
+      "sections": [
+        {
+          "key": "incident_summary",
+          "title": "What happened",
+          "required": true,
+          "hint": "Short description of the significant incident as known now."
+        },
+        {
+          "key": "suspected_malicious",
+          "title": "Suspected unlawful or malicious act",
+          "required": true,
+          "hint": "Whether the incident is suspected of being caused by unlawful or malicious acts."
+        },
+        {
+          "key": "cross_border",
+          "title": "Possible cross-border impact",
+          "required": true,
+          "hint": "Whether the incident could have a cross-border impact."
+        },
+        {
+          "key": "entity_details",
+          "title": "Reporting entity",
+          "required": true,
+          "hint": "Legal entity, sector and entity type."
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "nis2.incident_notification": {
+      "recipient": "nis2",
+      "sections": [
+        {
+          "key": "update",
+          "title": "Update to the early warning",
+          "required": true,
+          "hint": "What has changed since the early warning."
+        },
+        {
+          "key": "severity_impact",
+          "title": "Initial assessment: severity and impact",
+          "required": true,
+          "hint": "Severity and impact, including services affected and duration."
+        },
+        {
+          "key": "indicators",
+          "title": "Indicators of compromise",
+          "required": true,
+          "hint": "Indicators of compromise, where available."
+        },
+        {
+          "key": "measures",
+          "title": "Measures taken",
+          "required": true,
+          "hint": "Containment and mitigation measures so far."
+        },
+        {
+          "key": "cross_border",
+          "title": "Cross-border impact",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "nis2.intermediate_report": {
+      "recipient": "nis2",
+      "sections": [
+        {
+          "key": "status_update",
+          "title": "Status update requested by the authority",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "measures",
+          "title": "Measures taken since the last notice",
+          "required": false,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "nis2.progress_report": {
+      "recipient": "nis2",
+      "sections": [
+        {
+          "key": "progress",
+          "title": "Progress of incident handling",
+          "required": true,
+          "hint": "Where handling stands one month after the notification."
+        },
+        {
+          "key": "severity_impact",
+          "title": "Severity and impact so far",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "measures",
+          "title": "Mitigation measures applied and ongoing",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "nis2.final_report": {
+      "recipient": "nis2",
+      "sections": [
+        {
+          "key": "description",
+          "title": "Detailed description of the incident",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "severity_impact",
+          "title": "Severity and impact",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "root_cause",
+          "title": "Type of threat or root cause",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "mitigation",
+          "title": "Mitigation measures applied and ongoing",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "cross_border",
+          "title": "Cross-border impact",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "sec_8k.item_105": {
+      "recipient": "sec_8k",
+      "sections": [
+        {
+          "key": "nature",
+          "title": "Nature of the incident",
+          "required": true,
+          "hint": "Material aspects of the nature of the incident. No technical detail that would hinder response or remediation."
+        },
+        {
+          "key": "scope",
+          "title": "Scope of the incident",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "timing",
+          "title": "Timing of the incident",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "material_impact",
+          "title": "Material impact or reasonably likely material impact",
+          "required": true,
+          "hint": "Including on financial condition and results of operations."
+        },
+        {
+          "key": "not_determined",
+          "title": "Information not yet determined or unavailable",
+          "required": false,
+          "hint": "State it here and file an amendment within four business days once known."
+        },
+        {
+          "key": "signature",
+          "title": "Registrant and signatory",
+          "required": true,
+          "hint": ""
+        }
+      ]
+    },
+    "sec_8k.amendment": {
+      "recipient": "sec_8k",
+      "sections": [
+        {
+          "key": "amended_information",
+          "title": "Information that was not determined or unavailable at the initial filing",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "material_impact",
+          "title": "Material impact (updated)",
+          "required": false,
+          "hint": ""
+        },
+        {
+          "key": "signature",
+          "title": "Registrant and signatory",
+          "required": true,
+          "hint": ""
+        }
+      ]
+    },
+    "soci.critical_report": {
+      "recipient": "soci",
+      "sections": [
+        {
+          "key": "asset",
+          "title": "Critical infrastructure asset",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "incident",
+          "title": "Description of the cyber security incident",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "impact",
+          "title": "Impact on the availability of the asset",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "awareness",
+          "title": "When the entity became aware",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "measures",
+          "title": "Measures taken",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "soci.other_report": {
+      "recipient": "soci",
+      "sections": [
+        {
+          "key": "asset",
+          "title": "Critical infrastructure asset",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "incident",
+          "title": "Description of the cyber security incident",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "impact",
+          "title": "Relevant impact on the asset",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "awareness",
+          "title": "When the entity became aware",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "measures",
+          "title": "Measures taken",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "soci.written_record": {
+      "recipient": "soci",
+      "sections": [
+        {
+          "key": "oral_report",
+          "title": "Oral report this record follows",
+          "required": true,
+          "hint": "Date, time and reference of the oral report."
+        },
+        {
+          "key": "asset",
+          "title": "Critical infrastructure asset",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "incident",
+          "title": "Description of the cyber security incident",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "impact",
+          "title": "Impact on the asset",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "measures",
+          "title": "Measures taken",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "contact",
+          "title": "Contact point",
+          "required": true,
+          "hint": "Who the authority should contact, with phone and email."
+        }
+      ]
+    },
+    "gdpr_art33.notification": {
+      "recipient": "gdpr_art33",
+      "sections": [
+        {
+          "key": "nature",
+          "title": "Nature of the breach",
+          "required": true,
+          "hint": "Categories and approximate number of people and of personal data records concerned."
+        },
+        {
+          "key": "dpo",
+          "title": "Data protection officer or other contact point",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "consequences",
+          "title": "Likely consequences",
+          "required": true,
+          "hint": ""
+        },
+        {
+          "key": "measures",
+          "title": "Measures taken or proposed",
+          "required": true,
+          "hint": "Including measures to mitigate possible adverse effects."
+        },
+        {
+          "key": "delay_reasons",
+          "title": "Reasons for delay",
+          "required": false,
+          "hint": "Required when notifying later than 72 hours after awareness."
+        }
+      ]
+    }
+  }
+}
