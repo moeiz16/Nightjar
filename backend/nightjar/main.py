@@ -19,9 +19,25 @@ from nightjar.core.ratelimit import RateLimitMiddleware
 
 log = structlog.get_logger("nightjar")
 
-# Routers under /api/v1, in contract order. Builder A adds: ingest, events (search), detections, incidents,
-# investigations, actions, reporting, hunting, executive, ueba, models, settings.
-ROUTERS = ("auth", "org", "audit", "events")
+# Routers under /api/v1, in contract order.
+ROUTERS = (
+    "auth",
+    "org",
+    "invitations",
+    "ingest",
+    "events",
+    "detections",
+    "incidents",
+    "investigations",
+    "actions",
+    "reporting",
+    "hunting",
+    "executive",
+    "ueba",
+    "settings",
+    "audit",
+    "system",
+)
 
 OPENAPI_TAGS = [
     {"name": "auth", "description": "Sign-in, sessions and organisation switching"},
@@ -73,11 +89,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         bus=s.bus,
         demo_offset_days=offset.days,
     )
+    writer = sweeper_task = None
+    if s.background_tasks and s.environment != "test":
+        from nightjar.hunting.service import start_store_writer
+        from nightjar.services import sweeper
+
+        writer = await start_store_writer()
+        sweeper_task = sweeper.start()
     try:
         yield
     finally:
         from nightjar.db.session import get_engine
+        from nightjar.hunting.api import close_store
+        from nightjar.services import sweeper
 
+        await sweeper.stop(sweeper_task)
+        if writer is not None:
+            await writer.stop()
+        close_store()
         await get_engine().dispose()
 
 

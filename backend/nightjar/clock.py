@@ -15,6 +15,8 @@ Rules:
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta, tzinfo
 
 _offset = timedelta(0)
@@ -67,3 +69,16 @@ def uninstall() -> None:
     """Back to real time (tests)."""
     global _offset, _installed
     _offset, _installed = timedelta(0), False
+
+
+@contextmanager
+def travel(moment: datetime) -> Iterator[None]:
+    """Run business code as if `now()` were `moment` (the seed applies human decisions at their back-dated
+    times). Restores the previous offset afterwards. Not for request handling: the offset is process-wide."""
+    global _offset
+    previous = _offset
+    _offset = moment - real_now()
+    try:
+        yield
+    finally:
+        _offset = previous

@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     duckdb_path: Path = REPO_ROOT / "data" / "hunting.duckdb"
     hunting_query_timeout_s: float = 10.0
     hunting_max_rows: int = 5000
+    # The API's store-writer consumer and housekeeping loop (clock transitions, approval expiry). Off in tests.
+    background_tasks: bool = True
 
     # ── Agents and tool servers (ADR 0002, ADR 0006) ──────────────────────
     agent_triage_url: str = "http://127.0.0.1:8031"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,3 +84,55 @@ async def list_audit(
 @router.get("/verify")
 async def verify(ctx: RequestContext = Depends(require_perm("audit:read")), db: AsyncSession = Depends(get_db)) -> dict:
     return await verify_chain(db, ctx.org_id)
+
+
+@router.get("/export.csv")
+async def export_csv(
+    ctx: RequestContext = Depends(require_perm("audit:read")), db: AsyncSession = Depends(get_db)
+) -> Response:
+    import csv
+    import io
+    import json
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(
+        [
+            "id",
+            "createdAt",
+            "action",
+            "label",
+            "actorType",
+            "actorName",
+            "resourceType",
+            "resourceId",
+            "ip",
+            "metadata",
+            "prevHash",
+            "hash",
+        ]
+    )
+    rows = (await db.execute(select(AuditLog).where(AuditLog.org_id == ctx.org_id).order_by(AuditLog.id))).scalars()
+    for r in rows:
+        cells = [
+            r.id,
+            r.created_at.isoformat(),
+            r.action,
+            describe(r.action, r.meta),
+            r.actor_type,
+            r.actor_name,
+            r.resource_type,
+            r.resource_id,
+            r.ip,
+            json.dumps(r.meta or {}, sort_keys=True),
+            r.prev_hash,
+            r.hash,
+        ]
+        # neutralise spreadsheet formulas in text cells
+        w.writerow([f"'{c}" if isinstance(c, str) and c[:1] in "=+-@" else c for c in cells])
+    assert ctx.org is not None
+    return Response(
+        buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{ctx.org.slug}-audit.csv"'},
+    )
