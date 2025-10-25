@@ -13,8 +13,16 @@ os.environ.setdefault("BUS", "memory")
 os.environ.setdefault("AGENTS_TRANSPORT", "inline")
 os.environ.setdefault("LLM_FAKE", "true")
 os.environ.setdefault("LOG_LEVEL", "WARNING")
+os.environ.setdefault("BACKGROUND_TASKS", "false")
 
 import httpx
+from argon2 import PasswordHasher
+
+from nightjar.core import security as _security
+
+# Cheap Argon2 parameters in tests only (production uses the OWASP minimums in core/security.py).
+_security._hasher = PasswordHasher(time_cost=1, memory_cost=1024, parallelism=1)
+_security._DUMMY_HASH = _security._hasher.hash("timing-equaliser-not-a-real-password")
 
 DEMO_PASSWORD = "Nightjar-demo-2025!"
 
@@ -22,6 +30,8 @@ DEMO_PASSWORD = "Nightjar-demo-2025!"
 @pytest.fixture
 async def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[object]:
     monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{tmp_path / 'test.db'}")
+    monkeypatch.setenv("DUCKDB_PATH", str(tmp_path / "hunting.duckdb"))
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
     from nightjar import clock
     from nightjar.core.config import get_settings
     from nightjar.core.ratelimit import limiter
@@ -42,6 +52,9 @@ async def app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[
         await conn.run_sync(Base.metadata.create_all)
     application = create_app()
     yield application
+    from nightjar.hunting.api import close_store
+
+    close_store()
     await get_engine().dispose()
     for cached in (get_settings, get_engine, get_sessionmaker):
         cached.cache_clear()
