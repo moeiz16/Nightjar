@@ -211,6 +211,7 @@ async def _upsert(u: CorrelationUpdate) -> IncidentRef:
         for d in dets:
             entities = merge_entities(entities, d.entities)
             attack = merge_attack(attack, d.attack)
+        severity: str
         if u.all_likely_noise:  # a storm of likely-noise alerts keeps the correlator's (low) severity
             severity = u.severity
         else:
