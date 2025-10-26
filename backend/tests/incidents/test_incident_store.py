@@ -192,3 +192,44 @@ async def test_record_anomalies_is_idempotent(client: httpx.AsyncClient) -> None
     await incidents.record_anomalies(h["org_id"], [a])
     await incidents.record_anomalies(h["org_id"], [a])
     assert await _count(UiEvent, UiEvent.name == "anomaly.created") == 1
+
+
+async def test_noise_storm_keeps_correlator_severity(client: httpx.AsyncClient) -> None:
+    h = await f.halden()
+    dets = [f.detection(h["org_id"], severity="high", hosts=("ant-wms-01",), band="likely_noise") for _ in range(21)]
+    await incidents.record_detections(h["org_id"], dets)
+    ref = await incidents.upsert_incident(
+        CorrelationUpdate(
+            org_id=h["org_id"],
+            correlation_key="corr:storm",
+            detection_ids=tuple(d.id for d in dets),
+            kind="benign_activity",
+            title="Storm",
+            severity="low",
+            attack=(),
+            entities=Entities(hosts=("ant-wms-01",)),
+            first_seen=clock.now(),
+            last_seen=clock.now(),
+            summary="",
+            max_triage_probability=0.05,
+            all_likely_noise=True,
+        )
+    )
+    async with session_scope() as db:
+        inc = await db.get(Incident, ref.id)
+        assert inc is not None and inc.severity == "low"  # not the detections' "high", no crown-jewel bump
+
+
+async def test_benign_verdict_proposes_no_regimes(client: httpx.AsyncClient) -> None:
+    from nightjar.db.models.soc import RegimeAssessmentRow
+
+    h = await f.halden()
+    ref = await f.incident(h["org_id"], kind="benign_activity", severity="low", noise=True)
+    await f.triage(h["org_id"], ref.id, verdict="benign")
+    async with session_scope() as db:
+        rows = (
+            (await db.execute(select(RegimeAssessmentRow).where(RegimeAssessmentRow.incident_id == ref.id)))
+            .scalars()
+            .all()
+        )
+        assert rows and {r.proposal["applies"] for r in rows} == {"no"}

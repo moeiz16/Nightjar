@@ -211,10 +211,12 @@ async def _upsert(u: CorrelationUpdate) -> IncidentRef:
         for d in dets:
             entities = merge_entities(entities, d.entities)
             attack = merge_attack(attack, d.attack)
-        severity = max_severity([u.severity, *(d.severity for d in dets)])
-        crown = await involves_crown_jewel(db, org_id, entities)
-        if crown and not u.all_likely_noise:
-            severity = bump(severity)
+        if u.all_likely_noise:  # a storm of likely-noise alerts keeps the correlator's (low) severity
+            severity = u.severity
+        else:
+            severity = max_severity([u.severity, *(d.severity for d in dets)])
+            if await involves_crown_jewel(db, org_id, entities):
+                severity = bump(severity)
         inc = (
             await db.execute(
                 select(Incident).where(Incident.org_id == org_id, Incident.correlation_key == u.correlation_key)
@@ -291,7 +293,7 @@ async def _upsert(u: CorrelationUpdate) -> IncidentRef:
             if new_attack != (inc.attack or []):
                 changed.append("attack")
             inc.attack = new_attack
-            sev = max_severity([inc.severity, severity])
+            sev = severity if inc.likely_benign and u.all_likely_noise else max_severity([inc.severity, severity])
             if sev != inc.severity:
                 changed.append("severity")
                 inc.severity = sev

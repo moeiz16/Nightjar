@@ -88,9 +88,12 @@ async def propose_for_incident(db: AsyncSession, inc: Incident) -> list[RegimeAs
     out = []
     for ent in org_entities(org):
         for regime in rules.entity_regimes(ent):
-            applies, reasons = rules.propose(
-                regime, ent, inc.facts, incident={"jurisdictions": juris, "kind": inc.kind}
-            )
+            if inc.verdict in ("benign", "false_positive"):
+                applies, reasons = "no", ["The triage colleague concluded this was not an attack."]
+            else:
+                applies, reasons = rules.propose(
+                    regime, ent, inc.facts, incident={"jurisdictions": juris, "kind": inc.kind}
+                )
             proposal = {"applies": applies, "reasons": reasons, "proposedAt": clock.now().isoformat()}
             row = existing.get((regime, ent["id"]))
             if row is None:
