@@ -263,13 +263,13 @@ Stages run **Triage → Investigate → Contain → Report** (`stage`); status i
 | POST | `/incidents/{id}/reopen` | `incidents:write` | `{ reason }` |
 
 ```text
-IncidentSummary = { id, reference, title, kind, severity, status, stage, assets: string[], identities: string[],
+IncidentSummary = { id, reference, title, kind, severity, status, statusLabel, stage, assets: string[], identities: string[],
                     attackTactics: string[], detectionCount, firstSeen, lastSeen, assignee: User|null,
                     verdict: "true_positive"|"benign"|"false_positive"|"needs_review"|null,
                     likelyBenign: boolean, reportable: "yes"|"no"|"assess"|null, nextDeadline: Deadline|null,
                     pendingApprovals: number }
 Incident = IncidentSummary & {
-  version, summary, attack: AttackRef[], entities: Entities,
+  version, summary, attack: (AttackRef & { tacticLabels: string[] })[], entities: Entities,
   assetsDetail: AssetDoc[], identitiesDetail: IdentityDoc[],
   triage: { verdict, confidence, summary, modelProbability, decidedAt, runId } | null,
   timeToTriageSeconds: number|null, timeToContainSeconds: number|null,
@@ -294,14 +294,14 @@ the old/new value.
 | POST | `/incidents/{id}/investigations` | `investigations:run` | `{ reason? }` → `202 RunSummary` (rerun); `503 agents_unavailable` |
 | GET | `/investigations/{runId}` | `investigations:read` | `Run` with all steps |
 | GET | `/investigations/{runId}/steps/{seq}` | `investigations:read` | `AgentStepDoc` with full `detail` |
-| GET | `/investigations/{runId}/replay` | `investigations:read` | `{ runId, steps: AgentStepDoc[], verification: { inputHashesMatch: boolean, offlineReplayVerdict } }` re-runs the offline policy over the recorded inputs and compares |
+| GET | `/investigations/{runId}/replay` | `investigations:read` | `{ runId, steps: AgentStepDoc[], verification: { inputHashesMatch: boolean, offlineReplayVerdict, recordedVerdict, method: "replayed"\|"recorded" } }` re-runs the offline policy over the recorded inputs and compares (`replayed`, via `agents.replay_verify`); when the agents are unavailable it checks the record is complete instead (`recorded`) |
 
 ```text
 RunSummary = { id, incidentId, trigger: "auto"|"manual"|"rerun", status: "queued"|"running"|"completed"|"failed"|"cancelled",
-               startedAt, finishedAt, verdict, durationSeconds, stepCount, requestedBy: User|null }
+               startedAt, finishedAt, verdict, durationSeconds, stepCount, requestedBy: User|null, reason: string|null }
 Run = RunSummary & { steps: AgentStepDoc[], verdictDetail: TriageVerdictDoc|null,
                      enrichment: EnrichmentDoc|null, proposals: ProposalDoc[] }
-AgentStepDoc = { seq, agent: "triage"|"enrichment"|"response"|"orchestrator",
+AgentStepDoc = { seq, agent: "triage"|"enrichment"|"response"|"orchestrator", inputHash: string|null,
                  kind: "plan"|"tool_call"|"tool_result"|"handoff_out"|"handoff_in"|"finding"|"verdict"|"proposal"|"guardrail"|"error",
                  title, startedAt, durationMs, tool: string|null, a2aTaskId: string|null, model: string|null,
                  flags: string[], detail?: object }
@@ -329,9 +329,10 @@ shown as baton passes. Never show tool names, model ids or protocol words in cli
 ```text
 ProposalDoc = { id, incidentId, incidentReference, runId: string|null, kind, kindLabel, target, targetType,
                 rationale, expectedEffect, reversible, destructive, crownJewel: boolean,
-                proposedBy: { type: "agent"|"user", name },
+                proposedBy: { type: "agent"|"user", name }, proposedByUserId: string|null,
                 status: "auto_approved"|"pending"|"approved"|"rejected"|"expired"|"executed"|"failed",
-                requiredRoles: string[], approvals: { userId, name, role, decidedAt, note }[],
+                requiredRoles: string[], awaitingRoles: string[], canApprove: boolean,   # canApprove: for the caller
+                approvals: { userId, name, role, decidedAt, note }[],
                 rejection: { userId, name, reason, decidedAt }|null,
                 result: { executed, status, detail, executedAt }|null, createdAt, expiresAt }
 ```
@@ -399,16 +400,30 @@ RegimeAssessment = { regime, regimeLabel, jurisdiction, entityId, entityName,
 RegimeDetermination = { applies: boolean, rationale: string (10–2,000 chars),
                         awareAt?: datetime (nis2, soci, gdpr_art33), materialityDeterminedAt?: datetime (sec_8k),
                         impactLevel?: "significant"|"relevant" (soci), entityId: string }
-Deadline = { id, incidentId, incidentReference, regime, regimeLabel, noticeType, noticeLabel, jurisdiction,
+Deadline = { id, incidentId, incidentReference, regime, regimeLabel, noticeType, noticeLabel, jurisdiction, entityId,
              startsAt, dueAt, dueAtLocal: { at, timezone }, businessDays: number|null,
              state: "not_started"|"on_track"|"due_soon"|"overdue"|"submitted"|"not_required",
-             remainingSeconds: number|null, noticeId: string|null, basis: string }
+             remainingSeconds: number|null, noticeId: string|null, submittedAt: string|null, basis: string }
+# remainingSeconds is negative when overdue and null once submitted. businessDays (8-K only) counts New York
+# business days in (today, due day]. A `not_started` entry is an open assessment (proposal yes/assess, no
+# determination yet): id "assessment-<uuid>", noticeType/startsAt/dueAt/dueAtLocal null, noticeLabel
+# "Assessment open", basis = the proposal's reasons. /reporting/clocks lists running clocks soonest first, then
+# open assessments. The one-month NIS2 deadline reads `nis2.progress_report` while the incident is still open.
 NoticeSummary = { id, regime, type, typeLabel, status: "draft"|"approved"|"submitted", version, dueAt, submittedAt }
-Notice = NoticeSummary & { incidentId, entity: { id, name }, recipient: { name, channel, contact: RegimeContact|null },
-                           sections: { key, title, body, required: boolean, filled: boolean }[],
+Notice = NoticeSummary & { incidentId, entity: { id, name },
+                           recipient: { name, channel: "portal"|"EDGAR", portalUrl, contact: RegimeContact|null },
+                           sections: { key, title, hint, body, required: boolean, filled: boolean }[],
+                           missing: string[],   # required section keys not filled ("[to be confirmed]" counts as unfilled)
                            versions: { version, editedBy, editedAt }[], approvedBy: User|null, approvedAt,
-                           submission: { channel, receipt: "CCB-MOCK-…", submittedBy: User, submittedAt, note }|null }
+                           submission: { channel, receipt: "CCB-MOCK-…", submittedBy: User, submittedAt, note }|null,
+                           generatedBy: "offline"|"cloud" }
 ```
+Approve refuses a notice with missing required sections (`422 validation_error`, one error per
+`sections.<key>`); GDPR `delay_reasons` becomes required once the 72 h deadline has passed. Editing an approved
+notice returns it to `draft`. Only SOCI reports may be submitted `oral`. Receipts: `CCB-MOCK-`, `EDGAR-MOCK-`,
+`ASD-MOCK-`, `APD-MOCK-` + 8 hex. Drafting needs a positive determination (`409 clock_not_started`); `type` may be
+short (`early_warning`) or full (`nis2.early_warning`); drafting an existing unsubmitted type returns that notice.
+
 Notice types: `nis2.early_warning`, `nis2.incident_notification`, `nis2.intermediate_report`,
 `nis2.progress_report`, `nis2.final_report`, `sec_8k.item_105`, `sec_8k.amendment`, `soci.critical_report`,
 `soci.other_report`, `soci.written_record`, `gdpr_art33.notification`. Section keys per type are listed in
@@ -432,8 +447,12 @@ SQL from clients is never accepted.
 | GET | `/hunting/suggestions` | `hunting:read` | `Suggestion[]` plain-language ideas from recent techniques, anomalies and known-exploited vulnerabilities on owned assets |
 
 ```text
-HuntQueryDoc = { from, to, filters: { field, op: "eq"|"ne"|"in"|"contains"|"prefix"|"cidr"|"gt"|"lt", value }[],
-                 groupBy: string[], metric: "count"|"count_distinct:<field>", bucket: "5m"|"1h"|"1d"|null, limit }
+HuntQueryDoc = { from, to, relativeHours?: number, filters: { field, op: "eq"|"ne"|"in"|"contains"|"prefix"|"cidr"|"gt"|"lt", value }[],
+                 groupBy: string[] (≤ 3), metric: "count"|"count_distinct:<field>", bucket: "5m"|"1h"|"1d"|null, limit (≤ 5000) }
+# from/to default to the 24 h (or `relativeHours`) ending now; saved searches keep `relativeHours` so they stay
+# current. Without groupBy/bucket the rows are events: columns timestamp, eventId, dataset, action, outcome,
+# host.name, user.name, source.ip, destination.ip, summary (summary = the untrusted message text: plain text only).
+# With them: [bucket], …groupBy, then "count" or "distinct <field>". Matching is case-insensitive.
 HuntResultDoc = { columns: string[], rows: any[][], totalMatched, elapsedMs, truncated }
 SavedSearch = { id, name, description, query: HuntQueryDoc, createdBy: User, createdAt, lastRunAt, lastCount }
 Suggestion = { id, title, why, query: HuntQueryDoc, basis: { kind: "technique"|"anomaly"|"vulnerability", ref } }
@@ -448,6 +467,7 @@ Okafor's account was taken over this way on Thursday night".
 | GET | `/watch` | `watch:read` | `{ clocks: Deadline[], incidents: IncidentSummary[] (open), pendingApprovals: number, shiftLog: ShiftLogEntry[], pipeline: { status, plainStatus, eventsPerMinute } }` |
 | GET | `/watch/shift-log` | `watch:read` | `?since=` (default: my `lastSeenAt`) → `ShiftLogEntry[]`; `POST /watch/seen` marks now |
 | GET | `/executive/posture` | `exec:read` | `Posture` |
+| GET | `/executive/morning` | `exec:read` | `MorningBrief`: what happened last night (the `night` window of Part 6) |
 | GET | `/executive/briefs` | `exec:read` | `{ week: "2025-W47", generatedAt, headline }[]` |
 | GET | `/executive/briefs/{week}` | `exec:read` | `WeeklyBrief` |
 | GET | `/executive/briefs/{week}/document.html` | `exec:read` | printable |
@@ -461,7 +481,12 @@ Posture = { asOf, score: 0..100, scoreBand: "steady"|"watch"|"strained", compone
             meanTimeToContain: { last7dSeconds, last30dSeconds, trend },
             alerts: { last7d, incidentsLast7d, suppressedAsNoise, reductionPct },
             clocks: Deadline[], highlights: string[] }
-WeeklyBrief = { week, from, to, headline, sections: { title, body }[], metrics: Posture, incidents: IncidentSummary[], generatedBy: "offline"|"cloud" }
+WeeklyBrief = { week, from, to, headline, sections: { title, body }[], metrics: Posture, incidents: IncidentSummary[], generatedBy: "offline"|"cloud", generatedAt }
+MorningBrief = { asOf, night: { from, to }, headline, incidents: IncidentSummary[], contained: number,
+                 pendingApprovals: number, alerts: { last7d, incidentsLast7d, suppressedAsNoise, reductionPct },
+                 clocks: Deadline[], highlights: string[] }
+# Posture.components keys: exposure, clocks, response, decisions, intake. POST /executive/briefs/generate runs in
+# the API process and returns the job already `succeeded` (week defaults to last ISO week).
 ```
 `meanTimeToTriage` = first detection → recorded triage verdict; `meanTimeToContain` = first detection → first
 executed containment action (or resolution as benign). Both exclude merged incidents.
@@ -622,7 +647,11 @@ append_step(run_id, step: AgentStep) -> int                                    #
 finish_run(run_id, *, status, verdict, enrichment, proposals, error=None) -> None
 
 # nightjar/approvals/api.py
-request_approval(org_id, incident_id, run_id, action: ProposedAction) -> ApprovalRef   # ValueError if target ∉ incident
+request_approval(org_id, incident_id, run_id, action: ProposedAction) -> ApprovalRef   # TargetNotInIncidentError (a ValueError) if target ∉ incident
+# non-destructive kinds come back "auto_approved" with no required roles and no token; identical pending
+# requests (incident, kind, target) are deduplicated. get_approval(...).token is set only while the approval is
+# "approved" and unconsumed. consume() is False on a wrong nonce, reuse, an expired token (real clock), another
+# org, or any status other than "approved".
 get_approval(approval_id) -> ApprovalRef
 consume(org_id, approval_id, nonce) -> bool                                    # single use
 record_result(org_id, result: ActionResult) -> None
@@ -637,6 +666,16 @@ set_host_isolation(org_id, asset_name, *, isolated, approval_id) -> None      # 
 set_account_disabled(org_id, username, *, disabled, approval_id) -> None      # response tool server only
 revoke_access_key(org_id, access_key_id, *, approval_id) -> None              # response tool server only
 set_ip_block(org_id, ip, *, blocked, approval_id) -> None                     # response tool server only
+revoke_identity_sessions(org_id, username, *, approval_id) -> None             # response tool server only
+reset_identity_password(org_id, username, *, approval_id) -> None              # response tool server only
+quarantine_message(org_id, message_id, *, approval_id) -> None                 # response tool server only
+# effectors raise KeyError when the target does not exist in that org
+
+# nightjar/services/jobs.py
+update_job(job_id, *, status=None, progress=None, result=None, error=None)      # workers report job progress; SSE job.updated
+
+# nightjar/hunting/service.py
+handle_normalized(events: Sequence[NormalizedEvent]) -> None                   # the store-writer handler (DuckDB + river.batch)
 
 # nightjar/ticketing/api.py
 create_ticket(org_id, incident_id, *, title, body, priority, assignee_team) -> dict
@@ -657,6 +696,7 @@ publish_raw(events: Sequence[RawEvent]) -> IngestAck                           #
 normalize(raw: RawEvent) -> NormalizedEvent                                    # pure; ValueError with a plain reason
 subscribe_normalized(durable, handler, *, batch=500, max_wait_s=1.0) -> Subscription   # A's hunting writer
 pipeline_health() -> PipelineHealth
+list_dlq(*, page, page_size) -> (list[dict], total);  retry_dlq(seq) -> None (KeyError if unknown)
 list_scenarios() -> list[ScenarioInfo]
 start_replay(org_id, scenario_id, *, speed, job_id) -> None
 enqueue_job(kind, job_id, payload) -> None
@@ -665,6 +705,7 @@ enqueue_job(kind, job_id, payload) -> None
 start_investigation(org_id, incident_id, *, trigger, requested_by) -> uuid.UUID   # run id
 execute_approved_action(org_id, approval_id) -> None
 agent_cards() -> list[AgentCardInfo];  agents_health() -> list[AgentCardInfo]
+replay_verify(org_id, run_id) -> { inputHashesMatch, offlineReplayVerdict }
 
 # nightjar/detect/api.py
 list_rules(org_id) -> list[RuleInfo];  get_rule(org_id, rule_id) -> (RuleInfo, yaml) | None
@@ -672,13 +713,16 @@ set_rule_enabled(org_id, rule_id, *, enabled) -> RuleInfo
 
 # nightjar/intel/api.py
 attack_technique(technique_id) -> AttackRef | None;  attack_tactic_label(tactic) -> str
+attack_technique_detail(technique_id) -> { techniqueId, name, tactics, description, url } | None
 kev_lookup(cve_id) -> KevHit | None;  kev_for_assets(cve_ids) -> list[KevHit]   # hides dateAdded > clock.today()
 
 # nightjar/ml/api.py
-list_models() -> list[ModelInfo];  promote(name, version, *, promoted_by) -> ModelInfo
+list_models() -> list[ModelInfo];  promote(name, version, *, promoted_by) -> ModelInfo   # ValueError if gates failed
+entity_baseline(org_id, entity_type, entity_id) -> list[{ feature, label, median, p95 }]
 
 # nightjar/llm/api.py
 generate(task, *, instructions, trusted, untrusted: dict[str, UntrustedText], schema) -> LlmResult   # offline fake default
+# the offline fake returns trusted["baseline"] unchanged when present (notice drafts, weekly briefs)
 
 # nightjar/safety.py
 neutralise(value, *, field, max_len=2000) -> UntrustedText;  render_for_prompt(items) -> str
@@ -875,7 +919,7 @@ clean twins.
 
 # Part 6: Demo seed (`make seed`)
 
-`python -m nightjar.cli seed` (idempotent; `make reset` drops SQLite, `data/hunting.duckdb` and `data/jetstream`
+`python -m nightjar.cli seed [--fixtures]` (idempotent; `--fixtures` skips the pipeline replay in phase 2; `make reset` drops SQLite, `data/hunting.duckdb` and `data/jetstream`
 then re-seeds). All data is synthetic and fictional, labelled "Sample data" in the UI (`organizations.is_sample`).
 Domains use the reserved `.example` TLD; IPs use documentation ranges (192.0.2.0/24, 198.51.100.0/24,
 203.0.113.0/24) except the clearly-labelled sample "known bad" range. **Times are relative** to the demo clock:
