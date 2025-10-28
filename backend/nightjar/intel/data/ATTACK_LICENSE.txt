@@ -1,0 +1,9 @@
+MITRE ATT&CK(R) Enterprise v18.1 (subset of fields: technique id, name, tactics, first sentence of the
+description, URL), derived from https://github.com/mitre-attack/attack-stix-data.
+
+(c) The MITRE Corporation. This work is reproduced and distributed with the permission of The MITRE
+Corporation. ATT&CK is a registered trademark of The MITRE Corporation.
+
+Terms of use: https://attack.mitre.org/resources/legal-and-branding/terms-of-use/
+MITRE grants a non-exclusive, royalty-free licence to use, reproduce and distribute ATT&CK, provided this
+copyright notice and the terms-of-use reference are reproduced in all copies.

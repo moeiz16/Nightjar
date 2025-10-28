@@ -1,0 +1,18 @@
+{
+  "source": "Nightjar sample feed (fictional; documentation address ranges and .example domains)",
+  "items": [
+    {"type": "ip", "value": "203.0.113.66", "verdict": "malicious", "detail": "Sample feed: command-and-control server used by a ransomware affiliate (fictional)"},
+    {"type": "ip", "value": "203.0.113.67", "verdict": "malicious", "detail": "Sample feed: command-and-control server used by a ransomware affiliate (fictional)"},
+    {"type": "ip", "value": "198.51.100.23", "verdict": "suspicious", "detail": "Sample feed: hosting-provider address seen in cloud key abuse (fictional)"},
+    {"type": "ip", "value": "198.51.100.77", "verdict": "suspicious", "detail": "Sample feed: anonymising hosting network, frequent phishing sign-ins (fictional)"},
+    {"type": "ip", "value": "203.0.113.50", "verdict": "malicious", "detail": "Sample feed: password-spray source (fictional)"},
+    {"type": "ip", "value": "203.0.113.51", "verdict": "malicious", "detail": "Sample feed: password-spray source (fictional)"},
+    {"type": "ip", "value": "203.0.113.52", "verdict": "suspicious", "detail": "Sample feed: scanner, password spraying (fictional)"},
+    {"type": "domain", "value": "halden-invoices.example", "verdict": "malicious", "detail": "Sample feed: look-alike domain hosting a credential phishing page (fictional)"},
+    {"type": "domain", "value": "login-halden.example", "verdict": "malicious", "detail": "Sample feed: credential phishing kit (fictional)"},
+    {"type": "url", "value": "https://halden-invoices.example/pay/review", "verdict": "malicious", "detail": "Sample feed: phishing link (fictional)"},
+    {"type": "domain", "value": "files-sync.example", "verdict": "suspicious", "detail": "Sample feed: personal cloud storage service often used to move data out (fictional)"},
+    {"type": "hash", "value": "9f2c1e0b7a6d4c3b2a19f8e7d6c5b4a3928170f6e5d4c3b2a1908f7e6d5c4b3a", "verdict": "malicious", "detail": "Sample feed: beacon loader DLL (fictional hash)"},
+    {"type": "domain", "value": "updates.veeam-backup.example", "verdict": "benign", "detail": "Sample feed: vendor update service for the backup agent (fictional)"}
+  ]
+}

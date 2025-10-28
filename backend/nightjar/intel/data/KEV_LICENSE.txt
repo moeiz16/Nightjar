@@ -1,0 +1,3 @@
+CISA Known Exploited Vulnerabilities catalog (subset), https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+Released under CC0 1.0 Universal (public domain dedication). Entries added after the demo date are hidden at
+lookup time.
