@@ -1,0 +1,14 @@
+title: Signed system binary connecting to the internet
+id: 2266630d-a186-5855-9ff7-986e04da4e3d
+status: test
+description: rundll32 or regsvr32 made an outbound network connection to a public address, a common way to hide a beacon behind a trusted Windows program.
+author: Nightjar
+tags: [attack.defense-evasion, attack.t1218.011, attack.command-and-control, attack.t1071.001]
+logsource: {category: network_connection, product: windows}
+detection:
+  selection:
+    process.executable|endswith: ['\rundll32.exe', '\regsvr32.exe']
+  filter_private:
+    destination.ip|cidr: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8]
+  condition: selection and not filter_private
+level: high

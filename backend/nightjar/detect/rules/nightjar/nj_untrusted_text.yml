@@ -1,0 +1,12 @@
+title: Instruction-like text in a log field
+id: 51fbc0ea-2242-598c-86dd-7307db61093c
+status: stable
+description: A log field (subject line, command line, file name, user agent) contained text written like instructions to an assistant. It is kept as data only; it may be an attempt to manipulate automated analysis.
+author: Nightjar
+tags: [attack.defense-evasion]
+logsource: {product: nightjar, service: untrusted_text}
+detection:
+  selection:
+    untrusted.count|gte: 1
+  condition: selection
+level: low

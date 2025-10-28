@@ -1,0 +1,15 @@
+title: Sign-in from a hosting provider network
+id: 885adac3-d04b-5d2e-8558-24da50c1723d
+status: test
+description: A successful sign-in came from a data-centre or hosting network rather than a home, office or mobile network.
+author: Nightjar
+tags: [attack.initial-access, attack.t1078.004]
+logsource: {product: okta, service: okta}
+detection:
+  selection:
+    event.action: [logon, mfa-push-approved]
+    event.outcome: success
+    source.as.organization.name|contains: [Hosting, VPS, Datacenter, Data Center, Server, Cloud]
+  condition: selection
+falsepositives: [Staff using a commercial VPN]
+level: medium

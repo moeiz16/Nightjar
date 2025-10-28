@@ -1,0 +1,16 @@
+title: File-sync tool sending data to personal cloud storage
+id: 7049f45d-e44a-580c-b686-f6a5e73a533a
+status: test
+description: A file synchronisation tool was started with a remote destination that is not a company-approved storage service.
+author: Nightjar
+tags: [attack.exfiltration, attack.t1567.002]
+logsource: {category: process_creation, product: windows}
+detection:
+  selection_img:
+    process.name|endswith: [rclone.exe, filesync.exe, megasync.exe, megacmd.exe, odrive.exe]
+  selection_cli:
+    process.command_line|contains: [' copy ', ' sync ', ' move ', '--upload', ' push ']
+  filter_corp:
+    process.command_line|contains: [halden-share, sharepoint.com, 'corp:']
+  condition: all of selection_* and not filter_corp
+level: medium

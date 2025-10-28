@@ -1,0 +1,13 @@
+title: Remote-access session reused from a different address
+id: ee521d99-5179-58d2-a3bb-42532da93f94
+status: test
+description: An existing remote-access session continued from a different client address, the pattern of session-token theft on unpatched gateways (for example the NetScaler session leak).
+author: Nightjar
+references: [https://www.cisa.gov/guidance-addressing-citrix-netscaler-adc-and-gateway-vulnerability-cve-2023-4966-citrix-bleed]
+tags: [attack.initial-access, attack.t1190, attack.t1550.004]
+logsource: {product: nightjar, service: remote_access}
+detection:
+  selection:
+    event.action: session-ip-changed
+  condition: selection
+level: high

@@ -1,0 +1,15 @@
+title: Storage buckets listed with a long-term access key from outside the cloud
+id: 1811c3df-d313-584f-baa2-00d9de6ec941
+status: test
+description: A long-term access key (not a role session) listed every storage bucket, a common first step after a key is stolen.
+author: Nightjar
+tags: [attack.discovery, attack.t1619]
+logsource: {product: aws, service: cloudtrail}
+detection:
+  selection:
+    eventName: ListBuckets
+    cloud.access_key_id|startswith: AKIA
+  filter_aws:
+    sourceIPAddress|endswith: .amazonaws.com
+  condition: selection and not filter_aws
+level: medium

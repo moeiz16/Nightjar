@@ -1,0 +1,13 @@
+title: Large upload through the internet gateway
+id: c360ca11-63a4-5fa6-bee5-257122f4c39d
+status: test
+description: More than 300 MB was sent to one outside destination in a single session.
+author: Nightjar
+tags: [attack.exfiltration, attack.t1567.002]
+logsource: {product: nightjar, service: remote_access}
+detection:
+  selection:
+    event.action: network-flow
+    network.bytes_out|gte: 300000000
+  condition: selection
+level: medium

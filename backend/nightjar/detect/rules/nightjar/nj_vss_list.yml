@@ -1,0 +1,16 @@
+title: Recovery copies listed or resized
+id: 83b75a79-44e9-5333-913b-2ae6e46cfd76
+status: test
+description: Volume shadow copies were listed or their storage resized, often seen before they are deleted (and also during routine backup maintenance).
+author: Nightjar
+tags: [attack.impact, attack.t1490]
+logsource: {category: process_creation, product: windows}
+detection:
+  selection_vss:
+    process.name|endswith: vssadmin.exe
+    process.command_line|contains: [' list shadows', ' resize shadowstorage']
+  selection_wmic:
+    process.name|endswith: wmic.exe
+    process.command_line|contains: 'shadowcopy'
+  condition: 1 of selection_*
+level: low

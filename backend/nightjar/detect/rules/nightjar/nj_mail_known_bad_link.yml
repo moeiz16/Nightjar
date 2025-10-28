@@ -1,0 +1,13 @@
+title: Email delivered with a link to a known phishing site
+id: c62a0cc9-bf00-5d25-a985-a12cfe446d1c
+status: stable
+description: The mail gateway delivered a message containing a link that the threat intelligence feed lists as phishing.
+author: Nightjar
+tags: [attack.initial-access, attack.t1566.002]
+logsource: {product: nightjar, service: mail}
+detection:
+  selection:
+    event.action: email-delivered
+    threat.indicator.verdict: malicious
+  condition: selection
+level: high

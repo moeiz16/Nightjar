@@ -1,0 +1,13 @@
+title: Large number of mailbox items read in one session
+id: c95958c8-31ef-54c0-817a-9522167072fa
+status: test
+description: Fifty or more mailbox items were read in a single access burst.
+author: Nightjar
+tags: [attack.collection, attack.t1114.002]
+logsource: {product: m365, service: audit}
+detection:
+  selection:
+    event.action: mailbox-items-accessed
+    m365.operation_count|gte: 50
+  condition: selection
+level: medium

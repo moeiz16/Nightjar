@@ -1,0 +1,13 @@
+title: Mailbox rule forwards mail to an outside address
+id: 2ac77c35-f05e-5e12-8bde-5aa73257b6c8
+status: stable
+description: A new or changed inbox rule forwards or redirects mail to an address outside the organisation.
+author: Nightjar
+tags: [attack.collection, attack.t1114.003]
+logsource: {product: m365, service: audit}
+detection:
+  selection:
+    event.action: inbox-rule-created
+    email.external_recipients|gte: 1
+  condition: selection
+level: high

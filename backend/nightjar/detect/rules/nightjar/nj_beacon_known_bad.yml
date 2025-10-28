@@ -1,0 +1,12 @@
+title: Connection to a known command-and-control address
+id: b83b13e9-28d3-501d-bc61-fc33f416b8cc
+status: stable
+description: A process connected to an address or domain that threat intelligence lists as attacker infrastructure.
+author: Nightjar
+tags: [attack.command-and-control, attack.t1071.001]
+logsource: {category: network_connection, product: windows}
+detection:
+  selection:
+    threat.indicator.verdict: malicious
+  condition: selection
+level: high

@@ -1,0 +1,27 @@
+title: Remote-access sign-in failed
+id: ca378925-4092-50a5-b626-6067fa7fb8ae
+name: nj_vpn_signin_failed
+status: stable
+description: One failed sign-in on a remote-access gateway. Feeds the password-spray correlation; never alerts alone.
+author: Nightjar
+tags: [attack.credential-access, attack.t1110.003]
+logsource: {product: nightjar, service: remote_access}
+detection:
+  selection:
+    event.action: logon-failed
+  condition: selection
+level: informational
+---
+title: Password spray against the remote-access gateway
+id: 5b3e87b5-358a-554a-8279-8589cd24ccd4
+status: stable
+description: Ten or more different accounts failed to sign in from one address within ten minutes.
+author: Nightjar
+correlation:
+  type: value_count
+  rules: [nj_vpn_signin_failed]
+  group-by: [source.ip]
+  timespan: 10m
+  condition: {gte: 10, field: user.name}
+tags: [attack.credential-access, attack.t1110.003]
+level: medium

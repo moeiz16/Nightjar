@@ -1,0 +1,28 @@
+title: Object read from a storage bucket
+id: 160c1886-84d7-5b98-a8df-069f950465f7
+name: nj_s3_object_read
+status: stable
+description: One object read from a storage bucket. Feeds the bulk-read correlation; never alerts alone.
+author: Nightjar
+tags: [attack.collection, attack.t1530]
+logsource: {product: aws, service: cloudtrail}
+detection:
+  selection:
+    eventSource: s3.amazonaws.com
+    eventName: GetObject
+  condition: selection
+level: informational
+---
+title: Many objects read from a storage bucket with one access key
+id: 425f8cf1-2462-5859-87b4-0790cb2cacd3
+status: test
+description: Twenty or more objects were read from cloud storage with the same access key within ten minutes.
+author: Nightjar
+correlation:
+  type: event_count
+  rules: [nj_s3_object_read]
+  group-by: [cloud.access_key_id]
+  timespan: 10m
+  condition: {gte: 20}
+tags: [attack.collection, attack.t1530]
+level: medium

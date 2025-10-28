@@ -1,0 +1,27 @@
+title: Sign-in prompt refused
+id: 6477ffd3-aa6c-59aa-8220-a63585f13ba8
+name: nj_mfa_push_denied
+status: stable
+description: A person refused a push sign-in prompt. Feeds the repeated-prompt correlation; never alerts alone.
+author: Nightjar
+tags: [attack.credential-access, attack.t1621]
+logsource: {product: okta, service: okta}
+detection:
+  selection:
+    event.action: mfa-push-denied
+  condition: selection
+level: informational
+---
+title: Repeated sign-in prompts refused (prompt bombing)
+id: 00df2ee1-7f10-5758-926c-9ef79e964e00
+status: stable
+description: Three or more push prompts refused for one person within ten minutes, typical of an attacker who holds the password and hopes the person approves a prompt to make them stop.
+author: Nightjar
+correlation:
+  type: event_count
+  rules: [nj_mfa_push_denied]
+  group-by: [user.name]
+  timespan: 10m
+  condition: {gte: 3}
+tags: [attack.credential-access, attack.t1621]
+level: high

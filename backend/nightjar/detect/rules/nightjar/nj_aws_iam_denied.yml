@@ -1,0 +1,14 @@
+title: Attempt to create cloud users or keys was refused
+id: f20b9691-9c0b-5a78-9c96-ec3674a3d9cf
+status: stable
+description: An identity tried to create a user, an access key or attach a policy and was refused.
+author: Nightjar
+tags: [attack.persistence, attack.t1136.003]
+logsource: {product: aws, service: cloudtrail}
+detection:
+  selection:
+    eventSource: iam.amazonaws.com
+    eventName: [CreateUser, CreateAccessKey, AttachUserPolicy, PutUserPolicy, CreateLoginProfile]
+    errorCode: [AccessDenied, Client.UnauthorizedOperation, UnauthorizedOperation]
+  condition: selection
+level: high
