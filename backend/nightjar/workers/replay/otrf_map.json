@@ -1,0 +1,16 @@
+{
+  "note": "OTRF lab names mapped onto Halden Logistics sample entities for replay; originals are kept in each event under _otrf.",
+  "hosts": {
+    "WORKSTATION5.theshire.local": "ant-ws-014.halden.example",
+    "WORKSTATION6.theshire.local": "ant-ws-022.halden.example",
+    "MORDORDC.theshire.local": "ant-dc-01.halden.example",
+    "WORKSTATION5": "ANT-WS-014",
+    "WORKSTATION6": "ANT-WS-022",
+    "MORDORDC": "ANT-DC-01"
+  },
+  "users": {
+    "wardog": "l.peeters",
+    "pgustavo": "j.okafor",
+    "Administrator": "adm-ejanssens"
+  }
+}

@@ -1,0 +1,4010 @@
+{
+ "scenario": "halden-night",
+ "keyedBy": "seq (line number in the bundle; event ids depend on the organisation and replay time)",
+ "expectedIncidents": [
+  {
+   "segment": "s1",
+   "reference": "NJ-1036",
+   "kind": "ransomware_precursor",
+   "verdict": "true_positive"
+  },
+  {
+   "segment": "s2",
+   "reference": "NJ-1037",
+   "kind": "phishing_credential_misuse",
+   "verdict": "true_positive"
+  },
+  {
+   "segment": "s3",
+   "reference": "NJ-1038",
+   "kind": "cloud_credential_exposure",
+   "verdict": "true_positive"
+  },
+  {
+   "segment": "s4",
+   "reference": "NJ-1039",
+   "kind": "benign_activity",
+   "verdict": "benign"
+  },
+  {
+   "segment": "s5",
+   "reference": "NJ-1040",
+   "kind": "password_spray",
+   "verdict": "true_positive"
+  },
+  {
+   "segment": "s6",
+   "reference": "NJ-1041",
+   "kind": "data_exfiltration",
+   "verdict": "needs_review"
+  }
+ ],
+ "events": [
+  {
+   "seq": 251,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1190"
+  },
+  {
+   "seq": 252,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1078.002"
+  },
+  {
+   "seq": 253,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1218.011"
+  },
+  {
+   "seq": 254,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1071.001"
+  },
+  {
+   "seq": 255,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1003.001"
+  },
+  {
+   "seq": 256,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1003.001"
+  },
+  {
+   "seq": 257,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1087.002"
+  },
+  {
+   "seq": 258,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1482"
+  },
+  {
+   "seq": 259,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1021.002"
+  },
+  {
+   "seq": 260,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1021.002"
+  },
+  {
+   "seq": 261,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1569.002"
+  },
+  {
+   "seq": 262,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1569.002"
+  },
+  {
+   "seq": 263,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1021.002"
+  },
+  {
+   "seq": 264,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1021.002"
+  },
+  {
+   "seq": 265,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1569.002"
+  },
+  {
+   "seq": 266,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1569.002"
+  },
+  {
+   "seq": 267,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1053.005"
+  },
+  {
+   "seq": 268,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1053.005"
+  },
+  {
+   "seq": 269,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1490"
+  },
+  {
+   "seq": 270,
+   "scenario": "ransomware_precursor",
+   "malicious": true,
+   "technique": "T1490"
+  },
+  {
+   "seq": 4978,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1566.002"
+  },
+  {
+   "seq": 4979,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4980,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4981,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4982,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4983,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4984,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4985,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4986,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4987,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4988,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4989,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1078.004"
+  },
+  {
+   "seq": 4990,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1078.004"
+  },
+  {
+   "seq": 4991,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1621"
+  },
+  {
+   "seq": 4992,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1114.003"
+  },
+  {
+   "seq": 4993,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1114.002"
+  },
+  {
+   "seq": 4994,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1114.002"
+  },
+  {
+   "seq": 4995,
+   "scenario": "phishing_credential_misuse",
+   "malicious": true,
+   "technique": "T1114.002"
+  },
+  {
+   "seq": 4996,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1552.001"
+  },
+  {
+   "seq": 4997,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1619"
+  },
+  {
+   "seq": 4998,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1078.004"
+  },
+  {
+   "seq": 4999,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5000,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5001,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5002,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5003,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5004,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5005,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5006,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5007,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5008,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5009,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5010,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5011,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5012,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5013,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5014,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5015,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5016,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5017,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5018,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5019,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5020,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5021,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5022,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5023,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5024,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5025,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5026,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5027,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5028,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5029,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5030,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5031,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5032,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5033,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5034,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5035,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5036,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1530"
+  },
+  {
+   "seq": 5037,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1136.003"
+  },
+  {
+   "seq": 5038,
+   "scenario": "cloud_credential_exposure",
+   "malicious": true,
+   "technique": "T1098.001"
+  },
+  {
+   "seq": 5039,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5040,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5041,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5042,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5043,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5044,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5045,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5046,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5047,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5048,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5049,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5050,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5051,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5052,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5053,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5054,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5055,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5056,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5057,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5058,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5059,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5060,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5061,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5062,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5063,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5064,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5065,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5066,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5067,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5068,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5069,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5070,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5071,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5072,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5073,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5074,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5075,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5076,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5077,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5078,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5079,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5080,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5081,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5082,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5083,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5084,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5085,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5086,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5087,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5088,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5089,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5090,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5091,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5092,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5093,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5094,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5095,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5096,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5097,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5098,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5099,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5100,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5101,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5102,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5103,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5104,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5105,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5106,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5107,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5108,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5109,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5110,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5111,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5112,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5113,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5114,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5115,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5116,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5117,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5118,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5119,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5120,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5121,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5122,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5123,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5124,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5125,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5126,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5127,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5128,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5129,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5130,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5131,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5132,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5133,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5134,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5135,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5136,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5137,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5138,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5139,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5140,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5141,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5142,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5143,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5144,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5145,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5146,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5147,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5148,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5149,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5150,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5151,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5152,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5153,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5154,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5155,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5156,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5157,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5158,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5159,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5160,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5161,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5162,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5163,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5164,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5165,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5166,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5167,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5168,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5169,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5170,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5171,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5172,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5173,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5174,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5175,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5176,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5177,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5178,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5179,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5180,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5181,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5182,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5183,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5184,
+   "scenario": "benign_backup_rollout",
+   "malicious": false,
+   "technique": null
+  },
+  {
+   "seq": 5185,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5186,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5187,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5188,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5189,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5190,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5191,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5192,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5193,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5194,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5195,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5196,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5197,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5198,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5199,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5200,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5201,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5202,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5203,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5204,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5205,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5206,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5207,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5208,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5209,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5210,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5211,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5212,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5213,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5214,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5215,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5216,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5217,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5218,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5219,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5220,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5221,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5222,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5223,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5224,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5225,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5226,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5227,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5228,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5229,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5230,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5231,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5232,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5233,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5234,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5235,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5236,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5237,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5238,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5239,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5240,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5241,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5242,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5243,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5244,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5245,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5246,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5247,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5248,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5249,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5250,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5251,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5252,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5253,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5254,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5255,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5256,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5257,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5258,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5259,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5260,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5261,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5262,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5263,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5264,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5265,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5266,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5267,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5268,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5269,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5270,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5271,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5272,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5273,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5274,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5275,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5276,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5277,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5278,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5279,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5280,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5281,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5282,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5283,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5284,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5285,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5286,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5287,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5288,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5289,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5290,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5291,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5292,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5293,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5294,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5295,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5296,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5297,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5298,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5299,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5300,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5301,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5302,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5303,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5304,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5305,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5306,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5307,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5308,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5309,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5310,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5311,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5312,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5313,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5314,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5315,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5316,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5317,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5318,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5319,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5320,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5321,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5322,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5323,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5324,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5325,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5326,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5327,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5328,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5329,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5330,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5331,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5332,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5333,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5334,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5335,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5336,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5337,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5338,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5339,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5340,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5341,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5342,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5343,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5344,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5345,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5346,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5347,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5348,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5349,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5350,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5351,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5352,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5353,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5354,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5355,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5356,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5357,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5358,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5359,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5360,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5361,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5362,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5363,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5364,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5365,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5366,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5367,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5368,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5369,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5370,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5371,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5372,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5373,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5374,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5375,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5376,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5377,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5378,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5379,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5380,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5381,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5382,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5383,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5384,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5385,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5386,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5387,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5388,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5389,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5390,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5391,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5392,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5393,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5394,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5395,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5396,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5397,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5398,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5399,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5400,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5401,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5402,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5403,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5404,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5405,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5406,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5407,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5408,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5409,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5410,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5411,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5412,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5413,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5414,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5415,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5416,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5417,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5418,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5419,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5420,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5421,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5422,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5423,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5424,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5425,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5426,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5427,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5428,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5429,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5430,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5431,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5432,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5433,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5434,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5435,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5436,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5437,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5438,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5439,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5440,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5441,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5442,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5443,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5444,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5445,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5446,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5447,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5448,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5449,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5450,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5451,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5452,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5453,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5454,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5455,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5456,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5457,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5458,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5459,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5460,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5461,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5462,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5463,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5464,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5465,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5466,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5467,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5468,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5469,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5470,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5471,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5472,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5473,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5474,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5475,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5476,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5477,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5478,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5479,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5480,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5481,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5482,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5483,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5484,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5485,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5486,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5487,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5488,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5489,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5490,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5491,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5492,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5493,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5494,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5495,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5496,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5497,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5498,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5499,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5500,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5501,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5502,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5503,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5504,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5505,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5506,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5507,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5508,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5509,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5510,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5511,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5512,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5513,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5514,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5515,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5516,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5517,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5518,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5519,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5520,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5521,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5522,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5523,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5524,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5525,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5526,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5527,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5528,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5529,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5530,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5531,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5532,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5533,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5534,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5535,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5536,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5537,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5538,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5539,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5540,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5541,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5542,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5543,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5544,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5545,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5546,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5547,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5548,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5549,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5550,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5551,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5552,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5553,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5554,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5555,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5556,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5557,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5558,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5559,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5560,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5561,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5562,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5563,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5564,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5565,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5566,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5567,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5568,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5569,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5570,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5571,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5572,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5573,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5574,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5575,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5576,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5577,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5578,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5579,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5580,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5581,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5582,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5583,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5584,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5585,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5586,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5587,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5588,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5589,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5590,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5591,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5592,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5593,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5594,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5595,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5596,
+   "scenario": "password_spray",
+   "malicious": true,
+   "technique": "T1110.003"
+  },
+  {
+   "seq": 5597,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1078"
+  },
+  {
+   "seq": 5598,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1039"
+  },
+  {
+   "seq": 5599,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1039"
+  },
+  {
+   "seq": 5600,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1039"
+  },
+  {
+   "seq": 5601,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1039"
+  },
+  {
+   "seq": 5602,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5603,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5604,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5605,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5606,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5607,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5608,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5609,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5610,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5611,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5612,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5613,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5614,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5615,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5616,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5617,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  },
+  {
+   "seq": 5618,
+   "scenario": "data_exfiltration",
+   "malicious": true,
+   "technique": "T1567.002"
+  }
+ ]
+}
