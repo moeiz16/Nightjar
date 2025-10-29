@@ -1,0 +1,52 @@
+{
+ "triage": {
+  "champion": "1.0.0",
+  "versions": {
+   "1.0.0": {
+    "algorithm": "LightGBM + isotonic",
+    "gatesPassed": true,
+    "metrics": {
+     "brier": 0.0067,
+     "ece": 0.0046,
+     "fp_reduction": 0.989,
+     "pr_auc": 0.9929,
+     "recall_at_threshold": 0.9968,
+     "roc_auc": 0.9975
+    },
+    "promotedBy": "Model governance (initial release)",
+    "stage": "champion"
+   },
+   "1.0.0-rf": {
+    "algorithm": "Random forest",
+    "gatesPassed": true,
+    "metrics": {
+     "brier": 0.0112,
+     "ece": 0.0378,
+     "fp_reduction": 0.9383,
+     "pr_auc": 0.9992,
+     "recall_at_threshold": 0.9968,
+     "roc_auc": 0.9994
+    },
+    "promotedBy": null,
+    "stage": "challenger"
+   }
+  }
+ },
+ "ueba": {
+  "champion": "1.0.0",
+  "versions": {
+   "1.0.0": {
+    "algorithm": "Isolation Forest + robust z",
+    "gatesPassed": false,
+    "metrics": {
+     "fpr_max_group_gap": 0.0,
+     "precision": 1.0,
+     "precision_at_k": 1.0,
+     "recall": 0.7778
+    },
+    "promotedBy": "Model governance (initial release)",
+    "stage": "champion"
+   }
+  }
+ }
+}

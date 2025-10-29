@@ -1,0 +1,42 @@
+{
+ "eval": {
+  "flagged": 74,
+  "fpr_by_group": {
+   "kind:contractor": 0.0,
+   "kind:employee": 0.0,
+   "kind:service": 0.0,
+   "site:antwerp": 0.0,
+   "site:melbourne": 0.0,
+   "site:memphis": 0.0,
+   "site:other": 0.0
+  },
+  "fpr_max_group_gap": 0.0,
+  "injectedSequences": 18,
+  "injectedWindows": 219,
+  "precision": 1.0,
+  "precision_at_k": 1.0,
+  "recall": 0.7778,
+  "windowRecall": 0.3379,
+  "windows": 3704
+ },
+ "gates": {
+  "fpr_max_group_gap": 0.05,
+  "precision": 0.7,
+  "precision_at_k": 0.8,
+  "recall": 0.8
+ },
+ "gatesPassed": false,
+ "training": {
+  "baselineWindows": {
+   "host": 6614,
+   "user": 7340
+  },
+  "entities": {
+   "host": 12,
+   "user": 23
+  },
+  "historyEvents": 21491,
+  "seconds": 1.4
+ },
+ "version": "1.0.0"
+}

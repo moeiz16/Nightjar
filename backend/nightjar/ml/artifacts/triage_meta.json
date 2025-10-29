@@ -1,0 +1,410 @@
+{
+ "calibration": {
+  "x": [
+   0.009742,
+   0.138469,
+   0.145413,
+   0.462363,
+   0.494534,
+   0.664663,
+   0.72354,
+   0.773065,
+   0.828833,
+   0.991796
+  ],
+  "y": [
+   0.005,
+   0.005,
+   0.03125,
+   0.03125,
+   0.571429,
+   0.571429,
+   0.875,
+   0.875,
+   0.995,
+   0.995
+  ]
+ },
+ "calibrationBins": [
+  {
+   "bin": 0,
+   "count": 450,
+   "observed": 0.0022,
+   "predicted": 0.0065
+  },
+  {
+   "bin": 5,
+   "count": 9,
+   "observed": 0.6667,
+   "predicted": 0.5714
+  },
+  {
+   "bin": 8,
+   "count": 3,
+   "observed": 1.0,
+   "predicted": 0.875
+  },
+  {
+   "bin": 9,
+   "count": 300,
+   "observed": 0.9933,
+   "predicted": 0.9945
+  }
+ ],
+ "data": {
+  "days": {
+   "test": 10,
+   "train": 40,
+   "valid": 10
+  },
+  "labelNoiseTrain": 0.03,
+  "positiveRate": {
+   "test": 0.4042,
+   "train": 0.4904
+  },
+  "rows": {
+   "test": 762,
+   "train": 2851,
+   "valid": 715
+  },
+  "testComposition": {
+   "noise:benign_ad_audit": 10,
+   "noise:benign_admin_deploy": 16,
+   "noise:benign_admin_discovery": 3,
+   "noise:benign_large_upload": 16,
+   "noise:benign_maintenance_script": 8,
+   "noise:benign_mfa_confusion": 6,
+   "noise:benign_shadow_cleanup": 3,
+   "noise:benign_travel": 5,
+   "noise:bk": 387,
+   "real:ck": 43,
+   "real:ex": 80,
+   "real:ph": 39,
+   "real:rp": 122,
+   "real:sp": 24
+  }
+ },
+ "drift": [
+  {
+   "feature": "rule_level",
+   "psi": 0.0232
+  },
+  {
+   "feature": "rule_prior",
+   "psi": 0.0495
+  },
+  {
+   "feature": "rule_is_correlation",
+   "psi": 0.0323
+  },
+  {
+   "feature": "source_ueba",
+   "psi": 0.0282
+  },
+  {
+   "feature": "source_external",
+   "psi": 0.0005
+  },
+  {
+   "feature": "tactic_stage",
+   "psi": 0.0207
+  },
+  {
+   "feature": "tactic_count",
+   "psi": 0.007
+  },
+  {
+   "feature": "asset_criticality",
+   "psi": 0.0047
+  },
+  {
+   "feature": "identity_privileged",
+   "psi": 0.0216
+  },
+  {
+   "feature": "service_account",
+   "psi": 0.043
+  },
+  {
+   "feature": "ueba_entity_score",
+   "psi": 0.1117
+  },
+  {
+   "feature": "burst_same_rule",
+   "psi": 0.0106
+  },
+  {
+   "feature": "host_spread_same_rule",
+   "psi": 0.0354
+  },
+  {
+   "feature": "benign_lineage",
+   "psi": 0.0359
+  },
+  {
+   "feature": "intel_verdict",
+   "psi": 0.0121
+  },
+  {
+   "feature": "kev_on_asset",
+   "psi": 0.0267
+  },
+  {
+   "feature": "external_ip",
+   "psi": 0.0242
+  },
+  {
+   "feature": "multi_stage_entities",
+   "psi": 0.0543
+  },
+  {
+   "feature": "event_count_log",
+   "psi": 0.0147
+  },
+  {
+   "feature": "untrusted_text",
+   "psi": 0.0073
+  }
+ ],
+ "featureLabels": {
+  "asset_criticality": "Importance of the affected computer",
+  "benign_lineage": "Started by known maintenance software",
+  "burst_same_rule": "Same alert firing many times",
+  "event_count_log": "Number of events behind the alert",
+  "external_ip": "Outside internet address involved",
+  "host_spread_same_rule": "Same alert on many computers at once",
+  "identity_privileged": "Privileged account involved",
+  "intel_verdict": "Threat intelligence match",
+  "kev_on_asset": "Known exploited vulnerability on the computer",
+  "multi_stage_entities": "Several attack stages on the same entities",
+  "rule_is_correlation": "Pattern across several events",
+  "rule_level": "Rule severity",
+  "rule_prior": "This rule's track record",
+  "service_account": "Service account involved",
+  "source_external": "Alert from another security tool",
+  "source_ueba": "Unusual-behaviour finding",
+  "tactic_count": "Number of attack stages in the alert",
+  "tactic_stage": "Stage of the attack chain",
+  "ueba_entity_score": "How unusual the person or computer is behaving",
+  "untrusted_text": "Instruction-like text in the evidence"
+ },
+ "features": [
+  "rule_level",
+  "rule_prior",
+  "rule_is_correlation",
+  "source_ueba",
+  "source_external",
+  "tactic_stage",
+  "tactic_count",
+  "asset_criticality",
+  "identity_privileged",
+  "service_account",
+  "ueba_entity_score",
+  "burst_same_rule",
+  "host_spread_same_rule",
+  "benign_lineage",
+  "intel_verdict",
+  "kev_on_asset",
+  "external_ip",
+  "multi_stage_entities",
+  "event_count_log",
+  "untrusted_text"
+ ],
+ "gates": {
+  "brier": 0.1,
+  "ece": 0.08,
+  "fp_reduction": 0.5,
+  "pr_auc": 0.85,
+  "recall_at_threshold": 0.95,
+  "roc_auc": 0.9
+ },
+ "gatesPassed": true,
+ "importance": [
+  [
+   "rule_prior",
+   1.8594
+  ],
+  [
+   "benign_lineage",
+   0.5167
+  ],
+  [
+   "identity_privileged",
+   0.479
+  ],
+  [
+   "multi_stage_entities",
+   0.4595
+  ],
+  [
+   "ueba_entity_score",
+   0.2863
+  ],
+  [
+   "asset_criticality",
+   0.1551
+  ],
+  [
+   "intel_verdict",
+   0.1247
+  ],
+  [
+   "burst_same_rule",
+   0.1192
+  ],
+  [
+   "tactic_stage",
+   0.0804
+  ],
+  [
+   "host_spread_same_rule",
+   0.0749
+  ],
+  [
+   "event_count_log",
+   0.0519
+  ],
+  [
+   "rule_is_correlation",
+   0.0508
+  ],
+  [
+   "external_ip",
+   0.0309
+  ],
+  [
+   "tactic_count",
+   0.0168
+  ],
+  [
+   "service_account",
+   0.0101
+  ],
+  [
+   "rule_level",
+   0.0099
+  ],
+  [
+   "source_ueba",
+   0.0083
+  ],
+  [
+   "kev_on_asset",
+   0.0061
+  ],
+  [
+   "untrusted_text",
+   0.0036
+  ],
+  [
+   "source_external",
+   0.0
+  ]
+ ],
+ "metrics": {
+  "lightgbm": {
+   "brier": 0.0067,
+   "ece": 0.0046,
+   "fp_reduction": 0.989,
+   "pr_auc": 0.9929,
+   "recall_at_threshold": 0.9968,
+   "roc_auc": 0.9975
+  },
+  "lightgbm_uncalibrated": {
+   "brier": 0.0105,
+   "ece": 0.0387,
+   "pr_auc": 0.9978,
+   "roc_auc": 0.9987
+  },
+  "logistic": {
+   "brier": 0.0188,
+   "ece": 0.0461,
+   "fp_reduction": 0.9185,
+   "pr_auc": 0.9983,
+   "recall_at_threshold": 1.0,
+   "roc_auc": 0.9988
+  },
+  "random_forest": {
+   "brier": 0.0112,
+   "ece": 0.0378,
+   "fp_reduction": 0.9383,
+   "pr_auc": 0.9992,
+   "recall_at_threshold": 0.9968,
+   "roc_auc": 0.9994
+  },
+  "rules_alone": {
+   "fp_reduction": 0.0,
+   "recall_at_threshold": 1.0
+  },
+  "severity_cutoff_medium": {
+   "fp_reduction": 0.5683,
+   "recall_at_threshold": 0.987
+  }
+ },
+ "optuna": {
+  "bestValidPrAuc": 0.9996,
+  "trials": 25
+ },
+ "params": {
+  "deterministic": true,
+  "feature_fraction": 0.6292331754743309,
+  "lambda_l2": 7.36628991472411,
+  "learning_rate": 0.10447252398116538,
+  "min_data_in_leaf": 30,
+  "num_leaves": 16,
+  "num_threads": 1,
+  "objective": "binary",
+  "rounds": 85,
+  "seed": 20251015,
+  "verbosity": -1
+ },
+ "rulePriors": {
+  "00df2ee1-7f10-5758-926c-9ef79e964e00": 0.2683,
+  "1811c3df-d313-584f-baa2-00d9de6ec941": 0.96,
+  "2266630d-a186-5855-9ff7-986e04da4e3d": 0.963,
+  "2ac77c35-f05e-5e12-8bde-5aa73257b6c8": 0.9677,
+  "425f8cf1-2462-5859-87b4-0790cb2cacd3": 0.9474,
+  "51fbc0ea-2242-598c-86dd-7307db61093c": 0.9167,
+  "5b3e87b5-358a-554a-8279-8589cd24ccd4": 0.9938,
+  "5fc58078-eb62-5b2c-9a6e-a9d6d3ed0209": 0.9333,
+  "646ea171-dded-4578-8a4d-65e9822892e3": 0.963,
+  "7049f45d-e44a-580c-b686-f6a5e73a533a": 0.9667,
+  "773262e0-3dfb-54d2-8086-21c7ec65fea4": 0.963,
+  "7c0dcd3d-acf8-4f71-9570-f448b0034f94": 0.973,
+  "83b75a79-44e9-5333-913b-2ae6e46cfd76": 0.0013,
+  "8834e2f7-6b4b-4f09-8906-d2276470ee23": 0.973,
+  "885adac3-d04b-5d2e-8558-24da50c1723d": 0.5789,
+  "89ca78fd-b37c-4310-b3d3-81a023f83936": 0.52,
+  "97a80ec7-0e2f-4d05-9ef4-65760e634f6b": 0.1667,
+  "9a132afa-654e-11eb-ae93-0242ac130002": 0.5543,
+  "a49fa4d5-11db-418c-8473-1e014a8dd462": 0.963,
+  "b83b13e9-28d3-501d-bc61-fc33f416b8cc": 0.9375,
+  "c360ca11-63a4-5fa6-bee5-257122f4c39d": 0.84,
+  "c62a0cc9-bf00-5d25-a985-a12cfe446d1c": 0.9375,
+  "c947b146-0abc-4c87-9c64-b17e9d7274a2": 0.5778,
+  "c95958c8-31ef-54c0-817a-9522167072fa": 0.9722,
+  "ca2092a1-c273-4878-9b4b-0d60115bf5ea": 0.0024,
+  "df55196f-f105-44d3-a675-e9dfb6cc2f2b": 0.9808,
+  "e37db05d-d1f9-49c8-b464-cee1a4b11638": 0.9667,
+  "e6313acd-208c-44fc-a0ff-db85d572e90e": 0.0714,
+  "ea011323-7045-460b-b2d7-0f7442ea6b38": 0.3711,
+  "ee521d99-5179-58d2-a3bb-42532da93f94": 0.963,
+  "external:edr.alert:shadow-copy-deletion-blocked": 0.963,
+  "external:nightjar.synthetic:secret-exposed": 0.96,
+  "f20b9691-9c0b-5a78-9c96-ec3674a3d9cf": 0.9792,
+  "ueba:host:connectionsOut": 0.9655,
+  "ueba:host:distinctUsers": 0.6667,
+  "ueba:host:newProcesses": 0.9,
+  "ueba:host:offHours": 0.9915,
+  "ueba:host:processStarts": 0.6667,
+  "ueba:user:bytesOutMb": 0.901,
+  "ueba:user:distinctSrcIps": 0.9286,
+  "ueba:user:mfaDenied": 0.8333,
+  "ueba:user:offHours": 0.9583,
+  "ueba:user:processStarts": 0.9231,
+  "ueba:user:signIns": 0.9231
+ },
+ "thresholdNoise": 0.2,
+ "thresholdReal": 0.85,
+ "version": "1.0.0"
+}
