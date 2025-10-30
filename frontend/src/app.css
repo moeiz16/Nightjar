@@ -1,3 +1,608 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/geist/wght.css';
+@import '@fontsource-variable/geist-mono/wght.css';
 
-/* Design tokens, fonts and themes are defined by the design lead (frontend/DESIGN.md). */
+/* Nightjar SOC tokens (frontend/DESIGN.md §7–§10). Night is the default; "day watch" is the console in
+   light; the brief has its own dawn / night-edition reading tokens under .brief. */
+
+@theme inline {
+	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	--color-bg: var(--bg);
+	--color-pane: var(--pane);
+	--color-raised: var(--raised);
+	--color-sunk: var(--sunk);
+	--color-line: var(--line);
+	--color-line-strong: var(--line-strong);
+	--color-ink: var(--ink);
+	--color-ink-2: var(--ink-2);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+	--color-teal: var(--teal);
+	--color-teal-ink: var(--teal-ink);
+	--color-amber: var(--amber);
+	--color-red: var(--red);
+	--color-lav: var(--lav);
+	--radius-ctl: 6px;
+	--radius-chip: 4px;
+	--radius-hold: 8px;
+	--radius-pop: 10px;
+	--ease-tick: cubic-bezier(0.2, 0.9, 0.1, 1);
+	--ease-drop: cubic-bezier(0.2, 1.3, 0.35, 1);
+	--ease-stamp: cubic-bezier(0.2, 1.4, 0.3, 1);
+	--ease-dawn: cubic-bezier(0.3, 0.7, 0, 1);
+}
+
+:root {
+	color-scheme: dark;
+	--bg: #070b10;
+	--pane: #0c1219;
+	--raised: #121a23;
+	--sunk: #090e14;
+	--line: #1a2430;
+	--line-strong: #283646;
+	--ink: #e3ebf1;
+	--ink-2: #b9c6d0;
+	--muted: #8191a0;
+	--faint: #75879a;
+	--teal: #3ce6c8;
+	--teal-ink: #062a24;
+	--teal-wash: rgba(60, 230, 200, 0.1);
+	--teal-line: rgba(60, 230, 200, 0.38);
+	--amber: #f2b84b;
+	--red: #ff6b5e;
+	--lav: #b6a8ff;
+	--lav-wash: rgba(182, 168, 255, 0.1);
+	--sel: rgba(60, 230, 200, 0.16);
+	--shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+	--sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+	--mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+:root[data-theme='light'] {
+	color-scheme: light;
+	--bg: #e9eef0;
+	--pane: #ffffff;
+	--raised: #f3f6f7;
+	--sunk: #f6f8f9;
+	--line: #dce3e7;
+	--line-strong: #c4ced4;
+	--ink: #0b141b;
+	--ink-2: #2b3943;
+	--muted: #53626e;
+	--faint: #5f6e78;
+	--teal: #0a7f6d;
+	--teal-ink: #ffffff;
+	--teal-wash: rgba(10, 127, 109, 0.08);
+	--teal-line: rgba(10, 127, 109, 0.45);
+	--amber: #8a5d00;
+	--red: #b42318;
+	--lav: #5b45c9;
+	--lav-wash: rgba(91, 69, 201, 0.07);
+	--sel: rgba(10, 127, 109, 0.1);
+	--shadow: 0 24px 70px rgba(14, 30, 40, 0.18);
+}
+
+* {
+	box-sizing: border-box;
+}
+html,
+body {
+	margin: 0;
+}
+body {
+	background: var(--bg);
+	color: var(--ink);
+	font: 400 14px/1.45 var(--sans);
+	-webkit-font-smoothing: antialiased;
+	font-feature-settings: 'ss01';
+}
+button {
+	font: inherit;
+	color: inherit;
+	background: none;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+}
+button:disabled {
+	cursor: not-allowed;
+}
+a {
+	color: inherit;
+}
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+.mono {
+	font-family: var(--mono);
+	font-feature-settings: 'tnum', 'zero';
+}
+.tnum {
+	font-feature-settings: 'tnum', 'zero';
+}
+.muted {
+	color: var(--muted);
+}
+.faint {
+	color: var(--faint);
+}
+.teal {
+	color: var(--teal);
+}
+.amber {
+	color: var(--amber);
+}
+.lav {
+	color: var(--lav);
+}
+.red {
+	color: var(--red);
+}
+:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+}
+.sr {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+.skip-link {
+	position: absolute;
+	left: 8px;
+	top: -60px;
+	z-index: 100;
+	background: var(--teal);
+	color: var(--teal-ink);
+	padding: 8px 12px;
+	border-radius: 6px;
+	font-weight: 500;
+}
+.skip-link:focus {
+	top: 8px;
+}
+
+/* ---------- brand ---------- */
+.brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+.brand svg {
+	width: 22px;
+	height: 22px;
+	color: var(--teal);
+	flex: none;
+}
+.brand b {
+	font: 500 14px/1 var(--mono);
+	letter-spacing: -0.01em;
+	color: var(--ink);
+}
+.brand i {
+	font: 400 14px/1 var(--mono);
+	font-style: normal;
+	color: var(--muted);
+}
+
+/* ---------- keycaps, buttons ---------- */
+kbd {
+	font: 500 11px/1 var(--mono);
+	color: var(--ink-2);
+	padding: 3px 5px;
+	border-radius: 4px;
+	border: 1px solid var(--line-strong);
+	border-bottom-width: 2px;
+	background: var(--sunk);
+	white-space: nowrap;
+}
+.kbtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	height: 32px;
+	padding: 0 10px 0 12px;
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	color: var(--muted);
+	font-size: 13px;
+	white-space: nowrap;
+}
+.kbtn:hover {
+	color: var(--ink);
+	border-color: var(--muted);
+}
+.iconbtn {
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	display: grid;
+	place-items: center;
+	color: var(--muted);
+	border: 1px solid transparent;
+	flex: none;
+}
+.iconbtn:hover {
+	color: var(--ink);
+	border-color: var(--line-strong);
+}
+.iconbtn svg {
+	width: 16px;
+	height: 16px;
+}
+.btn {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line-strong);
+	font-size: 13px;
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	text-decoration: none;
+	white-space: nowrap;
+	background: transparent;
+}
+.btn:hover:not(:disabled) {
+	border-color: var(--muted);
+}
+.btn.pri {
+	background: var(--ink);
+	color: var(--bg);
+	border-color: var(--ink);
+	font-weight: 500;
+}
+.btn.pri:hover:not(:disabled) {
+	opacity: 0.92;
+}
+.btn.teal {
+	background: var(--teal);
+	color: var(--teal-ink);
+	border-color: var(--teal);
+	font-weight: 500;
+}
+.btn:disabled {
+	opacity: 0.5;
+}
+.btn.sm {
+	height: 26px;
+	padding: 0 9px;
+	font-size: 12px;
+}
+.lnk {
+	font: 400 12px/1 var(--mono);
+	color: var(--muted);
+	text-decoration: none;
+	border-bottom: 1px solid var(--line-strong);
+	padding-bottom: 2px;
+	white-space: nowrap;
+}
+.lnk:hover {
+	color: var(--ink);
+	border-color: var(--muted);
+}
+
+/* ---------- segmented toggles ---------- */
+.seg {
+	display: inline-flex;
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	overflow: hidden;
+	flex: none;
+}
+.seg button,
+.seg a {
+	height: 28px;
+	padding: 0 10px;
+	color: var(--ink-2);
+	border-right: 1px solid var(--line-strong);
+	font: 500 12px/28px var(--mono);
+	text-decoration: none;
+	white-space: nowrap;
+}
+.seg > :last-child {
+	border-right: 0;
+}
+.seg .on,
+.seg [aria-pressed='true'],
+.seg [aria-current='page'] {
+	background: var(--teal-wash);
+	color: var(--teal);
+}
+
+/* ---------- forms ---------- */
+.field {
+	display: grid;
+	gap: 6px;
+}
+.field > span {
+	font: 400 12px/1 var(--mono);
+	color: var(--muted);
+}
+.input,
+.select,
+.textarea {
+	height: 36px;
+	padding: 0 11px;
+	border-radius: 6px;
+	border: 1px solid var(--line-strong);
+	background: var(--sunk);
+	color: var(--ink);
+	font-size: 14px;
+	min-width: 0;
+	width: 100%;
+}
+.textarea {
+	height: auto;
+	padding: 10px 11px;
+	line-height: 1.55;
+	resize: vertical;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+	outline: 2px solid var(--teal);
+	outline-offset: -1px;
+	border-color: transparent;
+}
+.ferr {
+	font: 400 12px/1.4 var(--mono);
+	color: var(--red);
+}
+
+/* ---------- status glyph chips ---------- */
+.sev {
+	font: 500 12px/1 var(--mono);
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+	white-space: nowrap;
+}
+.sev .bars {
+	letter-spacing: -1px;
+}
+.sev.critical .bars,
+.sev.high .bars {
+	color: var(--red);
+}
+.sev.medium .bars {
+	color: var(--amber);
+}
+.sev.low .bars,
+.sev.info .bars {
+	color: var(--muted);
+}
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 22px;
+	padding: 0 8px;
+	border-radius: 4px;
+	font: 500 11.5px/1 var(--mono);
+	white-space: nowrap;
+	border: 1px solid var(--line-strong);
+	color: var(--ink-2);
+}
+.chip.await {
+	color: var(--lav);
+	border-color: color-mix(in srgb, var(--lav) 45%, transparent);
+	background: var(--lav-wash);
+}
+.chip.ok {
+	color: var(--teal);
+	border-color: var(--teal-line);
+	background: var(--teal-wash);
+}
+.chip.soon {
+	color: var(--amber);
+	border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+}
+.chip.bad {
+	color: var(--red);
+	border-color: color-mix(in srgb, var(--red) 45%, transparent);
+}
+.tag {
+	padding: 4px 6px;
+	border-radius: 3px;
+	background: var(--raised);
+	color: var(--ink-2);
+	font: 400 11.5px/1 var(--mono);
+	white-space: nowrap;
+}
+
+/* ---------- panes ---------- */
+.pane {
+	background: var(--pane);
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+}
+.pane > .ph {
+	height: 34px;
+	flex: none;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 0 14px;
+	border-bottom: 1px solid var(--line);
+	font: 400 12px/1 var(--mono);
+	color: var(--muted);
+	white-space: nowrap;
+	min-width: 0;
+}
+.pane > .ph b,
+.pane > .ph .ttl {
+	font-weight: 500;
+	color: var(--ink-2);
+}
+.pane > .ph .sp {
+	margin-left: auto;
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	min-width: 0;
+}
+.pane.focus::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	height: 2px;
+	background: var(--teal);
+	z-index: 2;
+}
+.pane.focus > .ph b,
+.pane.focus > .ph .ttl {
+	color: var(--ink);
+}
+.scroll {
+	overflow: auto;
+	min-height: 0;
+	flex: 1;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+/* ---------- ledgers (tables) ---------- */
+.ledger {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.ledger th {
+	text-align: left;
+	font: 400 11.5px/1 var(--mono);
+	color: var(--faint);
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line);
+	white-space: nowrap;
+	position: sticky;
+	top: 0;
+	background: var(--pane);
+	z-index: 1;
+}
+.ledger td {
+	padding: 11px 14px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink-2);
+	vertical-align: top;
+}
+.ledger tr.sel td {
+	background: var(--sel);
+}
+.ledger tbody tr:hover td {
+	background: color-mix(in srgb, var(--raised) 70%, transparent);
+}
+.ledger tr.sel:hover td {
+	background: var(--sel);
+}
+.ledger td.m {
+	font: 400 12px/1.4 var(--mono);
+	color: var(--faint);
+	white-space: nowrap;
+}
+.ledger .rowbtn {
+	text-align: left;
+	color: var(--ink);
+	font-weight: 500;
+}
+
+/* ---------- untrusted text (contract §1.1) ---------- */
+.untrusted {
+	display: block;
+	font: 400 12px/1.5 var(--mono);
+	color: var(--ink-2);
+	background: var(--sunk);
+	border: 1px dashed var(--line-strong);
+	border-radius: 4px;
+	padding: 6px 9px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+/* ---------- motion helpers ---------- */
+.pulse {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--teal);
+	box-shadow: 0 0 0 0 var(--teal-line);
+	animation: nj-pulse 2.4s ease-out infinite;
+	flex: none;
+}
+@keyframes nj-pulse {
+	0% {
+		box-shadow: 0 0 0 0 var(--teal-line);
+	}
+	70% {
+		box-shadow: 0 0 0 7px transparent;
+	}
+	100% {
+		box-shadow: 0 0 0 0 transparent;
+	}
+}
+.stamp {
+	animation: nj-stamp 420ms var(--ease-stamp) both;
+}
+@keyframes nj-stamp {
+	from {
+		transform: scale(1.12);
+		opacity: 0;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+
+/* Dawn: watch → brief page transition (View Transitions), DESIGN.md §11 */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+	mix-blend-mode: normal;
+}
+:root.dawn::view-transition-new(root) {
+	animation: nj-dawn 700ms var(--ease-dawn) both;
+}
+@keyframes nj-dawn {
+	from {
+		clip-path: inset(100% 0 0 0);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 1ms !important;
+	}
+	.pulse {
+		animation: none;
+	}
+	:root.dawn::view-transition-new(root) {
+		animation: nj-fade 150ms ease both;
+	}
+}
+@keyframes nj-fade {
+	from {
+		opacity: 0;
+	}
+}

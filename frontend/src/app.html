@@ -1,9 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB" data-theme="dark">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="color-scheme" content="dark light" />
+		<meta name="description" content="Nightjar SOC watches your company's security through the night, separates real threats from noise, starts the regulator's clock and drafts the notice. Nothing is switched off until a person says so." />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+		<script>
+			(function () {
+				try {
+					var brief = location.pathname.indexOf('/brief') === 0;
+					var t = localStorage.getItem(brief ? 'nj_brief_theme' : 'nj_theme');
+					var q = new URLSearchParams(location.search).get('theme');
+					document.documentElement.dataset.theme = q === 'light' || q === 'dark' ? q : t === 'light' || t === 'dark' ? t : brief ? 'light' : 'dark';
+				} catch (e) {}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
