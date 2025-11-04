@@ -1,0 +1,438 @@
+<script lang="ts">
+	// Hunting (DESIGN.md §6.7): plain words or filters, suggestions, List | Timeline over one search, Save as…
+	import { untrack } from 'svelte';
+	import { api, problemMessage } from '$lib/api';
+	import type { HuntQueryDoc, HuntResultDoc, IncidentSummary, SavedSearch, Suggestion, UntrustedText } from '$lib/api/types';
+	import { session } from '$lib/stores/session.svelte';
+	import { ui } from '$lib/stores/ui.svelte';
+	import { live } from '$lib/stores/live.svelte';
+	import { now, whenShort, timeOf } from '$lib/time/clock';
+	import { parseHunt, chipsFromQuery, type Chip } from '$lib/util/hunt';
+	import Untrusted from './Untrusted.svelte';
+
+	let { initial = '', savedId = '', compact = false }: { initial?: string; savedId?: string; compact?: boolean } = $props();
+
+	let text = $state('');
+	let chips = $state<Chip[]>([]);
+	let range = $state('last 7 days');
+	let query = $state<HuntQueryDoc | null>(null);
+	let result = $state<HuntResultDoc | null>(null);
+	let view = $state<'list' | 'timeline'>('list');
+	let suggestions = $state<Suggestion[]>([]);
+	let busy = $state(false);
+	let err = $state('');
+	let saving = $state(false);
+	let saveName = $state('');
+	let saveNote = $state('');
+	let fromSaved = $state<SavedSearch | null>(null);
+
+	$effect(() => {
+		api.hunting.suggestions().then((s) => (suggestions = s)).catch(() => undefined);
+	});
+	$effect(() => {
+		const sid = savedId;
+		const init = initial;
+		untrack(() => start(sid, init));
+	});
+	function start(savedId: string, initial: string) {
+		if (savedId) {
+			api.hunting.saved().then((all) => {
+				const s = all.find((x) => x.id === savedId);
+				if (!s) return;
+				fromSaved = s;
+				text = s.query.text ?? s.name;
+				chips = chipsFromQuery(s.query);
+				query = s.query;
+				runSaved(s);
+			});
+		} else if (initial) {
+			text = initial;
+			run();
+		}
+	}
+
+	function interpret() {
+		const p = parseHunt(text, now());
+		chips = p.chips;
+		range = p.range;
+		query = p.query;
+		fromSaved = null;
+	}
+	async function run(e?: SubmitEvent) {
+		e?.preventDefault();
+		if (!text.trim()) return;
+		interpret();
+		await exec();
+	}
+	async function exec() {
+		if (!query) return;
+		busy = true;
+		err = '';
+		try {
+			result = await api.hunting.search({ ...query, filters: chips.map((c) => c.filter) });
+		} catch (x) {
+			err = problemMessage(x);
+		} finally {
+			busy = false;
+		}
+	}
+	async function runSaved(s: SavedSearch) {
+		busy = true;
+		try {
+			result = await api.hunting.runSaved(s.id);
+		} catch (x) {
+			err = problemMessage(x);
+		} finally {
+			busy = false;
+		}
+	}
+	function removeChip(i: number) {
+		chips = chips.filter((_, k) => k !== i);
+		exec();
+	}
+	function useSuggestion(s: Suggestion) {
+		text = s.title;
+		query = s.query;
+		chips = chipsFromQuery(s.query);
+		exec();
+	}
+	async function save(e: SubmitEvent) {
+		e.preventDefault();
+		if (!query) interpret();
+		try {
+			const s = await api.hunting.save(saveName.trim(), saveNote.trim(), { ...query!, filters: chips.map((c) => c.filter) });
+			ui.toast(`Saved “${s.name}”. Find it in ⌘K › saved searches.`);
+			saving = false;
+		} catch (x) {
+			err = problemMessage(x);
+		}
+	}
+	async function addTo(eventId: string, what: string) {
+		const target = ui.scope ?? (live.incidents[0] ? { id: live.incidents[0].id, reference: live.incidents[0].reference } : null);
+		if (!target) return;
+		try {
+			await api.incidents.note(target.id, `Added from a hunt: ${what} (event ${eventId.slice(0, 8)})`);
+			ui.toast(`Added to ${target.reference}.`);
+		} catch (x) {
+			ui.toast(problemMessage(x), 'bad');
+		}
+	}
+	// Rows come back as named columns (contract §1.13); summary is the event's own text: untrusted, plain only.
+	let known = $state<IncidentSummary[]>([]);
+	let names = $state<Record<string, string>>({});
+	$effect(() => {
+		api.incidents.list({ status: 'all', pageSize: 100 }).then((r) => (known = r.items)).catch(() => undefined);
+		api.directory.identities().then((ids) => (names = Object.fromEntries(ids.map((i) => [i.username, i.displayName])))).catch(() => undefined);
+	});
+	type Row = { at: string; who: string; device: string; what: UntrustedText; incident: string | null; eventId: string };
+	function incidentFor(user: string | null, host: string | null, at: string): string | null {
+		const t = +new Date(at);
+		const hit = known.find((i) => ((user && i.identities.includes(user)) || (host && i.assets.includes(host))) && t >= +new Date(i.firstSeen) - 30 * 60e3 && t <= +new Date(i.lastSeen) + 30 * 60e3);
+		return hit?.reference ?? null;
+	}
+	const rows = $derived.by<Row[]>(() => {
+		if (!result) return [];
+		const c = (...n: string[]) => result!.columns.findIndex((x) => n.includes(x));
+		const [iT, iE, iH, iU, iS, iI] = [c('timestamp', 'time'), c('eventId'), c('host.name', 'device'), c('user.name', 'who'), c('summary', 'what', 'message'), c('incident')];
+		return result.rows.map((r, k) => {
+			const user = iU >= 0 ? ((r[iU] as string | null) ?? null) : null;
+			const host = iH >= 0 ? ((r[iH] as string | null) ?? null) : null;
+			const at = String(r[iT] ?? '');
+			const raw = iS >= 0 ? r[iS] : '';
+			return {
+				at,
+				eventId: iE >= 0 ? String(r[iE]) : String(k),
+				who: user ? (names[user] ?? user) : '—',
+				device: host ?? '—',
+				what: typeof raw === 'object' && raw ? (raw as UntrustedText) : { text: String(raw ?? ''), flags: [] },
+				incident: iI >= 0 ? ((r[iI] as string | null) ?? null) : incidentFor(user, host, at)
+			};
+		});
+	});
+	const devices = $derived(new Set(rows.map((r) => r.device)).size);
+	const people = $derived(new Set(rows.map((r) => r.who)).size);
+	const addTarget = $derived(ui.scope?.reference ?? live.incidents[0]?.reference ?? null);
+</script>
+
+<div class="hunt" class:compact>
+	<form class="bar" onsubmit={run} role="search">
+		<label class="sr" for="huntq">Search events in plain words</label>
+		<input id="huntq" class="q" bind:value={text} placeholder="laptops that opened links from halden-logistlcs.example in the last 7 days" autocomplete="off" />
+		<span class="kb mono" aria-hidden="true">⏎</span>
+		<div class="acts">
+			<span class="seg" role="group" aria-label="View">
+				<button type="button" aria-pressed={view === 'list'} onclick={() => (view = 'list')}>List</button>
+				<button type="button" aria-pressed={view === 'timeline'} onclick={() => (view = 'timeline')}>Timeline</button>
+			</span>
+			{#if session.can('hunting:write')}<button class="btn sm" type="button" onclick={() => ((saving = !saving), (saveName ||= text.slice(0, 60)))} disabled={!text.trim()}>Save as…</button>{/if}
+			<button class="btn sm teal" type="submit" disabled={busy}>▶ Run</button>
+		</div>
+	</form>
+
+	{#if saving}
+		<form class="save" onsubmit={save}>
+			<label class="field"><span>name</span><input class="input" bind:value={saveName} required /></label>
+			<label class="field"><span>why we watch this (a short note)</span><input class="input" bind:value={saveNote} /></label>
+			<div class="row"><button class="btn pri sm" type="submit">Save search</button><button class="lnk" type="button" onclick={() => (saving = false)}>cancel</button></div>
+		</form>
+	{/if}
+
+	<div class="filters mono" aria-label="Filters">
+		<span class="faint">filters:</span>
+		{#each chips as c, i (c.label)}
+			<span class="fchip">{c.label}<button type="button" aria-label="Remove {c.label}" onclick={() => removeChip(i)}>×</button></span>
+		{/each}
+		<span class="fchip dim">{range} ▾</span>
+		{#if fromSaved}<span class="faint">· saved search “{fromSaved.name}”</span>{/if}
+	</div>
+
+	{#if suggestions.length}
+		<div class="sugg">
+			<span class="mono faint">suggestions:</span>
+			{#each suggestions.slice(0, compact ? 2 : 3) as s (s.id)}
+				<button type="button" class="sg" title={s.why} onclick={() => useSuggestion(s)}>▸ {s.title}</button>
+			{/each}
+		</div>
+	{/if}
+
+	{#if err}<p class="ferr" role="alert">{err}</p>{/if}
+
+	{#if result}
+		<div class="sum mono" aria-live="polite">
+			<span><b>{result.totalMatched}</b> matches · {devices} devices · {people} people</span>
+			<span class="faint">searched {((result.searched ?? 0) / 1e6).toFixed(1)} m events</span>
+		</div>
+		{#if view === 'list'}
+			<div class="tblwrap">
+				<table class="ledger">
+					<thead><tr><th>time</th><th>who</th><th>device</th><th>what</th><th>incident</th></tr></thead>
+					<tbody>
+						{#each rows as r (r.eventId + r.at)}
+							<tr>
+								<td class="m">{whenShort(r.at)}</td>
+								<td>{r.who}</td>
+								<td class="m">{r.device}</td>
+								<td class="what"><Untrusted value={r.what} inline /></td>
+								<td class="m">
+									{#if r.incident}<a href="/incidents/{r.incident}">{r.incident}</a>{:else if addTarget && session.can('incidents:write')}<button class="lnk" type="button" onclick={() => addTo(r.eventId, r.what.text)}>— add to {addTarget} +</button>{:else}—{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			<ol class="ladder" aria-label="Matches as a minute ladder">
+				{#each rows as r (r.eventId + r.at)}
+					<li class:inc={!!r.incident}>
+						<span class="t mono">{whenShort(r.at)}<small>{timeOf(r.at, undefined, true).slice(6)}s</small></span>
+						<span class="dot" aria-hidden="true"></span>
+						<div><b>{r.who}</b> <span class="mono faint">{r.device}</span><Untrusted value={r.what} inline />{#if r.incident}<a class="mono inc" href="/incidents/{r.incident}">{r.incident}</a>{/if}</div>
+					</li>
+				{/each}
+			</ol>
+		{/if}
+		{#if !rows.length}<p class="none">Nothing matched. Try fewer filters or a longer time range.</p>{/if}
+	{:else if !busy}
+		<p class="none">Ask in plain words: who, which device, what happened, and when. Field names are optional.</p>
+	{/if}
+</div>
+
+<style>
+	.hunt {
+		display: grid;
+		align-content: start;
+	}
+	.bar {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		gap: 10px;
+		align-items: center;
+		padding: 14px 18px 10px;
+	}
+	.q {
+		height: 40px;
+		padding: 0 12px;
+		border-radius: 6px;
+		border: 1px solid var(--line-strong);
+		background: var(--sunk);
+		font-size: 14.5px;
+		min-width: 0;
+	}
+	.q:focus {
+		outline: 2px solid var(--teal);
+		outline-offset: -1px;
+	}
+	.kb {
+		color: var(--faint);
+		font-size: 12px;
+	}
+	.acts {
+		display: flex;
+		gap: 8px;
+		align-items: center;
+	}
+	.save {
+		display: grid;
+		grid-template-columns: 1fr 1.4fr;
+		gap: 10px;
+		padding: 4px 18px 12px;
+		align-items: end;
+	}
+	.save .row {
+		grid-column: 1 / -1;
+		display: flex;
+		gap: 12px;
+		align-items: center;
+	}
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		align-items: center;
+		padding: 0 18px 8px;
+		font-size: 11.5px;
+	}
+	.fchip {
+		display: inline-flex;
+		gap: 6px;
+		align-items: center;
+		height: 22px;
+		padding: 0 4px 0 8px;
+		border-radius: 4px;
+		background: var(--raised);
+		border: 1px solid var(--line-strong);
+		color: var(--ink-2);
+	}
+	.fchip.dim {
+		padding-right: 8px;
+		color: var(--muted);
+	}
+	.fchip button {
+		color: var(--faint);
+		padding: 0 4px;
+	}
+	.fchip button:hover {
+		color: var(--ink);
+	}
+	.sugg {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 14px;
+		padding: 0 18px 12px;
+		font-size: 12.5px;
+		align-items: center;
+	}
+	.sugg .mono {
+		font-size: 11.5px;
+	}
+	.sg {
+		color: var(--teal);
+		text-align: left;
+	}
+	.sg:hover {
+		text-decoration: underline;
+	}
+	.sum {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 18px;
+		border-top: 1px solid var(--line);
+		border-bottom: 1px solid var(--line);
+		font-size: 12px;
+		color: var(--ink-2);
+	}
+	.sum b {
+		color: var(--ink);
+	}
+	.tblwrap {
+		overflow-x: auto;
+	}
+	.what {
+		min-width: 260px;
+	}
+	.ladder {
+		list-style: none;
+		margin: 0;
+		padding: 8px 18px 18px;
+		position: relative;
+	}
+	.ladder::before {
+		content: '';
+		position: absolute;
+		left: 112px;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background: var(--line-strong);
+	}
+	.ladder li {
+		display: grid;
+		grid-template-columns: 80px 28px minmax(0, 1fr);
+		gap: 0;
+		padding: 9px 0;
+		align-items: start;
+		font-size: 13px;
+	}
+	.ladder .t {
+		font-size: 11.5px;
+		color: var(--faint);
+	}
+	.ladder .t small {
+		display: block;
+		font-size: 10.5px;
+	}
+	.ladder .dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		border: 1.6px solid var(--muted);
+		background: var(--pane);
+		margin: 4px 0 0 9px;
+		position: relative;
+	}
+	.ladder li.inc .dot {
+		border-color: var(--teal);
+	}
+	.ladder li div {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 8px;
+		align-items: baseline;
+	}
+	.ladder a.inc {
+		font-size: 11.5px;
+		color: var(--teal);
+	}
+	.none {
+		padding: 18px;
+		color: var(--muted);
+		font-size: 13px;
+		margin: 0;
+	}
+	.compact .bar {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+	.compact .kb {
+		display: none;
+	}
+	.compact .acts {
+		grid-column: 1 / -1;
+	}
+	@media (max-width: 760px) {
+		.bar {
+			grid-template-columns: minmax(0, 1fr);
+			padding: 12px;
+		}
+		.kb {
+			display: none;
+		}
+		.acts {
+			flex-wrap: wrap;
+		}
+		.save {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
