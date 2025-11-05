@@ -1,0 +1,30 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import Pane from '$lib/components/shell/Pane.svelte';
+	import ActivityPanel from '$lib/components/console/ActivityPanel.svelte';
+	import { session } from '$lib/stores/session.svelte';
+</script>
+
+<svelte:head><title>Activity log · Nightjar SOC</title></svelte:head>
+<div class="tiles">
+	<Pane title="activity" sub="every sensitive action, newest first" focus>
+		{#if session.can('audit:read')}
+			<ActivityPanel autoVerify={page.url.searchParams.has('verify')} autoExport={page.url.searchParams.has('export')} />
+		{:else}
+			<p class="pad">The activity log is for the CISO, administrators and auditors. Your own actions are recorded there too.</p>
+		{/if}
+	</Pane>
+</div>
+
+<style>
+	.tiles {
+		flex: 1;
+		display: grid;
+		min-height: 0;
+		background: var(--line);
+	}
+	.pad {
+		padding: 22px;
+		color: var(--muted);
+	}
+</style>
