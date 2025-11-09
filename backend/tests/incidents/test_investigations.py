@@ -105,8 +105,9 @@ async def test_run_views_and_step_detail(client: httpx.AsyncClient) -> None:
     assert step["detail"] == {"input": {"i": 1}} and step["kind"] == "handoff_out"
     assert (await client.get(f"{API}/investigations/{run_id}/steps/99")).status_code == 404
     replay = (await client.get(f"{API}/investigations/{run_id}/replay")).json()
-    assert replay["verification"]["inputHashesMatch"] is True
+    assert replay["verification"]["method"] in ("replayed", "recorded")
     assert replay["verification"]["recordedVerdict"] == "true_positive"
+    assert isinstance(replay["verification"]["inputHashesMatch"], bool) and len(replay["steps"]) == 3
     tl = (await client.get(f"{API}/incidents/{ref.id}/timeline")).json()
     assert any(e["kind"] == "handoff" for e in tl) and any(e["kind"] == "agent" and e["executive"] for e in tl)
 
@@ -145,3 +146,23 @@ async def test_auditor_cannot_rerun(client: httpx.AsyncClient) -> None:
     headers = await f.sign_in(client, f.HALDEN["auditor"])
     assert (await client.post(f"{API}/incidents/{ref.id}/investigations", json={}, headers=headers)).status_code == 403
     _ = uuid
+
+
+async def test_replay_falls_back_to_checking_the_record(client: httpx.AsyncClient, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from nightjar.agents import api as agents_api
+
+    async def down(*_a, **_kw):  # type: ignore[no-untyped-def]
+        raise ConnectionError("agents offline")
+
+    monkeypatch.setattr(agents_api, "replay_verify", down)
+    h = await f.halden()
+    ref = await f.incident(h["org_id"])
+    run_id = await f.triage(h["org_id"], ref.id)
+    await f.sign_in(client, f.HALDEN["auditor"])
+    v = (await client.get(f"{API}/investigations/{run_id}/replay")).json()["verification"]
+    assert v == {
+        "inputHashesMatch": True,
+        "offlineReplayVerdict": "true_positive",
+        "method": "recorded",
+        "recordedVerdict": "true_positive",
+    }

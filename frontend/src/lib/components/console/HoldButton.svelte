@@ -139,7 +139,7 @@
 		onclick={(e) => e.preventDefault()}
 		oncontextmenu={(e) => e.preventDefault()}
 	>
-		<span class="ring" aria-hidden="true">
+		<span class="dial" aria-hidden="true">
 			<svg viewBox="0 0 38 38"><circle class="trk" cx="19" cy="19" r="15.9" pathLength="100" /><circle class="arc" cx="19" cy="19" r="15.9" pathLength="100" style="stroke-dashoffset:{100 - (finished ? 100 : prefersReducedMotion.current ? pct : shown.current * 100)}" /></svg>
 			<span class="glyph">{finished ? '✓' : glyph}</span>
 		</span>
@@ -185,18 +185,18 @@
 		opacity: 0.55;
 		cursor: not-allowed;
 	}
-	.ring {
+	.dial {
 		position: relative;
 		width: 38px;
 		height: 38px;
 		flex: none;
 	}
-	.ring svg {
+	.dial svg {
 		width: 38px;
 		height: 38px;
 		transform: rotate(-90deg);
 	}
-	.ring circle {
+	.dial circle {
 		fill: none;
 		stroke-width: 3;
 	}

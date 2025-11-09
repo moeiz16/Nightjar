@@ -810,6 +810,20 @@ async def human_decisions(org_id: uuid.UUID, night: datetime, people: People) ->
                 rationale="Servers rebuilt from clean images and checked; dispatch can leave manual fallback.",
                 effector=await isolate(host, False),
             )
+        async with session_scope() as db:  # the outage and its reach are known after recovery, not at triage
+            row = await db.get(Incident, n36.id)
+            if row is not None:
+                row.facts = {
+                    **(row.facts or {}),
+                    "maliciousSuspected": True,
+                    "affectedJurisdictions": ["EU", "US", "AU"],
+                    "serviceDisruption": "outage",
+                    "disruptionHours": 9.0,
+                    "criticalAssetImpact": "relevant",
+                    "crossBorder": True,
+                }
+                with clock.travel(at(night, -1, 9, 20)):
+                    await clock_svc.propose_for_incident(db, row)
         aware = at(night, -1, 4, 52)
         rationale = (
             "Dispatch ran on manual fallback for about nine hours across EU, US and AU depots; the attacker "

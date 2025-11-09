@@ -233,3 +233,19 @@ async def test_benign_verdict_proposes_no_regimes(client: httpx.AsyncClient) -> 
             .all()
         )
         assert rows and {r.proposal["applies"] for r in rows} == {"no"}
+
+
+async def test_correlator_title_refreshes_until_a_person_renames(client: httpx.AsyncClient) -> None:
+    h = await f.halden()
+    ref = await f.incident(h["org_id"], key="corr:t", title="Suspicious activity on mem-citrix-01")
+    await f.incident(h["org_id"], key="corr:t", title="Ransomware precursor on the shared dispatch platform")
+    headers = await f.sign_in(client, f.HALDEN["analyst"])
+    inc = (await client.get(f"/api/v1/incidents/{ref.id}")).json()
+    assert inc["title"] == "Ransomware precursor on the shared dispatch platform"
+    await client.patch(
+        f"/api/v1/incidents/{ref.id}",
+        json={"title": "Dispatch ransomware attempt", "version": inc["version"]},
+        headers=headers,
+    )
+    await f.incident(h["org_id"], key="corr:t", title="Something else")
+    assert (await client.get(f"/api/v1/incidents/{ref.id}")).json()["title"] == "Dispatch ransomware attempt"

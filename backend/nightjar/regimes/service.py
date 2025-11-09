@@ -69,7 +69,8 @@ async def _jurisdictions(db: AsyncSession, inc: Incident) -> list[str]:
 
     ents = merge_entities(inc.entities, None)
     assets = await assets_by_names_or_ips(db, inc.org_id, ents["hosts"] + ents["cloudAccounts"])
-    idents = await identities_by_keys(db, inc.org_id, ents["users"])
+    people_kinds = ("phishing", "credential_misuse", "data_exfiltration", "insider")
+    idents = await identities_by_keys(db, inc.org_id, ents["users"]) if inc.kind in people_kinds else []
     return jurisdictions_of(assets, idents)
 
 

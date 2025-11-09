@@ -12,6 +12,7 @@ from datetime import datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from nightjar import clock
 from nightjar.contracts import (
@@ -310,6 +311,9 @@ async def _upsert(u: CorrelationUpdate) -> IncidentRef:
                 inc.max_triage_probability = max(inc.max_triage_probability or 0.0, u.max_triage_probability)
             if u.summary and u.summary != inc.summary:
                 inc.summary = u.summary
+            if u.title and u.title[:300] != inc.title and not await _renamed_by_person(db, inc):
+                inc.title = u.title[:300]  # the correlator names the cluster better as it grows
+                changed.append("title")
         # attach detections + timeline rows for new ones
         new_dets = [d for d in dets if d.incident_id != inc.id]
         for d in sorted(new_dets, key=lambda x: x.first_seen):
@@ -340,6 +344,23 @@ async def _upsert(u: CorrelationUpdate) -> IncidentRef:
             await announce_updated(db, inc, sorted(set(changed)))
         await db.flush()
         return IncidentRef(id=inc.id, reference=inc.reference, created=created, status=inc.status)  # type: ignore[arg-type]
+
+
+async def _renamed_by_person(db: AsyncSession, inc: Incident) -> bool:
+    from nightjar.db.models.platform import AuditLog
+
+    rows = (
+        await db.execute(
+            select(AuditLog.meta).where(
+                AuditLog.org_id == inc.org_id,
+                AuditLog.resource_type == "incident",
+                AuditLog.resource_id == str(inc.id),
+                AuditLog.action == "incident.updated",
+                AuditLog.actor_type == "user",
+            )
+        )
+    ).scalars()
+    return any("title" in (m or {}).get("fields", []) for m in rows)
 
 
 async def _merge_into(db, target: Incident, other: Incident, *, actor_name: str, actor_type: str = "system") -> None:
