@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from datetime import datetime
 from typing import Annotated
 
@@ -174,6 +175,10 @@ async def model(name: str, ctx: RequestContext = Depends(require_perm("models:re
         raise AppError(404, "not_found", "Model not found", "Model not found.")
     champion = next((m for m in infos if m.stage == "champion"), infos[0])
     doc = to_doc(champion)
+    extra = getattr(_ml(), "model_detail", None)
+    if extra is not None:
+        with contextlib.suppress(Exception):  # extras are optional: calibration bins, drift, fairness
+            doc.update(extra(name) or {})
     doc["versions"] = [{k: v for k, v in to_doc(m).items() if k != "cardMarkdown"} for m in infos]
     return doc
 

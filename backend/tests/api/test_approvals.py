@@ -266,3 +266,23 @@ async def test_queue_lists_pending_first_and_mine_filters(client: httpx.AsyncCli
     assert everything["total"] == 2
     acts = (await client.get(f"{API}/incidents/{ref.reference}/actions")).json()
     assert len(acts) == 2
+
+
+async def test_target_recheck_before_execution(client: httpx.AsyncClient) -> None:
+    h, ref = await _setup(users=("j.okafor",))
+    p = await approvals.request_approval(h["org_id"], ref.id, None, action("disable_account", "j.okafor", "user"))
+    assert await approvals.approval_target_in_incident(h["org_id"], p.approval_id, "j.okafor") is True
+    assert await approvals.approval_target_in_incident(h["org_id"], p.approval_id, "k.wouters") is False
+    assert await approvals.approval_target_in_incident(uuid.uuid4(), p.approval_id, "j.okafor") is False
+    async with session_scope() as db:  # entity removed from the incident after approval
+        await db.execute(update(Incident).where(Incident.id == ref.id).values(entities={"users": ["k.wouters"]}))
+    assert await approvals.approval_target_in_incident(h["org_id"], p.approval_id, "j.okafor") is False
+
+
+async def test_run_steps_for_replay(client: httpx.AsyncClient) -> None:
+    from nightjar.investigations import api as inv
+
+    h, ref = await _setup()
+    run_id = await f.triage(h["org_id"], ref.id)
+    steps = await inv.get_run_steps(run_id)
+    assert [s["seq"] for s in steps] == [1, 2, 3] and steps[0]["inputHash"] and "detail" in steps[0]

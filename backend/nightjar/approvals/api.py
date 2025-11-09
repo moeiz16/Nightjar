@@ -207,3 +207,19 @@ async def pending_for_dispatch(org_id: uuid.UUID | None = None) -> list[tuple[uu
         if org_id:
             stmt = stmt.where(ActionProposal.org_id == org_id)
         return [(o, i) for o, i in (await db.execute(stmt)).all()]
+
+
+async def approval_target_in_incident(org_id: uuid.UUID, approval_id: uuid.UUID, target: str) -> bool:
+    """Re-check just before execution (ADR 0006 check 5): the approval belongs to this org, `target` is the
+    approved target, and it is still one of the incident's entities."""
+    from nightjar.approvals.service import TARGET_TYPES, _target_key, incident_targets
+
+    async with session_scope() as db:
+        p = await db.get(ActionProposal, approval_id)
+        if p is None or p.org_id != org_id or p.target.strip() != target.strip():
+            return False
+        inc = await db.get(Incident, p.incident_id)
+        if inc is None:
+            return False
+        ttype = TARGET_TYPES.get(p.kind, p.target_type)
+        return _target_key(ttype, target) in (await incident_targets(db, inc)).get(ttype, set())

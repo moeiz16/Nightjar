@@ -380,3 +380,14 @@ async def run_full(db: AsyncSession, run: InvestigationRun) -> dict:
         "proposals": await proposals_for(db, run.org_id, run_id=run.id),
         "error": run.error,
     }
+
+
+async def get_run_steps(run_id: uuid.UUID) -> list[dict]:
+    """The run's AgentStepDoc list with `detail` and `inputHash` (read by `agents.replay_verify`)."""
+    async with session_scope() as db:
+        rows = (
+            (await db.execute(select(AgentStepRow).where(AgentStepRow.run_id == run_id).order_by(AgentStepRow.seq)))
+            .scalars()
+            .all()
+        )
+        return [step_doc(s, detail=True) for s in rows]
