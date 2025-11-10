@@ -1,0 +1,38 @@
+{
+ "transport": "nats-server JetStream + HTTP A2A agents + Streamable HTTP tool servers",
+ "events": 5798,
+ "incidents": 6,
+ "investigations": 6,
+ "alert_to_triage_s": {
+  "p50": 0.43,
+  "p95": 0.53,
+  "max": 0.54
+ },
+ "replay_to_last_verdict_s": 8.3,
+ "verdicts": [
+  [
+   "NJ-1036",
+   "true_positive"
+  ],
+  [
+   "NJ-1037",
+   "true_positive"
+  ],
+  [
+   "NJ-1038",
+   "true_positive"
+  ],
+  [
+   "NJ-1039",
+   "benign"
+  ],
+  [
+   "NJ-1040",
+   "true_positive"
+  ],
+  [
+   "NJ-1041",
+   "needs_review"
+  ]
+ ]
+}
