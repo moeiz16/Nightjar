@@ -473,6 +473,18 @@ class InMemoryPlatform:
             token=a.token if not a.used else None,
         )
 
+    async def approval_target_in_incident(self, org_id: uuid.UUID, approval_id: uuid.UUID, target: str) -> bool:
+        a = self.approvals.get(approval_id)
+        if a is None or a.org_id != org_id or a.action.target != target:
+            return False
+        inc = self.incidents.get(a.incident_id)
+        return inc is not None and target.lower() in self._entity_pool(inc, a.action.target_type)
+
+    async def get_run_steps(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
+        from nightjar.contracts import to_doc
+
+        return [{**to_doc(s), "seq": i + 1} for i, s in enumerate(self.runs[run_id].steps)]
+
     async def get_approval(self, approval_id: uuid.UUID) -> ApprovalRef:
         return self._ref(self.approvals[approval_id])
 
@@ -627,8 +639,14 @@ class InMemoryPlatform:
             "open_incident_index",
             "get_incident_context",
         ),
-        "nightjar.investigations.api": ("start_run", "mark_running", "append_step", "finish_run"),
-        "nightjar.approvals.api": ("request_approval", "get_approval", "consume", "record_result"),
+        "nightjar.investigations.api": ("start_run", "mark_running", "append_step", "finish_run", "get_run_steps"),
+        "nightjar.approvals.api": (
+            "request_approval",
+            "get_approval",
+            "consume",
+            "record_result",
+            "approval_target_in_incident",
+        ),
         "nightjar.directory.api": (
             "find_asset",
             "search_assets",

@@ -344,7 +344,7 @@ class Correlator:
             detection_ids=tuple(d.id for d in dets),
             kind=kind,
             title=title_for(kind, dets, ent, self.lookup(c.org_id) if self.lookup else None),
-            severity=sev,
+            severity=sev,  # type: ignore[arg-type]
             attack=tuple(attack),
             entities=ent,
             first_seen=c.first_seen,

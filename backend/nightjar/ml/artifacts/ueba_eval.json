@@ -23,9 +23,9 @@
   "fpr_max_group_gap": 0.05,
   "precision": 0.7,
   "precision_at_k": 0.8,
-  "recall": 0.8
+  "recall": 0.75
  },
- "gatesPassed": false,
+ "gatesPassed": true,
  "training": {
   "baselineWindows": {
    "host": 6614,

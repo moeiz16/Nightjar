@@ -117,7 +117,7 @@ def otrf_events(
                 break
             if line.strip():
                 rows.append(json.loads(line))
-    times = []
+    times: list[datetime | None] = []
     for r in rows:
         try:
             times.append(parse_ts(r.get("@timestamp") or r.get("TimeCreated") or r.get("eventTime")))

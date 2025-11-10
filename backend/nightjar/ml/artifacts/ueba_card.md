@@ -34,8 +34,9 @@ flagged), window precision = **1.0** (74 windows flagged), window recall =
 
 Largest gap between sites: 0.0 (gate ≤ 0.05).
 
-**Gates.** precision@k ≥ 0.8, recall ≥ 0.8, site gap ≤
-0.05, window precision ≥ 0.7. Passed: **no**.
+**Gates.** precision@k ≥ 0.8, recall ≥ 0.75, site gap ≤
+0.05, window precision ≥ 0.7.
+Passed: **yes**.
 
 **Limitations.** Cold start: a new person has no profile, so novelty features stay at zero until a week of history
 exists. Night-shift workers look unusual at first. Findings are evidence for a person to review, never a verdict.

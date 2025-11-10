@@ -145,7 +145,10 @@ class ToolClient:
         if self.transport == "inline":
             host = await inline_host()
             http = httpx2.AsyncClient(
-                transport=httpx2.ASGITransport(app=host), base_url=host.base_url, headers=headers, timeout=30
+                transport=httpx2.ASGITransport(app=host),  # type: ignore[arg-type]
+                base_url=host.base_url,
+                headers=headers,
+                timeout=30,
             )
             url = f"{host.base_url}/mcp/{server}"
         else:

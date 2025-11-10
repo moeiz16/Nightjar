@@ -193,10 +193,10 @@ def parse(payload: dict[str, Any]) -> Draft:
     dst = None
     if first(d, "DestAddress"):
         dst = Endpoint(ip=clean_ip(first(d, "DestAddress")), port=to_int(first(d, "DestPort")))
-    proc = None
+    sec_proc: ProcessInfo | None = None
     exe = first(d, "NewProcessName", "ProcessName", "Application")
     if exe or first(d, "CommandLine"):
-        proc = ProcessInfo(
+        sec_proc = ProcessInfo(
             name=basename(exe),
             executable=exe,
             pid=to_int(first(d, "NewProcessId", "ProcessId")),
@@ -216,7 +216,7 @@ def parse(payload: dict[str, Any]) -> Draft:
         user=UserRef(name=uname, domain=udom) if uname else None,
         source=src,
         destination=dst,
-        process=proc,
+        process=sec_proc,
         file_path=first(d, "RelativeTargetName", "ObjectName", "ServiceFileName", "ImagePath"),
         related_users=related_users,
     )

@@ -71,7 +71,7 @@ def _default_for(field_schema: dict[str, Any], defs: dict[str, Any]) -> Any:
     if "anyOf" in field_schema:
         non_null = [s for s in field_schema["anyOf"] if s.get("type") != "null"]
         return _default_for(non_null[0], defs) if non_null else None
-    t = field_schema.get("type")
+    t = str(field_schema.get("type") or "")
     return {"string": "", "integer": 0, "number": 0.0, "boolean": False, "array": [], "object": {}}.get(t)
 
 

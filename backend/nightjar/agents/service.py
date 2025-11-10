@@ -487,7 +487,7 @@ class TriageExecutor(BaseExecutor):
                 await rec.step(
                     "handoff_out",
                     "Asked the response colleague for a containment plan",
-                    detail={"input": {"verdict": verdict}},
+                    detail={"input": {"verdict": verdict, "incident": str(incident_id)}},
                     hash_of={"verdict": verdict, "incident": str(incident_id)},
                 )
                 res = await call_agent("triage", "response", plan_task)
@@ -547,7 +547,7 @@ def _enrichment_result(doc: dict[str, Any]) -> EnrichmentResult | None:
         typ = i["type"] if i["type"] in ("ip", "domain", "url", "hash", "cve", "user", "access_key") else "ip"
         inds.append(
             IndicatorFinding(
-                type=typ,
+                type=typ,  # type: ignore[arg-type]
                 value=str(i["value"]),
                 verdict=i["verdict"],
                 source=i["source"],
@@ -567,7 +567,7 @@ def _enrichment_result(doc: dict[str, Any]) -> EnrichmentResult | None:
 EXECUTORS = {"triage": TriageExecutor, "enrichment": EnrichmentExecutor, "response": ResponseExecutor}
 
 
-def build_agent_app(agent: str):  # type: ignore[no-untyped-def]
+def build_agent_app(agent: str):
     return build_app(agent, EXECUTORS[agent]())
 
 

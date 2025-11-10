@@ -104,7 +104,12 @@ def pipeline() -> ProcessingPipeline:
     return ProcessingPipeline(
         name="nightjar-ecs",
         priority=20,
-        items=[ProcessingItem(identifier="nightjar-ecs-fields", transformation=FieldMappingTransformation(FIELD_MAP))],
+        items=[
+            ProcessingItem(
+                identifier="nightjar-ecs-fields",
+                transformation=FieldMappingTransformation(FIELD_MAP),  # type: ignore[arg-type]
+            )
+        ],
     )
 
 
@@ -160,7 +165,7 @@ class RuleBook:
         referenced: set[str] = set()
         for m in self.meta.values():
             if m.correlation:
-                doc = next((yaml.safe_load(t) for t in _split_docs(m.yaml_text)), {}) or {}
+                doc: dict[str, Any] = next((yaml.safe_load(t) for t in _split_docs(m.yaml_text)), {}) or {}
                 referenced.update((doc.get("correlation") or {}).get("rules") or [])
         for m in self.meta.values():
             if m.level == "info" and m.name and m.name in referenced:
@@ -230,7 +235,7 @@ class _FastMatcher(SigmaMatcher):
         super().__init__(*args, **kwargs)
         self._ls_cache: dict[tuple[str | None, str | None, str | None], list[Any]] = {}
 
-    def _get_matchers(self, logsource: EventLogSource):  # type: ignore[override]
+    def _get_matchers(self, logsource: EventLogSource):
         key = logsource.as_tuple()
         hit = self._ls_cache.get(key)
         if hit is None:
@@ -301,15 +306,17 @@ def entities_of(events: Iterable[NormalizedEvent]) -> Entities:
 def snapshot(event: NormalizedEvent, flat: dict[str, Any] | None = None) -> EventSnapshot:
     flat = flat if flat is not None else flatten(event)
     fields = {k: flat[k] for k in EVIDENCE_FIELDS if k in flat}
-    text = event.message.text
+    text, field = event.message.text, "message"
     if event.process and event.process.command_line:
-        text = event.process.command_line
+        text, field = event.process.command_line, "process.command_line"
+    elif event.email and event.email.subject:
+        text, field = event.email.subject, "email.subject"
     return EventSnapshot(
         event_id=event.event_id,
         timestamp=event.timestamp,
         dataset=event.dataset,
         action=event.action,
-        summary=neutralise(text, field="process.command_line" if event.process else "message", max_len=500),
+        summary=neutralise(text, field=field, max_len=500),
         host=event.host.name if event.host else None,
         user=event.user.name if event.user else None,
         fields=fields,

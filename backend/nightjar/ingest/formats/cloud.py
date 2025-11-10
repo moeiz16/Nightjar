@@ -36,7 +36,7 @@ def parse_cloudtrail(p: dict[str, Any]) -> Draft:
     else:
         cat, typ = ("configuration",), ("info",) if name.startswith(("Describe", "List", "Get")) else ("change",)
     if error:
-        typ = (*typ, "denied")
+        typ = (*typ, "denied")  # type: ignore[assignment]
     req = p.get("requestParameters") or {}
     bucket = req.get("bucketName") if isinstance(req, dict) else None
     key = req.get("key") if isinstance(req, dict) else None

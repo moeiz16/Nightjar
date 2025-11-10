@@ -16,6 +16,22 @@ from pathlib import Path
 
 from nightjar.workers.replay.generator import SEGMENT_INFO, halden_night
 
+INCIDENT_KIND = {
+    "ransomware_precursor": "ransomware_precursor",
+    "phishing_credential_misuse": "credential_misuse",
+    "cloud_credential_exposure": "cloud_credential_exposure",
+    "benign_backup_rollout": "benign_activity",
+    "password_spray": "brute_force",
+    "data_exfiltration": "data_exfiltration",
+}
+INCIDENT_KIND = {
+    "ransomware_precursor": "ransomware_precursor",
+    "phishing_credential_misuse": "credential_misuse",
+    "cloud_credential_exposure": "cloud_credential_exposure",
+    "benign_backup_rollout": "benign_activity",
+    "password_spray": "brute_force",
+    "data_exfiltration": "data_exfiltration",
+}
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "backend" / "nightjar" / "workers" / "replay" / "halden-night.jsonl.gz"
 LABELS = ROOT / "eval" / "scenarios" / "halden-night.labels.json"
@@ -34,7 +50,7 @@ def main() -> None:
             {
                 "segment": seg,
                 "reference": ref,
-                "kind": kind if kind != "benign_backup_rollout" else "benign_activity",
+                "kind": INCIDENT_KIND[kind],
                 "verdict": {"s4": "benign", "s6": "needs_review"}.get(seg, "true_positive"),
             }
             for seg, (kind, ref) in SEGMENT_INFO.items()

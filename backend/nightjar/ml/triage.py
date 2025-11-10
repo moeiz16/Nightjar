@@ -60,7 +60,10 @@ class TriageModel:
         never = (
             d.severity == "critical"
             or d.source == "external"
-            or any(a.technique_id.split(".")[0] in NEVER_SUPPRESS_TECHNIQUES for a in d.attack)
+            or (
+                d.severity == "high"
+                and any(a.technique_id.split(".")[0] in NEVER_SUPPRESS_TECHNIQUES for a in d.attack)
+            )
         )
         reasons = self.reasons(row, contrib[0])
         return TriageScore(

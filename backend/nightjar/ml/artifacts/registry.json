@@ -6,12 +6,12 @@
     "algorithm": "LightGBM + isotonic",
     "gatesPassed": true,
     "metrics": {
-     "brier": 0.0067,
-     "ece": 0.0046,
-     "fp_reduction": 0.989,
-     "pr_auc": 0.9929,
+     "brier": 0.0084,
+     "ece": 0.0043,
+     "fp_reduction": 0.9802,
+     "pr_auc": 0.9926,
      "recall_at_threshold": 0.9968,
-     "roc_auc": 0.9975
+     "roc_auc": 0.9974
     },
     "promotedBy": "Model governance (initial release)",
     "stage": "champion"
@@ -20,10 +20,10 @@
     "algorithm": "Random forest",
     "gatesPassed": true,
     "metrics": {
-     "brier": 0.0112,
-     "ece": 0.0378,
-     "fp_reduction": 0.9383,
-     "pr_auc": 0.9992,
+     "brier": 0.0113,
+     "ece": 0.0417,
+     "fp_reduction": 0.9427,
+     "pr_auc": 0.9991,
      "recall_at_threshold": 0.9968,
      "roc_auc": 0.9994
     },
@@ -37,7 +37,7 @@
   "versions": {
    "1.0.0": {
     "algorithm": "Isolation Forest + robust z",
-    "gatesPassed": false,
+    "gatesPassed": true,
     "metrics": {
      "fpr_max_group_gap": 0.0,
      "precision": 1.0,

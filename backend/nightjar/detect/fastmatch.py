@@ -57,7 +57,7 @@ def _plain_parts(value: SigmaString) -> tuple[bool, str, bool] | None:
     core = items[int(lead) : len(items) - int(trail)]
     if not all(isinstance(i, str) for i in core):
         return None
-    return lead, "".join(core), trail
+    return lead, "".join(str(c) for c in core), trail
 
 
 class FastMatchCompiler(MatchCompiler):

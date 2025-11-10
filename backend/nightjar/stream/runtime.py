@@ -134,7 +134,7 @@ async def dead_letter(
         log.warning("dlq_publish_failed", error=str(exc))
     DLQ_MESSAGES.labels(stream=stream).inc()
     org = headers.get("Nj-Org")
-    row = {
+    row: dict[str, Any] = {
         "org_id": _uuid_or_none(org),
         "stream": stream,
         "consumer": consumer,

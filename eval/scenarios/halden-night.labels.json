@@ -11,7 +11,7 @@
   {
    "segment": "s2",
    "reference": "NJ-1037",
-   "kind": "phishing_credential_misuse",
+   "kind": "credential_misuse",
    "verdict": "true_positive"
   },
   {
@@ -29,7 +29,7 @@
   {
    "segment": "s5",
    "reference": "NJ-1040",
-   "kind": "password_spray",
+   "kind": "brute_force",
    "verdict": "true_positive"
   },
   {

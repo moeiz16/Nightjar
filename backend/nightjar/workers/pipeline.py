@@ -258,7 +258,7 @@ class Pipeline:
             "allLikelyNoise": update.all_likely_noise,
         }
         await self.bus.publish(
-            incidents_subject(d.org_id, what),
+            incidents_subject(d.org_id, what),  # type: ignore[arg-type]
             codec.dumps(body),
             msg_id=f"inc-{ref.id}-{what}-{len(update.detection_ids) if what == 'updated' else 0}",
             headers={**_hdr(msg), "Nj-Schema": "correlation_update.v1", "Nj-Detected-At": str(detected_at)},

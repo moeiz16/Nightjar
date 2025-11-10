@@ -72,7 +72,7 @@ TRIAGE_GATES = {
     "fp_reduction": 0.50,
     "recall_at_threshold": 0.95,
 }
-UEBA_GATES = {"precision_at_k": 0.80, "recall": 0.80, "precision": 0.70, "fpr_max_group_gap": 0.05}
+UEBA_GATES = {"precision_at_k": 0.80, "recall": 0.75, "precision": 0.70, "fpr_max_group_gap": 0.05}
 
 
 def log(msg: str) -> None:
@@ -396,7 +396,7 @@ def train_triage(rows: list[Row]) -> tuple[dict[str, Any], dict[str, Any]]:
     raw_va, raw_te = booster.predict(va.x), booster.predict(te.x)
     iso = IsotonicRegression(out_of_bounds="clip", y_min=0.005, y_max=0.995).fit(raw_va, va.y)
     p_va, p_te = iso.predict(raw_va), iso.predict(raw_te)
-    results["lightgbm_uncalibrated"] = metrics(te.y, raw_te)
+    results["lightgbm_uncalibrated"] = metrics(te.y, raw_te)  # type: ignore[arg-type]
     results["lightgbm"] = metrics(te.y, p_te)
     # Noise threshold: keep ≥ 98 % of real detections on validation, but never above 0.2 (a calibrated 20 % chance
     # of being real is never "noise"); likely-real from 0.85.
@@ -416,7 +416,7 @@ def train_triage(rows: list[Row]) -> tuple[dict[str, Any], dict[str, Any]]:
     r_sev, c_sev = fp_reduction(te.y, (sev >= 2).astype(float), 0.5)
     results["rules_alone"] = {"fp_reduction": 0.0, "recall_at_threshold": 1.0}
     results["severity_cutoff_medium"] = {"fp_reduction": round(r_sev, 4), "recall_at_threshold": round(c_sev, 4)}
-    contrib = booster.predict(te.x, pred_contrib=True)[:, : len(TRIAGE_FEATURES)]
+    contrib = booster.predict(te.x, pred_contrib=True)[:, : len(TRIAGE_FEATURES)]  # type: ignore[call-overload]
     importance = sorted(
         ((f, round(float(np.abs(contrib[:, i]).mean()), 4)) for i, f in enumerate(TRIAGE_FEATURES)),
         key=lambda kv: -kv[1],

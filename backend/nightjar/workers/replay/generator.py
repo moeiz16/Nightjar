@@ -762,12 +762,13 @@ def phishing_credential_misuse(
             "T1114.003",
         )
     )
-    remaining, at = items, 1200
+    remaining = items
+    t_read = 1200.0
     while remaining > 0:
         n = min(remaining, rng.randint(50, 75)) if remaining >= 50 else remaining
-        out.append(m(at, m365(user, "MailItemsAccessed", attacker_ip, OperationCount=n), "T1114.002"))
+        out.append(m(t_read, m365(user, "MailItemsAccessed", attacker_ip, OperationCount=n), "T1114.002"))
         remaining -= n
-        at += rng.uniform(200, 400)
+        t_read += rng.uniform(200, 400)
     return out
 
 

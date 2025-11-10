@@ -97,7 +97,7 @@ async def replay_scenario(
         return await publish_paced(org_id, items, total=len(items), speed=speed, source_ref=scenario_id, job_id=job_id)
     if scenario_id.startswith("otrf-"):
         key = scenario_id.removeprefix("otrf-")
-        items = [(when, payload, None) for when, payload in loader.otrf_events(key)]
+        items = [(when, payload, None) for when, payload in loader.otrf_events(key)]  # type: ignore[misc]
         return await publish_paced(org_id, items, total=len(items), speed=speed, source_ref=scenario_id, job_id=job_id)
     raise KeyError(scenario_id)
 

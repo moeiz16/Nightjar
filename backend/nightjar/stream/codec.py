@@ -20,7 +20,7 @@ import orjson
 from nightjar import contracts
 from nightjar.contracts import _camel, to_doc
 
-_KEEP = {"raw", "fields", "detail", "features", "params", "labels", "input", "output", "robust_z"}
+_KEEP = {"raw", "fields", "detail", "features", "params", "labels", "input", "output", "robust_z", "payload"}
 
 
 @lru_cache(maxsize=256)
@@ -43,15 +43,15 @@ def _coerce(tp: Any, value: Any) -> Any:
     if origin is Literal:
         return value
     if origin is tuple:
-        args = get_args(tp)
-        inner = args[0] if args else Any
+        targs = get_args(tp)
+        inner = targs[0] if targs else Any
         return tuple(_coerce(inner, v) for v in (value or ()))
     if origin is list:
         (inner,) = get_args(tp) or (Any,)
         return [_coerce(inner, v) for v in value]
     if origin is dict:
-        args = get_args(tp)
-        if len(args) == 2 and args[1] is float:
+        dargs = get_args(tp)
+        if len(dargs) == 2 and dargs[1] is float:
             return {k: float(v) for k, v in value.items()}
         return dict(value)
     if tp is Any:
@@ -81,7 +81,7 @@ def _coerce(tp: Any, value: Any) -> Any:
 
 def from_doc[T](cls: type[T], doc: dict[str, Any]) -> T:
     """camelCase (or snake_case) doc → frozen contract dataclass."""
-    hints = _hints(cls)
+    hints = _hints(cls)  # type: ignore[arg-type]
     kwargs: dict[str, Any] = {}
     for f in dataclasses.fields(cls):  # type: ignore[arg-type]
         key = _camel(f.name)
@@ -108,9 +108,19 @@ def _default(obj: Any) -> Any:
     raise TypeError(type(obj).__name__)
 
 
+# Fields whose dict keys are someone else's data and must cross the bus verbatim (`to_doc` keeps `raw`, `fields`,
+# `detail`, … but not the raw intake payload).
+_VERBATIM = ("payload",)
+
+
 def dumps(obj: Any) -> bytes:
     """Contract dataclass or plain JSON-able value → bytes."""
-    doc = to_doc(obj) if dataclasses.is_dataclass(obj) else obj
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        keep = {f: getattr(obj, f) for f in _VERBATIM if hasattr(obj, f)}
+        doc = to_doc(obj)
+        doc.update(keep)
+    else:
+        doc = obj
     return orjson.dumps(doc, default=_default, option=orjson.OPT_NON_STR_KEYS)
 
 

@@ -219,11 +219,11 @@ class BaseExecutor(AgentExecutor):
         return self.artifact_name
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
-        task = context.current_task or new_task_from_user_message(context.message)
+        task = context.current_task or new_task_from_user_message(context.message)  # type: ignore[arg-type]
         await event_queue.enqueue_event(task)
         up = TaskUpdater(event_queue=event_queue, task_id=task.id, context_id=task.context_id)
         await up.start_work()
-        payload = first_data(context.message.parts)
+        payload = first_data(context.message.parts)  # type: ignore[union-attr]
         try:
             result = await self.handle(payload, task.id)
         except Exception as exc:

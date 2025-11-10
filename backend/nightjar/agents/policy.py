@@ -214,9 +214,15 @@ def evidence_for(ctx: IncidentContext, enrichment: dict[str, Any] | None) -> tup
             out.append(
                 Evidence("intel", str(i.get("value")), f"{i.get('value')}: {i.get('verdict')} ({i.get('source')})")
             )
-    for a in ctx.assets:
-        if a.criticality == "crown_jewel":
-            out.append(Evidence("asset", a.name, f"{a.name} is a crown-jewel system ({a.business_service or a.kind})"))
+    for asset in ctx.assets:
+        if asset.criticality == "crown_jewel":
+            out.append(
+                Evidence(
+                    "asset",
+                    asset.name,
+                    f"{asset.name} is a crown-jewel system ({asset.business_service or asset.kind})",
+                )
+            )
     return tuple(out[:12])
 
 

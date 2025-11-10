@@ -1,26 +1,30 @@
 {
  "calibration": {
   "x": [
-   0.009742,
-   0.138469,
-   0.145413,
-   0.462363,
-   0.494534,
-   0.664663,
-   0.72354,
-   0.773065,
-   0.828833,
-   0.991796
+   0.007102,
+   0.154279,
+   0.156503,
+   0.29862,
+   0.467884,
+   0.470214,
+   0.530622,
+   0.811571,
+   0.812878,
+   0.887995,
+   0.895939,
+   0.994224
   ],
   "y": [
    0.005,
    0.005,
-   0.03125,
-   0.03125,
-   0.571429,
-   0.571429,
-   0.875,
-   0.875,
+   0.041667,
+   0.041667,
+   0.4,
+   0.4,
+   0.5,
+   0.5,
+   0.941176,
+   0.941176,
    0.995,
    0.995
   ]
@@ -28,27 +32,33 @@
  "calibrationBins": [
   {
    "bin": 0,
-   "count": 450,
+   "count": 445,
    "observed": 0.0022,
    "predicted": 0.0065
   },
   {
-   "bin": 5,
-   "count": 9,
-   "observed": 0.6667,
-   "predicted": 0.5714
+   "bin": 1,
+   "count": 1,
+   "observed": 0.0,
+   "predicted": 0.1621
   },
   {
-   "bin": 8,
-   "count": 3,
-   "observed": 1.0,
-   "predicted": 0.875
+   "bin": 4,
+   "count": 8,
+   "observed": 0.375,
+   "predicted": 0.4003
+  },
+  {
+   "bin": 5,
+   "count": 6,
+   "observed": 0.6667,
+   "predicted": 0.5
   },
   {
    "bin": 9,
-   "count": 300,
-   "observed": 0.9933,
-   "predicted": 0.9945
+   "count": 302,
+   "observed": 0.9934,
+   "predicted": 0.9932
   }
  ],
  "data": {
@@ -107,7 +117,7 @@
   },
   {
    "feature": "tactic_stage",
-   "psi": 0.0207
+   "psi": 0.0166
   },
   {
    "feature": "tactic_count",
@@ -155,7 +165,7 @@
   },
   {
    "feature": "multi_stage_entities",
-   "psi": 0.0543
+   "psi": 0.0704
   },
   {
    "feature": "event_count_log",
@@ -163,7 +173,7 @@
   },
   {
    "feature": "untrusted_text",
-   "psi": 0.0073
+   "psi": 0.0087
   }
  ],
  "featureLabels": {
@@ -222,79 +232,79 @@
  "importance": [
   [
    "rule_prior",
-   1.8594
+   1.851
   ],
   [
    "benign_lineage",
-   0.5167
+   0.5487
   ],
   [
    "identity_privileged",
-   0.479
+   0.4688
   ],
   [
    "multi_stage_entities",
-   0.4595
+   0.458
   ],
   [
    "ueba_entity_score",
-   0.2863
+   0.2524
   ],
   [
    "asset_criticality",
-   0.1551
+   0.1894
   ],
   [
    "intel_verdict",
-   0.1247
+   0.1393
   ],
   [
    "burst_same_rule",
-   0.1192
-  ],
-  [
-   "tactic_stage",
-   0.0804
+   0.1353
   ],
   [
    "host_spread_same_rule",
-   0.0749
+   0.1235
   ],
   [
    "event_count_log",
-   0.0519
+   0.0581
+  ],
+  [
+   "tactic_stage",
+   0.0482
   ],
   [
    "rule_is_correlation",
-   0.0508
-  ],
-  [
-   "external_ip",
-   0.0309
+   0.0327
   ],
   [
    "tactic_count",
-   0.0168
+   0.0302
   ],
   [
-   "service_account",
-   0.0101
+   "external_ip",
+   0.0284
   ],
   [
    "rule_level",
-   0.0099
-  ],
-  [
-   "source_ueba",
-   0.0083
+   0.0208
   ],
   [
    "kev_on_asset",
-   0.0061
+   0.0176
+  ],
+  [
+   "source_ueba",
+   0.0127
+  ],
+  [
+   "service_account",
+   0.0078
   ],
   [
    "untrusted_text",
-   0.0036
+   0.0051
   ],
   [
    "source_external",
@@ -303,32 +313,32 @@
  ],
  "metrics": {
   "lightgbm": {
-   "brier": 0.0067,
-   "ece": 0.0046,
-   "fp_reduction": 0.989,
-   "pr_auc": 0.9929,
+   "brier": 0.0084,
+   "ece": 0.0043,
+   "fp_reduction": 0.9802,
+   "pr_auc": 0.9926,
    "recall_at_threshold": 0.9968,
-   "roc_auc": 0.9975
+   "roc_auc": 0.9974
   },
   "lightgbm_uncalibrated": {
    "brier": 0.0105,
-   "ece": 0.0387,
-   "pr_auc": 0.9978,
-   "roc_auc": 0.9987
+   "ece": 0.0359,
+   "pr_auc": 0.9962,
+   "roc_auc": 0.9979
   },
   "logistic": {
-   "brier": 0.0188,
-   "ece": 0.0461,
+   "brier": 0.0198,
+   "ece": 0.0386,
    "fp_reduction": 0.9185,
-   "pr_auc": 0.9983,
+   "pr_auc": 0.9979,
    "recall_at_threshold": 1.0,
-   "roc_auc": 0.9988
+   "roc_auc": 0.9986
   },
   "random_forest": {
-   "brier": 0.0112,
-   "ece": 0.0378,
-   "fp_reduction": 0.9383,
-   "pr_auc": 0.9992,
+   "brier": 0.0113,
+   "ece": 0.0417,
+   "fp_reduction": 0.9427,
+   "pr_auc": 0.9991,
    "recall_at_threshold": 0.9968,
    "roc_auc": 0.9994
   },
@@ -342,19 +352,19 @@
   }
  },
  "optuna": {
-  "bestValidPrAuc": 0.9996,
+  "bestValidPrAuc": 0.9995,
   "trials": 25
  },
  "params": {
   "deterministic": true,
-  "feature_fraction": 0.6292331754743309,
-  "lambda_l2": 7.36628991472411,
-  "learning_rate": 0.10447252398116538,
-  "min_data_in_leaf": 30,
+  "feature_fraction": 0.6329684656093848,
+  "lambda_l2": 0.1564010419316747,
+  "learning_rate": 0.05189030294233878,
+  "min_data_in_leaf": 36,
   "num_leaves": 16,
   "num_threads": 1,
   "objective": "binary",
-  "rounds": 85,
+  "rounds": 115,
   "seed": 20251015,
   "verbosity": -1
  },

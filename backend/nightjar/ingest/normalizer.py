@@ -143,7 +143,7 @@ def normalize(raw: RawEvent) -> NormalizedEvent:
         [host.name if host else None, *draft.related_hosts, *unc_hosts(proc.command_line if proc else None)]
     )
     ts_iso = draft.timestamp.isoformat()
-    labels = {"ingest": raw.source}
+    labels: dict[str, str] = {"ingest": raw.source}
     if raw.source == "replay" and raw.source_ref:
         labels |= {"replay": raw.source_ref, "sample": "true"}
     elif raw.source_ref:

@@ -46,7 +46,13 @@ class ScopedServer(MCPServer):
             name,
             version="1.0.0",
             token_verifier=AgentTokenVerifier(),
-            auth=AuthSettings(issuer_url=base_url, resource_server_url=f"{base_url}/mcp/{name}", required_scopes=[]),
+            # The verifier binds each token to one agent and one organisation itself (validate audience there).
+            auth=AuthSettings(
+                issuer_url=base_url,  # type: ignore[arg-type]
+                resource_server_url=f"{base_url}/mcp/{name}",  # type: ignore[arg-type]
+                required_scopes=[],
+                validate_token_resource=False,
+            ),
             **kwargs,
         )
         self.tool_scopes: dict[str, str] = {}
@@ -60,7 +66,7 @@ class ScopedServer(MCPServer):
 
         return deco
 
-    async def list_tools(self):  # type: ignore[no-untyped-def]
+    async def list_tools(self):
         tools = await super().list_tools()
         access = get_access_token()
         scopes = set(access.scopes) if access else set()
@@ -349,9 +355,9 @@ def ticketing_server(base_url: str) -> ScopedServer:
             uuid.UUID(incidentId),
             title=title[:200],
             body=body[:4000],
-            priority=priority,
+            priority=priority,  # type: ignore[arg-type]
             assignee_team=assigneeTeam[:80],
-        )  # type: ignore[arg-type]
+        )
         return _ticket(t)
 
     @s.scoped_tool("tickets:write", WRITE)
@@ -415,11 +421,11 @@ async def _execute(tool: str, approval_id: str, target: str, approval_token: str
     except KeyError:
         res = ActionResult(
             aid,
-            kind,
+            kind,  # type: ignore[arg-type]
             target,
             False,
             "failed",
-            "The target was not found in the inventory.",  # type: ignore[arg-type]
+            "The target was not found in the inventory.",
             clock.now(),
             f"response.{tool}",
         )
@@ -447,10 +453,10 @@ def response_server(base_url: str) -> ScopedServer:
         if spec is None:
             raise ToolError(f"unknown action kind {kind}")
         action = ProposedAction(
-            kind=kind,
+            kind=kind,  # type: ignore[arg-type]
             target=target,
-            target_type=spec.target_type,
-            rationale=rationale[:1000],  # type: ignore[arg-type]
+            target_type=spec.target_type,  # type: ignore[arg-type]
+            rationale=rationale[:1000],
             expected_effect=spec.effect,
             reversible=spec.reversible,
         )
@@ -512,8 +518,13 @@ def _strip_default(fn: Callable[..., Any]) -> Callable[..., Any]:
     async def wrapper(approvalId: str, approvalToken: str = "", **kw: Any) -> Result:
         return await fn(approvalId=approvalId, approvalToken=approvalToken, _t=tool, **kw)
 
+    import typing
+
+    hints = typing.get_type_hints(fn)  # resolve the string annotations (`from __future__ import annotations`)
     sig = inspect.signature(fn)
-    wrapper.__signature__ = sig.replace(parameters=[p for n, p in sig.parameters.items() if n != "_t"])  # type: ignore[attr-defined]
+    params = [p.replace(annotation=hints.get(n, p.annotation)) for n, p in sig.parameters.items() if n != "_t"]
+    wrapper.__signature__ = sig.replace(parameters=params, return_annotation=Result)  # type: ignore[attr-defined]
+    wrapper.__annotations__ = {n: hints[n] for n in hints if n != "_t"}
     return wrapper
 
 

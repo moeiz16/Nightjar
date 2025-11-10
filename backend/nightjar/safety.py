@@ -50,7 +50,8 @@ _IMPERATIVE = re.compile(
         (?:system|admin(?:istrator)?|developer|root|assistant|agent|ai)\b
     | \bas\s+the\s+(?:system|administrator|developer|security\s+team|soc)\b[^.\n]{0,30}
         \b(?:instruct|order|direct|tell|authori[sz]e)
-    | \bnew\s+(?:instructions?|rules|system\s+prompt)\b
+    | \b(?:your\s+)?new\s+(?:instructions?|rules|system\s+prompt)\s*[:\-]
+    | \byour\s+new\s+(?:instructions?|rules|system\s+prompt)\b
     | \b(?:dear|attention|note\s+to|hey|hello)\s+(?:the\s+)?
         (?:ai|assistant|agent|llm|model|chatbot|analyst\s+bot|soc\s+bot)\b
     | \b(?:ai|assistant|agent|model|llm)\s*[,:]\s*(?:please\s+)?

@@ -98,7 +98,7 @@ def _store_writer() -> Callable[[Sequence[NormalizedEvent]], Awaitable[None]] | 
     try:
         from nightjar.hunting.service import handle_normalized  # builder A
 
-        return handle_normalized  # type: ignore[no-any-return]
+        return handle_normalized
     except Exception:
         return None
 
@@ -139,9 +139,9 @@ async def run_scenario_detailed(
     concurrent_dispatch: bool = False,
     include_dlq_sample: bool = True,
     anchor: datetime | None = None,
+    events: Sequence[tuple[datetime, dict[str, Any], str | None]] | None = None,
 ) -> ScenarioRun:
     from nightjar.mcp_servers.host import reset_inline_host
-    from nightjar.workers.jobs import replay_scenario
 
     t0 = time.perf_counter()
     with _inline_settings() as settings:
@@ -164,14 +164,14 @@ async def run_scenario_detailed(
                 from nightjar.workers.pipeline import run_workers
 
                 worker = asyncio.create_task(run_workers(pipeline, stop=stop))
-                await replay_scenario(org_id, scenario_id, speed=0, anchor=anchor, reference_order=True)
+                await _publish(org_id, scenario_id, anchor, events)
                 await _wait_idle(bus, pipeline)
                 await pipeline.flush_ueba()
                 await _wait_idle(bus, pipeline)
                 stop.set()
                 await worker
             else:
-                await replay_scenario(org_id, scenario_id, speed=0, anchor=anchor, reference_order=True)
+                await _publish(org_id, scenario_id, anchor, events)
                 if include_dlq_sample:
                     from nightjar.stream.api import publish_raw
 
@@ -193,6 +193,20 @@ async def run_scenario_detailed(
     out.seconds = time.perf_counter() - t0
     log.info("scenario_done", scenario=scenario_id, incidents=len(out.created), seconds=round(out.seconds, 1))
     return out
+
+
+async def _publish(
+    org_id: uuid.UUID,
+    scenario_id: str,
+    anchor: datetime | None,
+    events: Sequence[tuple[datetime, dict[str, Any], str | None]] | None,
+) -> None:
+    from nightjar.workers.jobs import publish_paced, replay_scenario
+
+    if events is None:
+        await replay_scenario(org_id, scenario_id, speed=0, anchor=anchor, reference_order=True)
+    else:
+        await publish_paced(org_id, events, total=len(events), speed=0, source_ref=scenario_id)
 
 
 async def _wait_idle(bus: MemoryBus, pipeline: Pipeline, timeout: float = 600) -> None:
