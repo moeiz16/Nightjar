@@ -90,11 +90,12 @@ def _camel(name: str) -> str:
 
 
 def to_doc(obj: Any) -> Any:
-    """Dataclass → camelCase JSON-ready dict (UUIDs and datetimes as strings). `raw`/`fields`/`detail` keep keys."""
+    """Dataclass → camelCase JSON-ready dict (UUIDs and datetimes as strings). Maps whose keys are someone else's
+    data (`raw`, `payload`, `fields`, `detail`, `features`, `robust_z`, …) keep their keys as written."""
     if hasattr(obj, "__dataclass_fields__"):
         obj = asdict(obj)
     if isinstance(obj, dict):
-        keep = {"raw", "fields", "detail", "features", "params", "labels", "input", "output"}
+        keep = {"raw", "payload", "fields", "detail", "features", "robust_z", "params", "labels", "input", "output"}
         return {(_camel(k) if isinstance(k, str) else k): (v if k in keep else to_doc(v)) for k, v in obj.items()}
     if isinstance(obj, list | tuple):
         return [to_doc(v) for v in obj]

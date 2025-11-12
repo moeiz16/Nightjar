@@ -73,7 +73,12 @@ where = ["."]
 include = ["nightjar*"]
 
 [tool.setuptools.package-data]
-nightjar = ["**/data/*.json", "**/data/*.jsonl", "**/data/*.yml", "**/data/*.yaml"]
+nightjar = [
+  "**/data/*.json", "**/data/*.jsonl", "**/data/*.yml", "**/data/*.yaml",
+  "detect/rules/**/*.yml",
+  "workers/replay/*.gz", "workers/replay/*.json",
+  "ml/artifacts/*",
+]
 
 [tool.ruff]
 line-length = 120

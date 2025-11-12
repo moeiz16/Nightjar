@@ -108,19 +108,9 @@ def _default(obj: Any) -> Any:
     raise TypeError(type(obj).__name__)
 
 
-# Fields whose dict keys are someone else's data and must cross the bus verbatim (`to_doc` keeps `raw`, `fields`,
-# `detail`, … but not the raw intake payload).
-_VERBATIM = ("payload",)
-
-
 def dumps(obj: Any) -> bytes:
     """Contract dataclass or plain JSON-able value → bytes."""
-    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
-        keep = {f: getattr(obj, f) for f in _VERBATIM if hasattr(obj, f)}
-        doc = to_doc(obj)
-        doc.update(keep)
-    else:
-        doc = obj
+    doc = to_doc(obj) if dataclasses.is_dataclass(obj) and not isinstance(obj, type) else obj
     return orjson.dumps(doc, default=_default, option=orjson.OPT_NON_STR_KEYS)
 
 
