@@ -25,8 +25,8 @@ compile**.
 ## Consequences and limits
 - **Throughput across the full subset is low**: about 4.3 ms per event across 557 process-creation rules (mostly
   regex search), i.e. roughly 230 events/s on simple events and ~40 events/s on long encoded command lines. The
-  detector therefore runs a **curated active set** (~120 rules matching Halden's sources plus Nightjar's own
-  rules); eval gate: ≥ 2,000 events/s on the replay mix. Optional later optimisation: a literal-substring
+  detector therefore runs a **curated active set** (125 SigmaHQ rules matching Halden's sources plus 18 of
+  Nightjar's own); eval gate: ≥ 2,000 events/s on the replay mix (measured: about 16,600 events/s). Optional later optimisation: a literal-substring
   pre-filter per rule.
 - The matcher looks fields up by exact name in a flat dict and does not iterate list values: the adapter
   flattens nested objects and expands list fields (`related.ip`) into indexed and joined forms.

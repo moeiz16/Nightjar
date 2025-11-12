@@ -27,7 +27,7 @@ authorise, and a separate dawn-washed morning brief.
 | `src/lib/components/console/` | `EventRiver`, `IncidentHeader`, `BatonTimeline`, `StepDrawer`, `ApprovalCard`, `HoldButton`, `DecisionSheet`, `HuntPanel`, `BehaviourPanel`, `ActivityPanel`, `Untrusted` |
 | `src/routes/` | `/` landing, `/sign-in`, `/invite/[token]`, `(app)/…` the console, `(read)/brief…` the brief and weekly report |
 
-## Contract notes (for the lead)
+## Contract notes
 
 - No inventory list routes in v1: `/assets` and `/identities` are tried first; on 404 the app assembles them from
   incidents' `assetsDetail` / `identitiesDetail`.

@@ -17,7 +17,7 @@ script). Pinned artefacts have SHA-256s in `scripts/data_pins.json`.
 
 | Source | What we take | Pin | Size | Licence | Used for |
 |---|---|---|---|---|---|
-| [OTRF Security Datasets](https://github.com/OTRF/Security-Datasets) | 9 small "atomic" scenarios (below), JSON lines / CSV | `master` (static since 2024) + SHA-256 | 2.3 MB zipped · 94 MB extracted | MIT | Detection precision/recall on real attack telemetry; normaliser format coverage (Windows Security, Sysmon, PowerShell, CloudTrail, S3 access logs) |
+| [OTRF Security Datasets](https://github.com/OTRF/Security-Datasets) | 9 small "atomic" scenarios (below), JSON lines / CSV | `master` (static since 2024) + SHA-256 | 2.3 MB zipped · 94 MB extracted | MIT | Real attack telemetry replayed through the pipeline (`make replay SCENARIO=otrf-<key>`); normaliser format coverage (Windows Security, Sysmon, PowerShell, CloudTrail, S3 access logs). Not part of the eval gates |
 | [SigmaHQ rules](https://github.com/SigmaHQ/sigma) | `sigma_core.zip` from release **r2025-11-01**, filtered to 8 folders: 745 rules | release tag + SHA-256 | 1.4 MB zipped · 3.1 MB kept | Detection Rule License (DRL) 1.1 | Detection rules (curated active subset bundled, full subset optional) |
 | [MITRE ATT&CK](https://github.com/mitre-attack/attack-stix-data) | `enterprise-attack-18.1.json` (STIX 2.1) | v18.1 + SHA-256 | 48 MB | ATT&CK Terms of Use (royalty-free; reproduce MITRE's copyright notice) | Technique and tactic names, descriptions, links; offline subset bundled |
 | [CISA Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | `known_exploited_vulnerabilities.json` | live feed (not pinned) | 1.8 MB | CC0 1.0 | KEV lookups for assets and indicators; offline subset bundled |
@@ -46,21 +46,21 @@ Kept folders: `windows/process_creation` (557), `windows/builtin/security` (77),
 (53), `windows/network_connection` (23), `windows/process_access` (16), `cloud/aws` (12), `cloud/azure/signin_logs`
 (6), `cloud/m365` (1). All 745 parse and compile with pySigma 2.1's native matcher and the Nightjar field pipeline
 (`scripts/smoke/sigma_smoke.py`). Throughput over the full subset is low (see ADR 0003), so the detector runs a
-**curated active set** (~120 rules relevant to Halden's log sources, bundled with attribution) and the rest is
+**curated active set** (125 rules relevant to Halden's log sources, bundled with attribution) and the rest is
 opt-in.
 
 ## Bundled offline data (committed, small)
 
-| Path (owner: builder B) | Content | Derived from | Licence handling |
+| Path | Content | Derived from | Licence handling |
 |---|---|---|---|
-| `backend/nightjar/detect/rules/sigmahq/*.yml` | ~120 curated SigmaHQ rules, unmodified | SigmaHQ r2025-11-01 | DRL 1.1: original `author`, `id` and `references` kept; `LICENSE.DRL-1.1.txt` and a `README` naming the release alongside |
-| `backend/nightjar/detect/rules/nightjar/*.yml` | Nightjar's own Sigma rules (MFA fatigue, inbox forwarding, cloud key misuse, file-sync exfiltration, instruction-like log text) | original | MIT (this repository) |
-| `backend/nightjar/intel/data/attack_v18_1.json` | Techniques/sub-techniques/tactics: id, name, tactics, short description, URL (~1 MB) | ATT&CK v18.1 | MITRE copyright notice and licence text reproduced in `intel/data/ATTACK_LICENSE.txt` |
-| `backend/nightjar/intel/data/kev_subset.json` | KEV entries with `dateAdded` ≤ 2025-11-27 for the vendors/products in the sample inventory plus the 200 most recent (~150 KB) | CISA KEV | CC0 1.0 |
+| `backend/nightjar/detect/rules/sigmahq/*.yml` | 125 curated SigmaHQ rules, unmodified | SigmaHQ r2025-11-01 | DRL 1.1: original `author`, `id` and `references` kept; `LICENSE.DRL-1.1.txt` and a `README` naming the release alongside |
+| `backend/nightjar/detect/rules/nightjar/*.yml` | 18 Nightjar Sigma rules (MFA push denials, external inbox forwarding, cloud key misuse, file-sync transfers, gateway session reuse, instruction-like log text and more) | original | MIT (this repository) |
+| `backend/nightjar/intel/data/attack_v18_1.json` | 14 tactics and 691 techniques/sub-techniques: id, name, tactics, short description, URL (~215 KB) | ATT&CK v18.1 | MITRE copyright notice and licence text reproduced in `intel/data/ATTACK_LICENSE.txt` |
+| `backend/nightjar/intel/data/kev_subset.json` | 479 KEV entries with `dateAdded` ≤ 2025-11-27: the vendors/products in the sample inventory plus the most recent (~220 KB) | CISA KEV | CC0 1.0 |
 | `backend/nightjar/intel/data/sample_indicators.json` | Fictional indicator list ("sample feed"): documentation-range IPs, `.example` domains | synthetic | MIT |
-| `backend/nightjar/workers/replay/halden-night.jsonl.gz` | Synthetic replay (~6,000 events, 6 scenarios + background), Halden entities, relative timestamps | synthetic (patterns modelled on the OTRF scenarios above) | MIT |
+| `backend/nightjar/workers/replay/halden-night.jsonl.gz` | Synthetic replay (5,798 events, 6 scenarios + background), Halden entities, relative timestamps | synthetic (patterns modelled on the OTRF scenarios above) | MIT |
 | `backend/nightjar/regimes/data/us_federal_holidays.json` | US federal holidays (observed) 2025–2026 | public calendar | facts |
-| `eval/scenarios/*.labels.json` | Ground truth for replays and injected UEBA anomalies; prompt-injection corpus | synthetic | MIT |
+| `eval/scenarios/halden-night.labels.json`, `eval/scenarios/injection_corpus.json` | Ground truth for the replay; prompt-injection corpus (held-out days and injected UEBA anomalies are generated from fixed seeds by the training and eval scripts) | synthetic | MIT |
 
 `INTEL_SOURCE=downloaded` / `RULES_SOURCE=downloaded` switch to the `data/` copies. The KEV lookups always hide
 entries added after the demo date (`dateAdded > clock.today()`), so a demo set in November 2025 does not show

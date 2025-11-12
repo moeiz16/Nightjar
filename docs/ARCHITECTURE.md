@@ -27,7 +27,7 @@ flowchart LR
   end
   WEB["Web console<br/>SvelteKit :3030"]
   People["Analysts · responders · CISO · auditors"]
-  REG["Regulators (mocked)<br/>CCB · SEC EDGAR · ASD"]
+  REG["Regulators (simulated)<br/>CCB · SEC EDGAR · ASD · data protection authority"]
 
   WH & SL & FR --> API --> BUS
   BUS <--> WK
@@ -81,17 +81,23 @@ flowchart TB
   S --> D["Detection<br/>ATT&CK technique ids"]
   IF -->|score ≥ threshold| D
   D --> T["Triage classifier<br/>LightGBM (logistic baseline)<br/>isotonic calibration · SHAP reasons"]
-  T --> C["Correlator<br/>time window + entity overlap<br/>+ ATT&CK tactic progression"]
+  T --> C["Correlator<br/>60-min window + shared host, user,<br/>address, access key or mail message"]
   C --> INC["Incident<br/>severity · techniques · assets · identities"]
 ```
 
 - **Sigma**: rules are parsed by pySigma and compiled to Python matchers; a processing pipeline maps Sigma's
-  Windows field names onto Nightjar's schema; correlation rules (event/value counts) are supported. ADR 0003.
+  Windows field names onto Nightjar's schema; correlation rules (event/value counts) are supported. The active set
+  is 125 curated SigmaHQ rules plus 18 of Nightjar's own. ADR 0003.
 - **UEBA**: per-entity baselines (median/MAD with a floor, p95) and an Isolation Forest over login, process and
   network features; anomalies become `source="ueba"` detections with plain reasons. ADR 0005.
-- **Triage model**: trained on labelled replay scenarios with a time split; scores every detection with a
+- **Triage model**: trained on labelled synthetic replay days with a time split; scores every detection with a
   calibrated probability and the top three SHAP reasons; likely-noise detections are suppressed from paging but
   kept, and an incident made only of noise is marked "likely benign". ADR 0005.
+- **Correlation**: a detection joins an open cluster when it falls inside the cluster's 60-minute window and shares
+  a host, a user (only from detections naming at most five users, so a spray across 63 accounts does not glue
+  unrelated incidents together), an address, an access key or a mail message; a detection that links two clusters
+  merges them. A cluster becomes an incident on one unsuppressed high-severity detection, two unsuppressed
+  medium ones, or a storm of detections (one likely-benign incident instead of 146 alerts).
 
 ## Agents and tools
 
@@ -142,7 +148,7 @@ stateDiagram-v2
   Proposed --> Assessing: CISO opens assessment
   Assessing --> NotRequired: determination = no
   Assessing --> Running: determination = yes<br/>(awareAt / materiality / impact level)
-  Running --> DueSoon: ≤ max(25 % window, 6 h)
+  Running --> DueSoon: ≤ max(25 % window, 6 h)<br/>(SEC: ≤ 1 business day)
   DueSoon --> Overdue: past dueAt
   Running --> Submitted: notice approved + submitted (mock)
   DueSoon --> Submitted
@@ -150,7 +156,10 @@ stateDiagram-v2
   Submitted --> Running: next notice in the regime<br/>(e.g. NIS2 notification → final report)
 ```
 
-Regimes, deadlines and notice types: API contract §1.12. Deadlines are computed from the determination timestamp
+Four regimes are modelled: EU NIS2 (24 h early warning, 72 h notification, final report one month after the
+notification), SEC Form 8-K Item 1.05 (17:30 New York time on the fourth business day after the materiality
+determination), Australia's SOCI Act (12 h critical, 72 h other) and GDPR Art. 33 (72 h). Regimes, deadlines and
+notice types: API contract §1.12. Deadlines are computed from the determination timestamp
 in UTC and shown in the regime's zone; SEC deadlines count US business days with a bundled federal-holiday table.
 
 ## Stores
@@ -160,7 +169,7 @@ in UTC and shown in the regime's zone; SEC deadlines count US business days with
 | App database | SQLAlchemy 2 + Alembic; SQLite (WAL) by default, Postgres-ready | API, workers, agents (shared) | Tenancy, users, incidents, detections, runs and steps, approvals, notices, audit chain, SSE outbox |
 | Hunting store | DuckDB (embedded, columnar) | **API only** (single writer) | Normalised events for search, hunting and the event river; Parquet snapshots for training |
 | Stream store | JetStream file store in `data/jetstream` | nats-server | In-flight messages, dead letters |
-| Experiment tracking | MLflow local file store `mlruns/` | `make train` | Runs, metrics, registered model versions |
+| Experiment tracking | MLflow local tracking store in `mlruns/` (git-ignored) | `make train` | Runs, metrics, model versions; the committed `ml/artifacts/registry.json` records champion and challengers |
 
 ## Platform
 
@@ -178,12 +187,12 @@ in UTC and shown in the regime's zone; SEC deadlines count US business days with
 
 ## Processes and resources (8 GB laptop)
 
-| Process | Port | Memory (approx.) |
+| Process | Port | Memory budget (approx.) |
 |---|---|---|
 | nats-server | 4230 (monitor 8230) | ~25 MB |
 | API (FastAPI + DuckDB writer) | 8030 | ~250 MB |
 | Workers (pipeline, ML scoring) | – | ~300 MB |
-| Agents (3 processes, or 1 with `AGENTS_PROCESS=single`) | 8031–8033 | ~80 MB each |
+| Agents (one process hosting all three by default; `serve triage\|enrichment\|response` runs one each) | 8031–8033 | ~80 MB per agent process |
 | Tool servers (MCP host) | 8034 | ~90 MB |
 | Web (SvelteKit) | 3030 | ~150 MB dev |
 

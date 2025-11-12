@@ -1,10 +1,10 @@
 # Nightjar SOC frontend design: the night watch
 
-> Copy this file to `~/Work/nightjar-soc/frontend/DESIGN.md`. The static prototype lives in `prototype/` next to this file. Open `index.html`, `console.html` or `brief.html` directly. Add `?theme=light|dark`, `?still` for the settled, reduced-motion state, `?palette` to open ⌘K, or `?holding` to freeze the hold at 64%. Screenshots are in `shots/`. Build to this document. The prototype is the visual reference for type, colour, spacing, the baton grammar and the clock bar.
+> The design concept the web app is built to. A static HTML prototype was made at the design stage as the visual reference for type, colour, spacing, the baton grammar and the clock bar; it is not part of the repository. Wireframes below use illustrative names (`INC-0412`, Marta, Priya, Henrik); the shipped demo uses the seeded Halden Logistics people and `NJ-10xx` references.
 
 Nightjar SOC is a managed security-operations platform for mid-size companies. It takes in security events around the clock and groups threats into incidents (Sigma rules, MITRE ATT&CK). It spots unusual behaviour, and three cooperating AI teammates (**Triage**, **Enrichment**, **Response**) investigate. When an incident is reportable, it starts the regulator's clock (EU NIS2, US SEC Form 8-K Item 1.05, Australia SOCI) and drafts the notice. **A person approves every response action.** Executives get a plain-language morning brief.
 
-- **Demo company:** **Halden Logistics**, with an EU hub in Antwerp, offices in Rotterdam and Amsterdam, US-listed shares with an office in New Jersey, and freight services in Melbourne.
+- **Demo company:** **Halden Logistics**, with an EU distribution centre in Antwerp (NIS2, GDPR), a US-listed parent headquartered in Memphis (SEC Form 8-K), and a critical freight network run from Melbourne (SOCI).
 - **Stack:** SvelteKit + TypeScript + Tailwind 4.1 (the tokens below go into `@theme`). Motion uses Svelte built-ins only: `svelte/transition`, `svelte/animate` (`flip`), `crossfade`, and the `Spring`/`Tween` classes from `svelte/motion` with `prefersReducedMotion`. There is no animation library.
 - **Copy date:** copy is written as of **late November 2025**. Anything time-sensitive is computed at runtime (§13).
 
@@ -16,7 +16,7 @@ Every reference was re-checked in this design round. Vendor marketing pages were
 
 | # | Reference | What we take |
 |---|---|---|
-| 1 | Google SecOps (Chronicle) case graph and playback: https://cloud.google.com/chronicle/docs/soar/investigate/working-with-cases/explore-entities-and-alerts-investigation | A **play control that steps through a case's alerts in order**, highlighting what each step touched and dimming the rest. → Our **Replay**: the baton timeline steps through the teammates' work. The current step is lit and future steps sit at 35%. We use no graph canvas (Kinroot owns graphs). |
+| 1 | Google SecOps (Chronicle) case graph and playback: https://cloud.google.com/chronicle/docs/soar/investigate/working-with-cases/explore-entities-and-alerts-investigation | A **play control that steps through a case's alerts in order**, highlighting what each step touched and dimming the rest. → Our **Replay**: the baton timeline steps through the teammates' work. The current step is lit and future steps sit at 35%. We use no graph canvas: the investigation is told in time, not as a network. |
 | 2 | Microsoft Defender / Sentinel attack story: https://learn.microsoft.com/en-us/defender-xdr/investigate-incidents | **One queue and one attack story** per incident instead of separate alerts, with alerts replayed in time order. → Alerts coalesce into one incident strip, and the incident page tells one story from top to bottom. |
 | 3 | Datadog Bits Security Analyst: https://docs.datadoghq.com/bits_ai/bits_security_analyst and signal investigation: https://docs.datadoghq.com/security/cloud_siem/triage_and_investigate/investigate_security_signals/ | An automated investigation ends in a **plain verdict with the evidence underneath**, an "Investigating" state until then, and next actions (declare an incident, suppress) on the same panel. → The Triage step shows "Likely real: 94 in 100", then "why …" and "looked at …". |
 | 4 | CrowdStrike Charlotte AI agentic SOC (press, April 2025): https://www.businesswire.com/news/home/20250428067495/en | **Bounded autonomy**: the customer decides what runs on its own and what waits for analyst approval. → In Nightjar SOC nothing destructive runs on its own. Every response action is gated, and the gate is a visible, physical gesture (Hold). |
@@ -146,7 +146,7 @@ The footer is on the dawn colour: "Take the watch at Halden Logistics." It inclu
 
 ## 5. Home: "the Watch" (`/watch`)
 
-The home is the **live console** in the person's role layout. There is no greeting and there are no KPI cards. The responder layout is the prototype (`console.html`):
+The home is the **live console** in the person's role layout. There is no greeting and there are no KPI cards. The responder layout:
 
 - **events** (300 px): the live river, grouped by minute. Each minute header reads like "09:18 · 1,262 in · 2 to look at".
   - Unusual-behaviour rows: ◇ with an amber left rule.
@@ -164,7 +164,7 @@ When nothing is open, the incident tile reads "Nothing needs a person. The watch
 
 ## 6. Screens and wireframes
 
-Screens marked **[P]** are prototyped. Every wireframe sits inside the clock bar + tiles + status line shell unless it says otherwise.
+Screens marked **[P]** were prototyped at the design stage. Every wireframe sits inside the clock bar + tiles + status line shell unless it says otherwise.
 
 ### 6.1 Landing (`/`) [P]: `index.html`
 
@@ -524,7 +524,7 @@ Teammates appear as "Response (teammate)", never by internal names. A teammate's
 
 ## 7. Type
 
-**Geist** for UI and reading, **Geist Mono** for time, IDs, labels and keycaps. There is **no serif** anywhere (Plotline and Kinroot own serif). Labels are **lowercase mono** ("events", "awaiting you", "notice · draft 2"), never uppercase-tracked mono (Plotline's).
+**Geist** for UI and reading, **Geist Mono** for time, IDs, labels and keycaps. There is **no serif** anywhere. Labels are **lowercase mono** ("events", "awaiting you", "notice · draft 2"), never uppercase-tracked mono.
 
 | Token | Face / weight | Size / line | Use |
 |---|---|---|---|
@@ -544,7 +544,7 @@ Numbers in mono always use `tnum`. Geist Mono's slashed zero is kept: it is part
 
 ## 8. Palette (tokens)
 
-Mint teal (hue ≈170°) is the only accent. It is clearly not Kinroot's oxblood (350°) or Plotline's surveyor orange (25°), and it is used for **light and line** (live dots, the baton, focus, "on track", the active-tile rule), almost never as a large fill. The two exceptions are the primary landing CTA and the "Authorised" stamp.
+Mint teal (hue ≈170°) is the only accent. It is used for **light and line** (live dots, the baton, focus, "on track", the active-tile rule), almost never as a large fill. The two exceptions are the primary landing CTA and the "Authorised" stamp.
 
 ### Console: night (default)
 
@@ -652,13 +652,13 @@ Svelte built-ins only. Everything animates transform or opacity, except the hold
 | **Live pulse** | the status line's live dot pulses a 7 px ring | 2.4 s ease-out loop | static dot |
 
 What Nightjar SOC **never** uses:
-- self-drawing outlines with `stroke-dashoffset` (Plotline);
-- time-ruler scrubbing (Plotline);
-- slack-to-taut strings, unfold springs or stitches (Kinroot);
-- 150 ms page fades as the only motion (Necessa);
+- self-drawing outlines with `stroke-dashoffset`;
+- time-ruler scrubbing;
+- string, thread or stitch metaphors and unfold springs;
+- short page fades as the only motion;
 - parallax, scroll-jacking, glitch effects or typing-cursor gimmicks.
 
-`prefersReducedMotion.current` (from `svelte/motion`) switches every row of the table to its right-hand column. `?still` in the prototype shows exactly that.
+`prefersReducedMotion.current` (from `svelte/motion`) switches every row of the table to its right-hand column.
 
 ---
 
@@ -693,55 +693,42 @@ Terse, operational, time-stamped, calm. Write short declaratives with a time in 
 - **As-of date (late November 2025):** the docs and copy in the repo are written as of late November 2025, and nothing hard-coded refers to later events.
   - Every time-sensitive value is computed at runtime from one clock helper (`NIGHTJAR_DEMO_TODAY`, with Playwright `clock.setFixedTime` for shots): countdowns, due dates, "today/tomorrow", the "night of Wednesday to Thursday" eyebrow, the SEC business-day count, the brief's dateline and the seven-nights labels.
   - Seeded incidents are placed relative to today (the reportable one became known at 03:12 local time today).
-  - Prototype shots are frozen at **Thu 20 Nov 2025 09:18 Europe/Brussels**.
+  - Screenshots are taken with the clock fixed inside late November 2025 (for example **Thu 20 Nov 2025 09:18 Europe/Brussels**).
 
 ## 14. Forbidden words (rendered UI text)
 
-From STANDARDS §4: RAG, retrieval, embeddings, vector, rerank, **LLM**, model or provider names (GPT, Gemini, Groq, Llama, Claude…), LiteLLM, prompt, tokens, SQL, architecture, **pipeline**, **agent internals**, **A2A**, **MCP**, latency, fallback, cache.
+Engineering vocabulary never appears in rendered text: RAG, retrieval, embeddings, vector, rerank, **LLM**, model or provider names (GPT, Gemini, Groq, Llama…), LiteLLM, prompt, tokens, SQL, architecture, **pipeline**, **agent internals**, **A2A**, **MCP**, latency, fallback, cache.
 
-For this product, also avoid "agent" and "agentic" (say teammate, Triage, Enrichment, Response, "the watch"), "AI-powered", "autonomous", "smart", "magic", "algorithm", "playbook run", "SOAR", "SIEM" in executive copy, "query language", and host or IP jargon in the brief. Analyst screens may show ATT&CK IDs, Sigma, host names and event fields, because those are the analyst's own vocabulary. The prototype passes a scan for all of the above (§15).
+For this product, also avoid "agent" and "agentic" (say teammate, Triage, Enrichment, Response, "the watch"), "AI-powered", "autonomous", "smart", "magic", "algorithm", "playbook run", "SOAR", "SIEM" in executive copy, "query language", and host or IP jargon in the brief. Analyst screens may show ATT&CK IDs, Sigma, host names and event fields, because those are the analyst's own vocabulary. Rendered pages are scanned for all of the above.
 
-## 15. How this differs from Necessa, Plotline and Kinroot
+## 15. Design principles
 
-| Dimension | Necessa | Plotline (Field Atlas) | Kinroot | **Nightjar SOC** |
-|---|---|---|---|---|
-| Metaphor | Clinical worklist | Field atlas + surveyor's ledger | Investigation board + case dossiers | **The night watch: a log, clocks and a baton passed between teammates** |
-| App shell | Light left sidebar with org card, grouped nav, top search | Two-tier masthead with mono caps tabs over a full-bleed map | Ink icon spine + graph board + dossier drawer | **⌘K-first tiled console: regulator clock bar on top, hairline tmux tiles, mono status line; no sidebar, tabs or menus** |
-| Landing | Headline left, product card right, 4-up stats | Huge centred serif date on topo map, scroll story | Type into the client pin, roots grow, red string | **The console replays a night (time-driven); a left-aligned night log; the headline lands as the last entry; the status line navigates to the shift log** |
-| Home | "Good evening, Maya" + Today + 4 KPI cards | Map + floating ledger + time ruler | Client constellation + file tray | **The Watch: event river · incident with baton tracks · "awaiting you", in a role layout** |
-| Executive view | Same app | Same app | Partners' brief inside the app | **A separate reading mode: a dawn-washed, one-column morning brief with one decision box** |
-| Data idiom | Cards with score rings | Map layers, ledger rows | Graph + ledger twin | **Streams, lane tracks, clocks, ledgers, rhythm strips** |
-| Type | System sans | Newsreader serif + Plex Mono caps labels | Spectral + Hanken Grotesk + Red Hat Mono | **Geist + Geist Mono; lowercase mono labels; no serif** |
-| Palette / theme | Neutral grey + indigo, light | Warm map paper + orange, light | Cool bond grey + oxblood, light | **Blue-black night #070B10 + mint teal #3CE6C8, dark-first; dawn #CBE5DE → #F7F9F8 for the brief** |
-| Shape | 8–12 px cards | Square boxes, rubber stamp | 2 px paper, notched folder tabs | **Radius-0 tiles with hairline gutters, keycaps, 2 px left rules, one 8 px hold button** |
-| Motion | 150 ms fades | Self-drawing outlines, fly-to, ruler scrub | Unfold springs, slack-to-taut string | **Rolling digits, coalesce, baton bead, hold fill + stamp, clock drop, dawn wipe** |
-| Signature | Live check progress | Ruler scrub, statement stamp | Pull the thread, fuse or split | **Replay · Hold to authorise · The clock drops in** |
-| CTAs | Explore the demo / Create an account | Open the Northbank atlas / Start your atlas | Trace a client / Open Harbourline's files | **Take the watch / Replay the night** |
-| Logo | Indigo "M" tile | Folded map + serif wordmark | Knotted thread + Spectral italic | **Nightjar eye (two arcs + dot) + lowercase mono wordmark** |
+| Dimension | Nightjar SOC | Why |
+|---|---|---|
+| Metaphor | **The night watch: a log, clocks and a baton passed between teammates** | Security operations is a shift; the questions are "what happened overnight, what is running, who holds it now" |
+| App shell | **⌘K-first tiled console: regulator clock bar on top, hairline tiles, mono status line; no sidebar, tabs or menus** | Analysts live on the keyboard; the deadlines that matter most are always in view |
+| Landing | **The console replays a night (time-driven); a left-aligned night log; the headline lands as the last entry; the status line leads to the shift log** | The product is shown working rather than described |
+| Home | **The Watch: event river · incident with baton tracks · "awaiting you", in a role layout** | Each role opens on the work only they can do |
+| Executive view | **A separate reading mode: a dawn-washed, one-column morning brief with one decision box** | Executives read once a day and decide; they should not have to operate a console |
+| Data idiom | **Streams, lane tracks, clocks, ledgers, rhythm strips** | Everything in a SOC is time-ordered |
+| Type | **Geist + Geist Mono; lowercase mono labels; no serif** | Mono for time, IDs and keycaps keeps numbers aligned and unambiguous |
+| Palette / theme | **Blue-black night #070B10 + mint teal #3CE6C8, dark-first; dawn #CBE5DE → #F7F9F8 for the brief** | Dark for night shifts and wall screens, light for the morning read |
+| Shape | **Radius-0 tiles with hairline gutters, keycaps, 2 px left rules, one 8 px hold button** | Density without clutter; the one rounded control is the one that matters |
+| Motion | **Rolling digits, coalesce, baton bead, hold fill + stamp, clock drop, dawn wipe** | Motion shows time passing and work changing hands, never decoration |
+| Signature | **Replay · Hold to authorise · The clock drops in** | Each one makes a promise visible: replayable decisions, a person in charge, deadlines tracked |
+| CTAs | **Take the watch / Replay the night** | Operational verbs in the product's own voice |
+| Logo | **Nightjar eye (two arcs + dot) + lowercase mono wordmark** | A night bird that watches |
 
-The screenshots were compared side by side with `Necessa 01/10`, `Plotline 01/06` and `Kinroot 01/04/06`. All three earlier products are light-first, with paper or grey canvases and serif or system type. Nightjar SOC is the only dark-first one, the only time-first one, and the only one whose landing is a live console.
+Nightjar SOC is dark-first, time-first, and its landing is a live console. One composition risk was found and fixed during iteration: a centred giant clock over a centred tagline read as a poster rather than a console, so the landing's centre became a **left-aligned night log**. The mini baton graph first used line drawing; the bead now carries the motion and the lines fade in.
 
-One composition risk was found and fixed during iteration. A centred giant clock over a centred tagline read as a cousin of Plotline's centred giant date, so the landing's centre became a **left-aligned night log**. The mini baton graph first used `stroke-dashoffset` line drawing (Plotline's motion); the bead now carries the motion and the lines fade in.
+## 16. Build notes
 
-## 16. Prototype and hand-off
+**Svelte components (as built):**
+- shell: `ClockBar`, `ClockCell` (Tick + Drop + elapsed rule), `Tick` / `Digit`, `StatusLine`, `CommandPalette`, `Pane`, `Toasts`, `Logo`;
+- console: `EventRiver` (minute groups + fold), `IncidentHeader`, `IncidentView`, `BatonTimeline` (lane tracks, SVG links, bead, Replay controller), `StepDrawer`, `ApprovalCard`, `HoldButton`, `DecisionSheet`, `AwaitingTile`, `EvidenceTile`, `HuntPanel`, `BehaviourPanel` (rhythm strips), `ActivityPanel`, `Untrusted`;
+- brief: the `(read)/brief` routes and `SevenNights`.
 
-`prototype/` (static, no build step):
-
-- `nightjar.css`: tokens, shell, Tick, hold and palette.
-- `nightjar.js`: theme, reduced motion, runtime clocks, Tick and hold. Deadlines are computed from the browser clock.
-- `index.html`: the landing replay plus the shift log.
-- `console.html`: the watch with INC-0412, the baton tracks, the approval hold, a draft notice and ⌘K.
-- `brief.html`: the morning brief (dawn / night edition).
-- `shoot.mjs`: reproduces `shots/` with playwright-core and system Chrome at 1440×900 @2×. The `Date` is frozen to 2025-11-20 09:18 Europe/Brussels, and the script checks overflow and that no 2026 date appears.
-
-The only external dependency is Google Fonts (Geist, Geist Mono). The visible text passes the forbidden-word scan.
-
-**Svelte components to build:**
-- shell: `ClockBar`, `ClockCell` (Tick + Drop + elapsed rule), `Tiles` (split/focus/zoom, layout presets), `StatusLine`, `CommandPalette`;
-- console: `EventRiver` (minute groups + fold), `IncidentHeader`, `StageRail`, `BatonTimeline` (lane tracks, SVG links, bead, Replay controller), `StepDrawer`, `ApprovalCard`, `HoldButton`, `NoticeDraft`, `HuntTile`, `RhythmStrip`;
-- brief: `BriefPage`, `DecisionBox`, `ClockLedger`, `SevenNights`.
-
-Clock maths lives in one `clock.ts` (regime windows, business days with a US federal holiday list, timezone per regime). The UI never computes deadlines inline.
+Clock maths lives in one `src/lib/time/clock.ts` (regime windows, business days with a US federal holiday list, timezone per regime). The UI never computes deadlines inline. Geist and Geist Mono are bundled (`@fontsource-variable/*`), so the app has no external runtime dependency.
 
 **Regulatory facts used (designed to support, not legal advice):**
 - **NIS2 Art. 23:** early warning within 24 h of becoming aware, incident notification within 72 h, final report within one month of the notification.

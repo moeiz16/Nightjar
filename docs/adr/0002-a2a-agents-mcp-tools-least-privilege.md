@@ -3,7 +3,7 @@
 **Status:** accepted
 
 ## Context
-The brief asks for independent triage, enrichment and response agents that cooperate over an open protocol and use
+The product needs independent triage, enrichment and response agents that cooperate over an open protocol and use
 tools through servers we implement, with least-privilege access and a replayable record of every decision. A
 single in-process "agent framework" would hide the boundaries we need to show and to enforce.
 
@@ -33,10 +33,11 @@ Verified on Python 3.13, macOS arm64:
   executed, with one it is; the stdio transport also works.
 
 ## Consequences
-- API notes for builders: a2a-sdk 1.x uses protobuf types (`TaskState.TASK_STATE_COMPLETED`, `Role.ROLE_USER`);
+- Implementation notes: a2a-sdk 1.x uses protobuf types (`TaskState.TASK_STATE_COMPLETED`, `Role.ROLE_USER`);
   DataPart numbers come back as floats; `create_client(card, ClientConfig(httpx_client=...))` injects auth headers
   and test transports. mcp 2.x renamed `FastMCP` to `MCPServer`, uses `httpx2` for its HTTP client, snake_case
   model fields (`structured_content`, `destructive_hint`), and `list_tools()` returns a result object (`.tools`).
-- Five processes for the agent tier is too heavy for 8 GB, so the MCP servers share one host and the three agents
-  can share one process (`AGENTS_PROCESS=single`) while keeping separate ports, cards and tokens.
+- Five processes for the agent tier is too heavy for 8 GB, so the MCP servers share one host and, by default
+  (`make agents`, i.e. `serve all`), the three agents share one process while keeping separate ports, cards and
+  tokens. `serve triage|enrichment|response` runs each in its own process.
 - No agent framework dependency: policies are plain Python, which keeps tool choice deterministic (ADR 0006).

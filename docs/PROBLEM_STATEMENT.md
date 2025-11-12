@@ -13,9 +13,10 @@ At the same time, the reporting clock has become law in every region such a comp
 | **EU NIS2** (Directive (EU) 2022/2555, Art. 23; transposition deadline 17 October 2024) | Essential and important entities in 18 sectors, including transport and postal/courier services | Early warning within **24 hours** of becoming aware of a significant incident; notification within **72 hours**; final report within **one month** |
 | **US SEC Form 8-K Item 1.05** (applies since 18 December 2023) | Public companies | Disclose a material cybersecurity incident within **four business days** of determining it is material |
 | **Australia SOCI Act 2018, Part 2B** | Responsible entities for critical infrastructure assets, including critical freight services | **12 hours** for an incident with a significant impact on availability; **72 hours** for other impacts |
+| **EU GDPR Art. 33** | Any controller of personal data | Notify the supervisory authority of a personal data breach within **72 hours** of becoming aware, where feasible |
 
 A mid-size logistics group with a Belgian subsidiary, a US listing and an Australian freight network is subject
-to all three, each with its own trigger, clock and recipient. Missing the early warning because nobody connected
+to all three, each with its own trigger, clock and recipient, and to GDPR whenever personal data is involved. Missing the early warning because nobody connected
 "unusual sign-in" to "significant incident" is a compliance failure on top of the breach.
 
 ## Who we serve
@@ -39,14 +40,16 @@ to all three, each with its own trigger, clock and recipient. Missing the early 
    colleague proposes containment. Every step is recorded and replayable.
 5. **Keeps humans in charge**: isolating a server or disabling an account needs a responder's approval, and a
    crown-jewel system needs the CISO as well.
-6. **Starts the regulator's clock**: proposes which regimes apply from the company profile and the incident
-   facts, lets the CISO decide, counts down each deadline (business days for the SEC) and drafts the early warning,
-   notification and final report.
+6. **Starts the regulator's clock**: proposes which regimes apply (NIS2, SEC Form 8-K Item 1.05, SOCI, GDPR
+   Art. 33) from the company profile and the incident facts, lets the CISO decide, counts down each deadline
+   (business days for the SEC) and drafts the early warning, notification and final report. Submissions are
+   recorded, not sent.
 7. **Supports hunting and reporting**: saved searches over the event store with suggested hunts, an executive
-   posture view and a weekly brief.
+   posture view, a CISO morning brief and a weekly report.
 
 ## Success measures (evaluated in `eval/`, gated in CI)
-- Detection precision and recall on labelled replays (synthetic and OTRF).
+- Detection recall and post-triage precision on labelled synthetic replays (OTRF scenarios can be replayed through
+  the same pipeline, but carry no gate).
 - Behaviour-anomaly precision@k and recall against injected anomalies.
 - Triage classifier PR-AUC, calibration, and false-positive reduction versus rules alone.
 - Triage-colleague verdict accuracy against labels; alert-to-triage under **60 seconds** at demo scale.

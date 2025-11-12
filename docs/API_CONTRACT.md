@@ -1,12 +1,12 @@
 # Nightjar SOC API contract (v1)
 
-The binding reference for Nightjar SOC's module boundaries. The web app (builder C) builds against Part 1; the
-platform (builder A) implements it. Part 2 is the data model, Part 3 the Python interfaces between the platform
-(A) and the pipeline (B), Part 4 the event backbone, Part 5 the agents and tool servers, Part 6 the demo seed,
-Part 7 module ownership, Part 8 project conventions.
+The binding reference for Nightjar SOC's module boundaries. The web app builds against Part 1, which the platform
+modules implement. Part 2 is the data model, Part 3 the Python interfaces between the platform and the pipeline,
+Part 4 the event backbone, Part 5 the agents and tool servers, Part 6 the demo seed, Part 7 the module map and
+Part 8 project conventions.
 
 Changing a shape here means changing it in the same commit as the code. `backend/nightjar/contracts.py` and the
-`*/api.py` stubs are the code half of Part 3.
+`*/api.py` modules are the code half of Part 3.
 
 ---
 
@@ -208,7 +208,7 @@ UntrustedText = { text, field, flags: string[], truncated: boolean }
 ```
 Datasets: `windows.security`, `windows.sysmon`, `windows.powershell`, `aws.cloudtrail`, `aws.s3access`,
 `okta.system`, `m365.audit`, `mail.gateway`, `vpn.syslog`, `edr.alert`, `nightjar.synthetic`. Normaliser field
-mapping per format is builder B's (`backend/nightjar/ingest/formats/*.py`); the Sigma field mapping is in ADR 0003.
+mapping per format lives in `backend/nightjar/ingest/formats/*.py`; the Sigma field mapping is in ADR 0003.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
@@ -427,7 +427,7 @@ short (`early_warning`) or full (`nis2.early_warning`); drafting an existing uns
 Notice types: `nis2.early_warning`, `nis2.incident_notification`, `nis2.intermediate_report`,
 `nis2.progress_report`, `nis2.final_report`, `sec_8k.item_105`, `sec_8k.amendment`, `soci.critical_report`,
 `soci.other_report`, `soci.written_record`, `gdpr_art33.notification`. Section keys per type are listed in
-`backend/nightjar/regimes/data/notice_templates.json` (builder A). SEC drafts describe material aspects of the
+`backend/nightjar/regimes/data/notice_templates.json`. SEC drafts describe material aspects of the
 nature, scope and timing and the material impact; they never include technical detail that would hinder response.
 
 ## 1.13 Threat hunting
@@ -584,12 +584,12 @@ the API does not stream ticks.
 
 Every tenant table has `org_id` (indexed) and every query filters on the caller's org. UUID primary keys except
 append-only logs (integer ids). `created_at`/`updated_at` on all mutable rows. Portable types only (`JSONType`,
-`UUIDType`, `UTCDateTime` from `nightjar/db/base.py`). Builder A owns every table except those prefixed `pl_`
-(builder B). The platform tables in `nightjar/db/models/platform.py` already exist (migration `0001`).
+`UUIDType`, `UTCDateTime` from `nightjar/db/base.py`). Platform modules own every table except those prefixed
+`pl_`, which belong to the pipeline. The platform tables live in `nightjar/db/models/platform.py` (migration `0001`).
 
 | Area | Table | Key fields |
 |---|---|---|
-| platform (done) | `organizations` | name, slug, timezone, profile (OrgProfile JSON), settings (OrgSettings JSON), is_sample |
+| platform | `organizations` | name, slug, timezone, profile (OrgProfile JSON), settings (OrgSettings JSON), is_sample |
 | | `users`, `memberships`, `invitations`, `sessions`, `ingest_keys` | per §1.2, §1.4 |
 | | `audit_log` | org_id, actor_id, actor_type (user/agent/system), actor_name, action, resource_type, resource_id, metadata, ip, user_agent, prev_hash, hash; unique (org_id, prev_hash) |
 | | `ui_events` | org_id, name, data, permission, user_ids (SSE outbox; id = SSE id) |
@@ -615,22 +615,22 @@ append-only logs (integer ids). `created_at`/`updated_at` on all mutable rows. P
 | hunting | `saved_searches` | org_id, name, description, query (JSON), created_by, last_run_at, last_count |
 | executive | `weekly_briefs` | org_id, week (unique per org), headline, sections, metrics, generated_by |
 | models | `model_promotions` | org_id, model_name, version, stage, promoted_by, note (MLflow holds runs and metrics) |
-| pipeline (B) | `pl_rule_overrides` | org_id, rule_id, enabled |
+| pipeline | `pl_rule_overrides` | org_id, rule_id, enabled |
 | | `pl_ueba_baselines` | org_id, entity_type, entity_id, feature, median, mad, p95, n, updated_at |
 | | `pl_correlation_state` | org_id, correlation_key, incident_id, entities, last_seen (warm start; the incident table remains the source of truth) |
 
 The **hunting store** is DuckDB (`data/hunting.duckdb`), not SQLAlchemy: table `events` with the flattened ECS
-columns of §1.6 plus `org_id`, `raw JSON`, partitioned logically by `org_id` and day; owned by A (ADR 0004).
+columns of §1.6 plus `org_id`, `raw JSON`, partitioned logically by `org_id` and day; owned by the API process (ADR 0004).
 
 ---
 
-# Part 3: Python interfaces between the platform (A) and the pipeline (B)
+# Part 3: Python interfaces between the platform and the pipeline
 
 All shared dataclasses live in **`backend/nightjar/contracts.py`** (frozen, slotted; `to_doc()` gives the
-camelCase wire form). Each side exposes typed **`api.py`** modules; callers import only those. Stubs raise
-`NotImplementedError` until implemented. Changing a signature means changing this Part in the same commit.
+camelCase wire form). Each side exposes typed **`api.py`** modules; callers import only those. Changing a
+signature means changing this Part in the same commit.
 
-### B calls A (platform side; builder A implements)
+### The pipeline calls the platform (platform side)
 ```python
 # nightjar/incidents/api.py
 record_detections(org_id, detections: Sequence[Detection]) -> None            # idempotent on id
@@ -685,16 +685,16 @@ get_ticket(org_id, ticket_id) -> dict | None
 # nightjar/core/events.py and nightjar/services/audit.py (exist)
 emit(db, org_id, name, data, *, permission=None, user_ids=None)               # SSE outbox, in the caller's transaction
 audit(db, None, org_id=..., action=..., actor_type="agent", actor_name="Response agent", ...)
-# nightjar/core/security.py (exists)
+# nightjar/core/security.py
 sign_approval_token(...) / verify_approval_token(token, *, action, target, org_id) -> ApprovalClaims | None
 ```
 
-### A calls B (pipeline side; builder B implements)
+### The platform calls the pipeline (pipeline side)
 ```python
 # nightjar/stream/api.py
 publish_raw(events: Sequence[RawEvent]) -> IngestAck                           # raises BackpressureError → 503
 normalize(raw: RawEvent) -> NormalizedEvent                                    # pure; ValueError with a plain reason
-subscribe_normalized(durable, handler, *, batch=500, max_wait_s=1.0) -> Subscription   # A's hunting writer
+subscribe_normalized(durable, handler, *, batch=500, max_wait_s=1.0) -> Subscription   # the platform's hunting writer
 pipeline_health() -> PipelineHealth
 list_dlq(*, page, page_size) -> (list[dict], total);  retry_dlq(seq) -> None (KeyError if unknown)
 list_scenarios() -> list[ScenarioInfo]
@@ -729,24 +729,25 @@ neutralise(value, *, field, max_len=2000) -> UntrustedText;  render_for_prompt(i
 ```
 
 ### Who triggers what
-1. **Ingest** (A's endpoint) → `stream.publish_raw` → B's normaliser → `nj.events.normalized.*` → A's
-   `store-writer` (DuckDB + `river.batch` SSE) and B's detector/UEBA.
-2. B's scorer → `incidents.record_detections` (+ `record_anomalies`) → B's correlator → `incidents.upsert_incident`.
-3. B's dispatcher, on a new incident with `autoInvestigate` → `agents.start_investigation` (which calls
+1. **Ingest** (platform endpoint) → `stream.publish_raw` → normaliser → `nj.events.normalized.*` → the API's
+   `store-writer` (DuckDB + `river.batch` SSE) and the detector/UEBA.
+2. Scorer → `incidents.record_detections` (+ `record_anomalies`) → correlator → `incidents.upsert_incident`.
+3. Dispatcher, on a new incident with `autoInvestigate` → `agents.start_investigation` (which calls
    `investigations.start_run`) → A2A triage → enrichment → response; every step `investigations.append_step`;
-   proposals `approvals.request_approval`; end `investigations.finish_run` (A applies the verdict, records
+   proposals `approvals.request_approval`; end `investigations.finish_run` (the platform applies the verdict, records
    time-to-triage and proposes regime applicability).
-4. A person approves (A's endpoint) → A signs the token → `agents.execute_approved_action` → the response agent
+4. A person approves (platform endpoint) → the API signs the token → `agents.execute_approved_action` → the response agent
    calls the response tool server, which verifies the token, `approvals.consume`s it, calls the `directory`
    effector, then `approvals.record_result`.
-5. A person with `reporting:assess` determines applicability (A) → deadlines start → notices drafted with
-   `llm.generate` (A) → approved and submitted (mock) by the executive.
+5. A person with `reporting:assess` determines applicability → deadlines start → notices drafted with
+   `llm.generate` → approved and submitted (mock) by the executive.
 
 ### Process topology and DuckDB ownership
-`api` (FastAPI, :8030; owns DuckDB and runs `store-writer`) · `workers` (B: normaliser, detector + UEBA, scorer,
-correlator, dispatcher, orchestrator, DLQ mover, jobs) · `agents` (B: triage :8031, enrichment :8032, response
-:8033; three processes, or one process hosting all three with `AGENTS_PROCESS=single`) · `mcp` (B: one host
-process on :8034 serving the five tool servers) · `nats-server` (:4230, monitor :8230). SQLite is shared by
+`api` (FastAPI, :8030; owns DuckDB and runs `store-writer`) · `workers` (normaliser, detector + UEBA, scorer,
+correlator, dispatcher, orchestrator, DLQ mover, jobs) · `agents` (triage :8031, enrichment :8032, response
+:8033; `serve all`, the `make agents` default, hosts the three in one process on their own ports, and
+`serve triage|enrichment|response` runs one per process) · `mcp` (one host process on :8034 serving the five
+tool servers) · `nats-server` (:4230, monitor :8230). SQLite is shared by
 `api`, `workers` and `agents` in WAL mode; DuckDB is opened only by `api`.
 
 ---
@@ -932,8 +933,7 @@ keys, 35 historical incidents over the previous 45 days (closed, with triage/con
 trends, 4 weekly briefs); (2) **tonight**: the bundled `halden-night` replay is pushed through the real pipeline
 in-process (`BUS=memory`, `AGENTS_TRANSPORT=inline`, offline model) with `retime` so detections, incidents and
 agent runs are genuine; (3) people: the seed applies the human decisions below at their back-dated times
-(approvals, determinations, notices). Until builder B's pipeline lands, phase 2 may insert fixture incidents with
-the same keys.
+(approvals, determinations, notices).
 
 ### Organisations and members (password for every demo account: **`Nightjar-demo-2025!`**)
 **Halden Logistics** (sample) · timezone Europe/Brussels · ~1,800 staff · regulatory profile:
@@ -1006,18 +1006,20 @@ rows forming a valid chain. Ground truth for the replay lives in `eval/scenarios
 
 ---
 
-# Part 7: Module ownership
+# Part 7: Module map
 
-Three builders work in parallel. Only the owner edits a path; cross-boundary changes go through Part 3 and
-`contracts.py` (owner: project lead; both builders may propose changes in the same commit as the code that needs
-them, updating this document). One heavy process at a time on the machine (`~/Work/_playbook/heavy`).
+Cross-module changes go through Part 3 and `backend/nightjar/contracts.py`, updated in the same commit as the code
+that needs them, together with this document.
 
-| Builder | Owns | Paths |
+| Area | Responsibility | Paths |
 |---|---|---|
-| **A: platform + API** | FastAPI app, settings, auth/sessions/RBAC, orgs/members/invitations/ingest keys, audit, SSE outbox, jobs table, every HTTP router; incidents store, timelines, investigations store, approvals gate + token issuing, inventory/directory and effectors, ticketing; **incident clock** (regimes, applicability proposals, deadlines, business days, notices, mock submissions); hunting store wiring (DuckDB writer, structured query compiler, saved searches, suggestions); executive posture and weekly brief; settings; seed and reset; Alembic migrations (except `pl_` tables) | `backend/nightjar/{core,db,api,schemas,services,incidents,investigations,approvals,directory,ticketing,regimes,hunting,executive,seed}/**`, `backend/nightjar/{main,cli,clock}.py`, `backend/alembic/**`, `backend/tests/{platform,api,incidents,reporting,hunting,seed}/**` |
-| **B: pipeline + intelligence** | Stream backbone (NATS + memory bus), ingest formats and normaliser, Sigma detection and ATT&CK mapping, rule bundle, correlation, UEBA (Isolation Forest + robust z), triage classifier (baseline, LightGBM, Optuna, calibration, SHAP, MLflow, model cards, drift), offline intel (ATT&CK/KEV bundles), LLM adapter + fake, untrusted-text neutraliser, the three A2A agents and orchestrator, the five MCP servers, workers, replay scenarios, eval harness and gates | `backend/nightjar/{stream,ingest,detect,correlate,ml,agents,mcp_servers,intel,llm,workers}/**`, `backend/nightjar/safety.py`, `backend/nightjar/db/models/pipeline.py` (+ its migration), `backend/tests/{pipeline,detect,ml,agents,safety}/**`, `eval/**`, `scripts/**` (except Makefile-level tooling) |
-| **C: web app** | SvelteKit + TypeScript + Tailwind 4.1 console, landing page, sign-in, design system, Playwright screenshots | `frontend/**` |
-| Lead | contracts, docs, ADRs, Makefile, CI, README | `backend/nightjar/contracts.py`, `docs/**`, `Makefile`, `.github/**`, `README.md`, `.env.example` |
+| **Platform and API** | FastAPI app, settings, auth, sessions and RBAC; organisations, members, invitations and ingest keys; audit chain, SSE outbox and jobs; every HTTP router; incident store and timelines, investigation runs, the approval gate and token issuing, inventory, directory and effectors, ticketing; the **incident clock** (regimes, applicability proposals, deadlines, business days, notices, mock submissions); the hunting store (DuckDB writer, structured query compiler, saved searches, suggestions); executive posture, morning and weekly briefs; seed and reset; Alembic migrations | `backend/nightjar/{core,db,api,schemas,services,incidents,investigations,approvals,directory,ticketing,regimes,hunting,executive,seed}/**`, `backend/nightjar/{main,cli,clock}.py`, `backend/alembic/**` |
+| **Pipeline and intelligence** | Stream backbone (NATS and the in-process bus), ingest formats and the normaliser, Sigma detection and ATT&CK mapping, the rule bundle, correlation, UEBA (Isolation Forest + robust z), the triage classifier (baseline, LightGBM, Optuna, calibration, SHAP, MLflow, model cards, drift), offline intel (ATT&CK and KEV bundles), the LLM adapter and offline fake, the untrusted-text neutraliser, the three A2A agents and the orchestrator, the five MCP tool servers, workers and replay scenarios | `backend/nightjar/{stream,ingest,detect,correlate,ml,agents,mcp_servers,intel,llm,workers}/**`, `backend/nightjar/safety.py`, `backend/nightjar/db/models/pipeline.py` |
+| **Web app** | SvelteKit + TypeScript + Tailwind 4.1 console, landing page, sign-in, the morning brief and the design system | `frontend/**` |
+| **Shared contracts** | Frozen dataclasses and enums shared by the platform and the pipeline | `backend/nightjar/contracts.py`, `backend/nightjar/*/api.py` |
+| **Evaluation and tooling** | Eval harness and gates, data downloaders, toolchain smoke checks, latency measurement | `eval/**`, `scripts/**` |
+| **Tests** | Backend tests by area (platform, API, incidents, reporting, hunting, seed, pipeline, detect, ML, agents, safety); web app tests in `frontend/src/tests/` | `backend/tests/**`, `frontend/src/tests/**` |
+| **Project** | Docs, decision records, Makefile, CI | `docs/**`, `Makefile`, `.github/**`, `README.md`, `.env.example` |
 
 ---
 
@@ -1042,6 +1044,6 @@ them, updating this document). One heavy process at a time on the machine (`~/Wo
 - **Commit messages** are conventional (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `ci:`, `refactor:`, `perf:`),
   in logical batches, with no dates and no tool attribution. Stage explicit paths; never commit `data/`, `.venv`,
   `node_modules`, `.svelte-kit`, `build`, `.tools`, `mlruns/`, `.env`, `*.db` or `*.duckdb`.
-- **Client-facing copy** never shows engineering vocabulary (STANDARDS §4 forbidden list). Say "colleague",
+- **Client-facing copy** never shows engineering vocabulary (the forbidden-word list in `frontend/DESIGN.md` §14). Say "colleague",
   "hand-off", "checked", "pattern check" in the UI; "agent", "A2A", "MCP", "model", "pipeline" only in docs and
   the API.
