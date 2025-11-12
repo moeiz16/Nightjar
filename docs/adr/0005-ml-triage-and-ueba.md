@@ -15,7 +15,7 @@ starts, new processes, distinct and new users, outbound connections, new destina
 off-hours. Novelty features compare with the entity's own profile. Two signals: an **Isolation Forest**
 (scikit-learn, 150 trees) trained on the baseline period per entity type, rank-normalised to 0..1, and a
 **robust z-score** per feature against the entity's own median and MAD. A window is reported when the rank score
-is at least 0.95, some robust z is at least 3 and a novelty or risk feature is present. Plain reasons come from the largest z contributions ("3.2 GB sent out; this account usually sends 40 MB").
+is at least 0.95, some robust z is at least 3 and a novelty or risk feature is present. Plain reasons come from the largest z contributions ("3,200 MB sent out; usually 4 MB").
 Evaluation: precision@k and recall against anomalies injected into held-out replay days.
 
 **Triage classifier (supervised).** 20 features per detection: rule level and track record (precision on the
