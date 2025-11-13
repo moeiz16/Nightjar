@@ -284,5 +284,5 @@ async def me_payload(db: AsyncSession, user: User, sess: UserSession) -> dict:
         "membership": membership,
         "orgs": [org_summary(o, m) for o, m in orgs],
         "session": session_out(sess),
-        "clock": {"today": clock.today().isoformat(), "demo": clock.is_shifted()},
+        "clock": {"today": clock.today().isoformat(), "now": clock.now().isoformat(), "demo": clock.is_shifted()},
     }

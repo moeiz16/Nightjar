@@ -5,12 +5,12 @@ Add new settings to the relevant section; never rename existing ones (the web ap
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, time
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, computed_field
+from pydantic import Field, SecretStr, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     log_json: bool = False
     # Demo clock (see nightjar/clock.py): "today" for walkthroughs and screenshots, e.g. 2025-11-20.
     nightjar_demo_today: date | None = None
+    # Optional time of day for the demo clock (e.g. 10:00, read in nightjar_demo_tz), so "last night" never depends
+    # on when the seed or a walkthrough runs. Needs nightjar_demo_today.
+    nightjar_demo_time: time | None = None
+    nightjar_demo_tz: str = "Europe/Brussels"
+
+    @field_validator("nightjar_demo_today", "nightjar_demo_time", mode="before")
+    @classmethod
+    def _blank_is_unset(cls, value: object) -> object:
+        """`NIGHTJAR_DEMO_TODAY=` (as in .env.example) means real time."""
+        return None if isinstance(value, str) and not value.strip() else value
 
     # ── Security ───────────────────────────────────────────────────────────
     secret_key: SecretStr = SecretStr("dev-insecure-change-me-0123456789abcdef")

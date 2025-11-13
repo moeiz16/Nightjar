@@ -1,7 +1,7 @@
 /* eslint-disable svelte/prefer-svelte-reactivity -- local Date arithmetic, not reactive state */
 import { api } from '$lib/api';
 import type { Me, Role } from '$lib/api/types';
-import { setServerOffset } from '$lib/time/clock';
+import { offsetFromDateHeader, setServerOffset } from '$lib/time/clock';
 
 class Session {
 	me = $state<Me | null>(null);
@@ -33,7 +33,11 @@ class Session {
 	set(me: Me | null) {
 		this.me = me;
 		this.loaded = true;
-		if (me?.clock?.demo && me.clock.today) {
+		if (me?.clock?.demo && me.clock.now) {
+			// the server's demo clock, time of day included
+			const off = offsetFromDateHeader(me.clock.now);
+			if (off) setServerOffset(off);
+		} else if (me?.clock?.demo && me.clock.today) {
 			// keep the browser's time of day, but trust the server's calendar date for business logic
 			const local = new Date();
 			const today = local.toLocaleDateString('sv-SE');

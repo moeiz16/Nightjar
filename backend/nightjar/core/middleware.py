@@ -10,6 +10,7 @@ import uuid
 import structlog
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from nightjar import clock
 from nightjar.core.config import get_settings
 from nightjar.core.logging import request_id_ctx
 from nightjar.core.metrics import HTTP_LATENCY, HTTP_REQUESTS
@@ -50,6 +51,8 @@ class RequestContextMiddleware:
                 status_holder["status"] = message["status"]
                 headers = list(message.get("headers", []))
                 headers.append((b"x-request-id", rid.encode()))
+                # the server's business clock (moves with the demo clock); the web app ticks countdowns from it
+                headers.append((b"x-nightjar-now", clock.now().isoformat(timespec="seconds").encode()))
                 message["headers"] = headers
             await send(message)
 

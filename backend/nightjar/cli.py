@@ -51,7 +51,7 @@ def seed(
 ) -> None:
     """Seed Halden Logistics and Brightline Couriers (idempotent; respects NIGHTJAR_DEMO_TODAY). Stop the API
     first: the seed writes the hunting store, which has a single writer."""
-    clock.install_from_settings()
+    clock.install_from_settings(fresh=True)
     upgrade_head()
     from nightjar.seed import run
 
@@ -67,7 +67,7 @@ def reset(
     """Drop local app data, the hunting store and the stream store, then migrate and seed."""
     if not yes:
         raise typer.BadParameter("pass --yes to drop local data")
-    clock.install_from_settings()
+    clock.install_from_settings(fresh=True)
     from nightjar.seed import reset as do_reset
 
     out = asyncio.run(do_reset(use_pipeline=not fixtures))

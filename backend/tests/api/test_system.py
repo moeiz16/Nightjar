@@ -178,7 +178,8 @@ async def test_me_reports_the_demo_clock(client: httpx.AsyncClient) -> None:
     clock.install("2025-11-20")
     try:
         me = (await client.get(f"{API}/auth/me")).json()
-        assert me["clock"] == {"today": "2025-11-20", "demo": clock.is_shifted()}
+        assert me["clock"]["today"] == "2025-11-20" and me["clock"]["demo"] == clock.is_shifted()
+        assert me["clock"]["now"].startswith("2025-11-20")
     finally:
         clock.uninstall()
 

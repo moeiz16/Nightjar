@@ -133,7 +133,8 @@ export function createClient(opts: ClientOptions) {
 			if (e instanceof DOMException && e.name === 'AbortError') throw e;
 			throw new ApiError({ type: 'about:blank', title: 'Unavailable', status: 503, code: 'unavailable', detail: 'Nightjar SOC cannot be reached right now.' });
 		}
-		const off = offsetFromDateHeader(res.headers.get('date'));
+		// the API's business clock (X-Nightjar-Now moves with the demo clock); the Date header is a fallback
+		const off = offsetFromDateHeader(res.headers.get('x-nightjar-now') ?? res.headers.get('date'));
 		if (off) setServerOffset(off);
 		if (res.status === 204) return undefined as T;
 		const type = res.headers.get('content-type') ?? '';
