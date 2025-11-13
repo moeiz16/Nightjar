@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import datetime
-from typing import Annotated
+from datetime import datetime, timedelta
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import StringConstraints
@@ -76,7 +76,84 @@ async def anomalies(
         (await db.execute(stmt.order_by(AnomalyRow.score.desc()).offset(page.offset).limit(page.page_size))).scalars()
     )
     links = await _incident_map(db, rows)
-    return page.wrap([anomaly_doc(a, links.get(a.detection_id)) for a in rows], total)
+    docs = [anomaly_doc(a, links.get(a.detection_id)) for a in rows]
+    await _add_rhythm(db, ctx.org_id, rows, docs)
+    return page.wrap(docs, total)
+
+
+RHYTHM_DAYS = 14
+
+
+async def _add_rhythm(db: AsyncSession, org_id: Any, rows: list[AnomalyRow], docs: list[dict]) -> None:
+    """For the behaviour page: a plain label for the person or device, a one-line headline (the strongest reason)
+    and a 14 × 24 rhythm grid (local hours in the org's zone), each cell 0..1 by how far above that hour's usual
+    level it sits, the anomaly's own window at 1. Best effort: without the hunting store the fields are omitted."""
+    from zoneinfo import ZoneInfo
+
+    from nightjar.db.models.platform import Organization
+    from nightjar.hunting import api as store
+
+    if not rows:
+        return
+    org = await db.get(Organization, org_id)
+    tz = ZoneInfo((org.timezone if org else None) or "Europe/Brussels")
+    users = {a.entity_id.lower() for a in rows if a.entity_type == "user"}
+    hosts = {a.entity_id.lower() for a in rows if a.entity_type == "host"}
+    people = {
+        i.username.lower(): i
+        for i in (
+            await db.execute(select(Identity).where(Identity.org_id == org_id, Identity.username.in_(users)))
+        ).scalars()
+    }
+    devices = {
+        x.name.lower(): x
+        for x in (await db.execute(select(Asset).where(Asset.org_id == org_id, Asset.name.in_(hosts)))).scalars()
+    }
+    end_local = max(a.window_end for a in rows).astimezone(tz)
+    last_day = end_local.date()
+    first_day = last_day - timedelta(days=RHYTHM_DAYS - 1)
+    since = datetime.combine(first_day, datetime.min.time(), tz)
+    until = datetime.combine(last_day + timedelta(days=1), datetime.min.time(), tz)
+    try:
+        counts = {
+            **await store.hourly_activity(org_id, "user_name", sorted(users), since, until),
+            **await store.hourly_activity(org_id, "host_name", sorted(hosts), since, until),
+        }
+    except Exception:
+        counts = {}
+    for a, doc in zip(rows, docs, strict=True):
+        key = a.entity_id.lower()
+        if a.entity_type == "user" and key in people:
+            p = people[key]
+            doc["label"] = " · ".join(x for x in (p.display_name, p.department) if x)
+        elif a.entity_type == "host" and key in devices:
+            dev = devices[key]
+            doc["label"] = " · ".join(x for x in (dev.name, dev.business_service) if x)
+        reasons = a.reasons or []
+        if reasons:
+            doc["headline"] = str(reasons[0].get("text") or "")
+        grid = [[0.0] * 24 for _ in range(RHYTHM_DAYS)]
+        for hour, n in (counts.get(key) or {}).items():
+            local = hour.astimezone(tz)
+            d = (local.date() - first_day).days
+            if 0 <= d < RHYTHM_DAYS:
+                grid[d][local.hour] += n
+        above = [[0.0] * 24 for _ in range(RHYTHM_DAYS)]
+        for h in range(24):
+            column = sorted(grid[d][h] for d in range(RHYTHM_DAYS))
+            usual = column[RHYTHM_DAYS // 2]
+            for d in range(RHYTHM_DAYS):
+                above[d][h] = max(0.0, grid[d][h] - usual)
+        peak = max((v for row in above for v in row), default=0.0) or 1.0
+        rhythm = [[round(min(0.9, v / peak * 0.9), 3) for v in row] for row in above]
+        start, stop = a.window_start.astimezone(tz), a.window_end.astimezone(tz)
+        cur = start.replace(minute=0, second=0, microsecond=0)
+        while cur < stop:
+            d = (cur.date() - first_day).days
+            if 0 <= d < RHYTHM_DAYS:
+                rhythm[d][cur.hour] = 1.0
+            cur += timedelta(hours=1)
+        doc["rhythm"] = rhythm
 
 
 FEATURE_LABELS = {

@@ -35,6 +35,12 @@ class DelayIn(CamelIn):
     reference: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 
 
+class DeferIn(CamelIn):
+    entity_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
+    decide_by: datetime
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] = ""
+
+
 class NoticeIn(CamelIn):
     regime: Literal["nis2", "sec_8k", "soci", "gdpr_art33"]
     type: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=60)]
@@ -79,6 +85,29 @@ async def sec_delay(
     inc = await get_incident(db, ctx.org_id, incident_id)
     out = await clock_svc.sec_delay(
         db, inc, granted_until=body.granted_until, reference=body.reference, user=ctx.user, ip=ctx.ip
+    )
+    await db.commit()
+    return out
+
+
+@router.post("/incidents/{incident_id}/reporting/{regime}/defer")
+async def defer(
+    incident_id: str,
+    regime: str,
+    body: DeferIn,
+    ctx: RequestContext = Depends(require_perm("reporting:assess")),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    inc = await get_incident(db, ctx.org_id, incident_id)
+    out = await clock_svc.defer(
+        db,
+        inc,
+        regime,
+        entity_id=body.entity_id,
+        decide_by=body.decide_by,
+        note=body.note,
+        user=ctx.user,
+        ip=ctx.ip,
     )
     await db.commit()
     return out

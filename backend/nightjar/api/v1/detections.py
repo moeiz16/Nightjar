@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
+from pydantic import Field, StringConstraints
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from nightjar import clock
 from nightjar.contracts import to_doc
 from nightjar.core.deps import RequestContext, get_db, require_perm
 from nightjar.core.errors import AppError, unavailable
@@ -146,6 +149,7 @@ async def list_rules(
         rules = _rules_api().list_rules(ctx.org_id)
     except NotImplementedError as exc:
         raise unavailable("Detection rules are not loaded yet.") from exc
+    hits, daily, exceptions = await _rule_stats(ctx.org_id)
     out = []
     for r in rules:
         if q and q.lower() not in f"{r.title} {r.id}".lower():
@@ -156,8 +160,40 @@ async def list_rules(
             continue
         if tactic and not any(tactic in a.tactics for a in r.attack):
             continue
-        out.append(to_doc(r))
+        out.append(_rule_doc(r, hits, daily, exceptions))
     return out
+
+
+async def _rule_stats(org_id: uuid.UUID) -> tuple[dict[str, int], dict[str, list[int]], dict[str, int]]:
+    """Hits in the last 7 days, hits per day (oldest first) and active exceptions per rule."""
+    detect = _rules_api()
+    hits = await detect.rule_hits(org_id)
+    daily = await detect.rule_hits_daily(org_id)
+    exceptions: dict[str, int] = {}
+    for sup in await detect.active_suppressions(org_id):
+        exceptions[sup.rule_id] = exceptions.get(sup.rule_id, 0) + 1
+    return hits, daily, exceptions
+
+
+def _rule_doc(r: Any, hits: dict[str, int], daily: dict[str, list[int]], exceptions: dict[str, int]) -> dict:
+    doc = to_doc(r)
+    doc["hits7d"] = hits.get(r.id, 0)
+    doc["hits7dDaily"] = daily.get(r.id, [0] * 7)
+    doc["exceptions"] = exceptions.get(r.id, 0)
+    return doc
+
+
+def _suppression_doc(sup: Any) -> dict:
+    return {
+        "id": str(sup.id),
+        "ruleId": sup.rule_id,
+        "field": sup.field,
+        "value": sup.value,
+        "reason": sup.reason,
+        "createdBy": sup.created_by,
+        "createdAt": sup.created_at.isoformat(),
+        "expiresAt": sup.expires_at.isoformat() if sup.expires_at else None,
+    }
 
 
 @router.get("/rules/{rule_id}")
@@ -169,7 +205,13 @@ async def get_rule(rule_id: str, ctx: RequestContext = Depends(require_perm("rul
     if found is None:
         raise AppError(404, "not_found", "Rule not found", "Rule not found.")
     info, yaml = found
-    return {"rule": to_doc(info), "yaml": yaml}
+    hits, daily, exceptions = await _rule_stats(ctx.org_id)
+    sups = await _rules_api().active_suppressions(ctx.org_id, rule_id)
+    return {
+        "rule": _rule_doc(info, hits, daily, exceptions),
+        "yaml": yaml,
+        "exceptions": [_suppression_doc(x) for x in sups],
+    }
 
 
 class RulePatchIn(CamelIn):
@@ -199,7 +241,106 @@ async def toggle_rule(
         metadata={"title": info.title, "state": "turned on" if body.enabled else "turned off", "enabled": body.enabled},
     )
     await db.commit()
-    return to_doc(info)
+    hits, daily, exceptions = await _rule_stats(ctx.org_id)
+    return _rule_doc(info, hits, daily, exceptions)
+
+
+# ── Exceptions ("Lower the noise", "Mark as expected") ───────────────────────
+_FIELD_LABELS = {"user": "person", "host": "device", "ip": "address"}
+
+
+class SuppressionIn(CamelIn):
+    rule_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=128)]
+    field: Literal["user", "host", "ip"]
+    value: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=10, max_length=1000)]
+    expires_in_days: int | None = Field(default=None, ge=1, le=365)
+
+
+def _rule_title(rule_id: str) -> str:
+    if rule_id.startswith("ueba:"):
+        kind = rule_id.split(":")[1] if ":" in rule_id else "user"
+        return "Unusual behaviour (" + ("people" if kind == "user" else "devices") + ")"
+    from nightjar.detect.engine import rulebook
+
+    meta = rulebook().meta.get(rule_id)
+    return meta.title if meta else rule_id
+
+
+@router.get("/suppressions")
+async def list_suppressions(
+    rule_id: str | None = Query(None, alias="ruleId", max_length=128),
+    ctx: RequestContext = Depends(require_perm("rules:read")),
+) -> list[dict]:
+    return [_suppression_doc(x) for x in await _rules_api().active_suppressions(ctx.org_id, rule_id)]
+
+
+@router.post("/suppressions", status_code=status.HTTP_201_CREATED)
+async def add_suppression(
+    body: SuppressionIn,
+    ctx: RequestContext = Depends(require_perm("rules:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    expires = clock.now() + timedelta(days=body.expires_in_days) if body.expires_in_days else None
+    try:
+        sup = await _rules_api().add_suppression(
+            ctx.org_id,
+            body.rule_id,
+            field=body.field,
+            value=body.value,
+            reason=body.reason,
+            created_by_id=ctx.user.id,
+            created_by=ctx.user.full_name,
+            expires_at=expires,
+        )
+    except KeyError as exc:
+        raise AppError(404, "not_found", "Rule not found", "Rule not found.") from exc
+    await audit(
+        db,
+        ctx,
+        action="rule.exception_added",
+        resource_type="rule",
+        resource_id=body.rule_id[:64],
+        metadata={
+            "title": _rule_title(body.rule_id),
+            "field": body.field,
+            "fieldLabel": _FIELD_LABELS[body.field],
+            "value": body.value,
+            "reason": body.reason,
+            "expiresAt": expires.isoformat() if expires else None,
+        },
+    )
+    await db.commit()
+    return _suppression_doc(sup)
+
+
+@router.delete("/suppressions/{suppression_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_suppression(
+    suppression_id: str,
+    ctx: RequestContext = Depends(require_perm("rules:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    try:
+        sid = uuid.UUID(suppression_id)
+    except ValueError as exc:
+        raise AppError(404, "not_found", "Exception not found", "Exception not found.") from exc
+    sup = await _rules_api().revoke_suppression(ctx.org_id, sid, revoked_by=ctx.user.full_name)
+    if sup is None:
+        raise AppError(404, "not_found", "Exception not found", "Exception not found.")
+    await audit(
+        db,
+        ctx,
+        action="rule.exception_removed",
+        resource_type="rule",
+        resource_id=sup.rule_id[:64],
+        metadata={
+            "title": _rule_title(sup.rule_id),
+            "field": sup.field,
+            "fieldLabel": _FIELD_LABELS[sup.field],
+            "value": sup.value,
+        },
+    )
+    await db.commit()
 
 
 @router.get("/attack/techniques/{technique_id}")

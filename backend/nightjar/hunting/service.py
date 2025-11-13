@@ -211,7 +211,12 @@ async def river(db: AsyncSession, org_id: uuid.UUID, *, after: str | None, limit
     pos = await store_api.event_position(org_id, after) if after else None
     rows = await store_api.recent_rows(org_id, after=pos, limit=limit)
     epm = await store_api.events_per_minute(org_id, clock.now() - timedelta(minutes=5), 5)
-    return {"lines": await river_lines(db, org_id, rows), "eventsPerMinute": epm}
+    minutes: list[dict] = []
+    if rows:  # totals for every minute the lines cover (the lines are a sample; the totals are exact)
+        lo = min(r["ts"] for r in rows).replace(second=0, microsecond=0)
+        hi = max(r["ts"] for r in rows).replace(second=0, microsecond=0) + timedelta(minutes=1)
+        minutes = [{"minute": m.isoformat(), "count": n} for m, n in await store_api.minute_totals(org_id, lo, hi)]
+    return {"lines": await river_lines(db, org_id, rows), "eventsPerMinute": epm, "minutes": minutes}
 
 
 # ── store-writer: the API's durable consumer on normalised events ────────────

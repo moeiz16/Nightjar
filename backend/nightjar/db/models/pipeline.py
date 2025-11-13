@@ -74,3 +74,23 @@ class DeadLetter(Base):
     payload: Mapped[str] = mapped_column(Text)
     retried_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class RuleSuppression(UUIDPkMixin, OrgScopedMixin, Base):
+    """A per-org exception to a detection rule ("Lower the noise", "Mark as expected"): detections from `rule_id`
+    (or any rule starting with it when it ends in `*`, e.g. `ueba:user:*`) whose entities include `value` in
+    `field` are still recorded but scored as suppressed, so they never open an incident on their own. Expiring
+    and revocable; adding and removing one is audited."""
+
+    __tablename__ = "pl_rule_suppressions"
+
+    rule_id: Mapped[str] = mapped_column(String(128), index=True)
+    field: Mapped[str] = mapped_column(String(16))  # user | host | ip
+    value: Mapped[str] = mapped_column(String(255))
+    reason: Mapped[str] = mapped_column(Text)
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType, nullable=True)
+    created_by_name: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    revoked_by_name: Mapped[str | None] = mapped_column(String(200), nullable=True)

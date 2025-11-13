@@ -10,7 +10,7 @@ from __future__ import annotations
 import html
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -148,7 +148,8 @@ async def assessments_for_incident(db: AsyncSession, inc: Incident) -> list[dict
                 "jurisdiction": ent.get("jurisdiction", rules.REGIMES[r.regime]["jurisdiction"]),
                 "entityId": r.entity_id,
                 "entityName": ent.get("name", r.entity_id),
-                "proposal": r.proposal,
+                "proposal": {k: v for k, v in (r.proposal or {}).items() if k != "deferral"},
+                "deferral": (r.proposal or {}).get("deferral") if det is None else None,
                 "determination": det,
             }
         )
@@ -194,11 +195,19 @@ def deadline_doc(d: DeadlineRow, inc: Incident, ent: dict | None, now: datetime 
         "noticeId": str(d.notice_id) if d.notice_id else None,
         "submittedAt": d.submitted_at.isoformat() if d.submitted_at else None,
         "basis": d.basis,
+        "decideBy": None,
     }
 
 
 def _pending_doc(a: RegimeAssessmentRow, inc: Incident, ent: dict | None) -> dict:
-    """`not_started`: an assessment is open (proposal yes/assess, no determination yet)."""
+    """`not_started`: an assessment is open (proposal yes/assess, no determination yet). With a deferral ("Not
+    yet: decide by…") the entry carries `decideBy` and reads "Decision due"."""
+    deferral = (a.proposal or {}).get("deferral") or None
+    basis = "; ".join((a.proposal or {}).get("reasons") or [])
+    if deferral:
+        basis = f"Decision set for {deferral['decideBy'][:10]} by {deferral['by']}" + (
+            f": {deferral['note']}" if deferral.get("note") else ""
+        )
     return {
         "id": f"assessment-{a.id}",
         "incidentId": str(inc.id),
@@ -206,7 +215,7 @@ def _pending_doc(a: RegimeAssessmentRow, inc: Incident, ent: dict | None) -> dic
         "regime": a.regime,
         "regimeLabel": rules.regime_label(a.regime),
         "noticeType": None,
-        "noticeLabel": "Assessment open",
+        "noticeLabel": "Decision due" if deferral else "Assessment open",
         "jurisdiction": (ent or {}).get("jurisdiction", rules.REGIMES[a.regime]["jurisdiction"]),
         "entityId": a.entity_id,
         "startsAt": None,
@@ -217,7 +226,8 @@ def _pending_doc(a: RegimeAssessmentRow, inc: Incident, ent: dict | None) -> dic
         "remainingSeconds": None,
         "noticeId": None,
         "submittedAt": None,
-        "basis": "; ".join((a.proposal or {}).get("reasons") or []),
+        "basis": basis,
+        "decideBy": deferral["decideBy"] if deferral else None,
     }
 
 
@@ -511,6 +521,108 @@ async def assess(db: AsyncSession, inc: Incident, regime: str, body: dict, *, us
     await announce_updated(db, inc, ["reporting"])
     docs = await assessments_for_incident(db, inc)
     return next(d for d in docs if d["regime"] == regime and d["entityId"] == ent["id"])
+
+
+async def defer(
+    db: AsyncSession,
+    inc: Incident,
+    regime: str,
+    *,
+    entity_id: str,
+    decide_by: datetime,
+    note: str,
+    user: User,
+    ip: str | None,
+) -> dict:
+    """Not yet, decide by: record when the person with `reporting:assess` will decide. No clock starts; the
+    open assessment reads "Decision due" in the clock bar, the timeline and the shift log say so, and the sweep
+    posts a reminder once the date has passed. Refused once a determination exists (`409 already_decided`)."""
+    from nightjar.incidents.service import add_timeline, announce_updated
+
+    if regime not in rules.REGIME_IDS:
+        raise AppError(404, "not_found", "Regime not found", "Unknown reporting regime.")
+    org = await db.get(Organization, inc.org_id)
+    assert org is not None
+    ent = entity_by_id(org, entity_id)
+    if ent is None or regime not in rules.entity_regimes(ent):
+        raise validation_error(
+            "This legal entity is not in scope of that regime.",
+            [{"field": "entityId", "message": "Choose a legal entity that this regime applies to."}],
+        )
+    now = clock.now()
+    if decide_by.tzinfo is None:
+        decide_by = decide_by.replace(tzinfo=UTC)
+    if decide_by <= now:
+        raise validation_error("Choose a time in the future.", [{"field": "decideBy", "message": "Must be later."}])
+    if decide_by > now + timedelta(days=30):
+        raise validation_error(
+            "Decide within 30 days: the decision must be made without unreasonable delay.",
+            [{"field": "decideBy", "message": "Choose a date within 30 days."}],
+        )
+    row = (
+        await db.execute(
+            select(RegimeAssessmentRow).where(
+                RegimeAssessmentRow.incident_id == inc.id,
+                RegimeAssessmentRow.regime == regime,
+                RegimeAssessmentRow.entity_id == ent["id"],
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        row = RegimeAssessmentRow(
+            org_id=inc.org_id,
+            incident_id=inc.id,
+            regime=regime,
+            entity_id=ent["id"],
+            proposal={
+                "applies": "assess",
+                "reasons": ["Assessment opened by a person."],
+                "proposedAt": now.isoformat(),
+            },
+        )
+        db.add(row)
+    if row.determination is not None:
+        raise AppError(409, "already_decided", "Conflict", "This decision has already been recorded.")
+    deferral = {
+        "decideBy": decide_by.astimezone(UTC).isoformat(),
+        "note": note,
+        "by": user.full_name,
+        "byId": str(user.id),
+        "at": now.isoformat(),
+        "reminded": False,
+    }
+    row.proposal = {**(row.proposal or {}), "deferral": deferral}
+    label = rules.regime_label(regime)
+    tz = ZoneInfo(str(ent.get("timezone") or "UTC"))
+    day = decide_by.astimezone(tz).strftime("%a %-d %b %H:%M")
+    await add_timeline(
+        db,
+        inc.org_id,
+        inc.id,
+        kind="clock",
+        actor_type="user",
+        actor_name=user.full_name,
+        title=f"{label}: decision set for {day} ({tz.key.split('/')[-1].replace('_', ' ')} time). No clock yet",
+        body=note or None,
+        executive=True,
+    )
+    await audit(
+        db,
+        None,
+        org_id=inc.org_id,
+        action="reporting.deferred",
+        resource_type="incident",
+        resource_id=inc.id,
+        actor_id=user.id,
+        actor_name=user.full_name,
+        ip=ip,
+        metadata={"reference": inc.reference, "regime": regime, "regimeLabel": label, "decideBy": day},
+    )
+    await announce_updated(db, inc, ["reporting"])
+    await db.flush()
+    return next(
+        a for a in await assessments_for_incident(db, inc) if a["regime"] == regime and a["entityId"] == ent["id"]
+    )
 
 
 async def sec_delay(
@@ -1067,6 +1179,25 @@ async def sweep(db: AsyncSession) -> int:
     )
     now = clock.now()
     n = 0
+    from nightjar.incidents.service import add_timeline
+
+    pending = list(
+        (await db.execute(select(RegimeAssessmentRow).where(RegimeAssessmentRow.determination.is_(None)))).scalars()
+    )
+    for a in pending:
+        deferral = (a.proposal or {}).get("deferral")
+        if not deferral or deferral.get("reminded") or datetime.fromisoformat(deferral["decideBy"]) > now:
+            continue
+        a.proposal = {**a.proposal, "deferral": {**deferral, "reminded": True}}
+        n += 1
+        await add_timeline(
+            db,
+            a.org_id,
+            a.incident_id,
+            kind="clock",
+            title=f"Reminder: the {rules.regime_label(a.regime)} decision set by {deferral['by']} is due now",
+            executive=True,
+        )
     for d in rows:
         state = rules.clock_state(regime=d.regime, starts_at=d.starts_at, due_at=d.due_at, now=now, submitted=False)
         if state != d.state:

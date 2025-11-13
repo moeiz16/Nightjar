@@ -28,6 +28,7 @@ ROUTERS = (
     "events",
     "detections",
     "incidents",
+    "inventory",
     "investigations",
     "actions",
     "reporting",
@@ -43,6 +44,7 @@ OPENAPI_TAGS = [
     {"name": "auth", "description": "Sign-in, sessions and organisation switching"},
     {"name": "organisation", "description": "Organisation profile, members, invitations and event-source keys"},
     {"name": "ingest", "description": "Event intake: webhook, syslog-style JSON and file replay"},
+    {"name": "inventory", "description": "Asset inventory and identity directory"},
     {"name": "events", "description": "Normalised event search"},
     {"name": "detections", "description": "Rule and behaviour detections, detection rules"},
     {"name": "incidents", "description": "Incidents, timelines, affected assets and identities"},
@@ -137,7 +139,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "X-CSRF-Token", "X-Request-ID", "Last-Event-ID", s.ingest_key_header],
-        expose_headers=["X-Request-ID", "Retry-After", "Content-Disposition"],
+        expose_headers=["X-Request-ID", "X-Nightjar-Now", "Retry-After", "Content-Disposition"],
     )
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestContextMiddleware)

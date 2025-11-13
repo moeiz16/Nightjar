@@ -24,7 +24,15 @@ from typing import Any
 import structlog
 
 from nightjar import clock
-from nightjar.contracts import Anomaly, CorrelationUpdate, Detection, IncidentRef, NormalizedEvent, RawEvent
+from nightjar.contracts import (
+    Anomaly,
+    CorrelationUpdate,
+    Detection,
+    IncidentRef,
+    NormalizedEvent,
+    RawEvent,
+    Reason,
+)
 from nightjar.core.metrics import ALERT_TO_TRIAGE, DETECTIONS
 from nightjar.correlate.correlator import Correlator
 from nightjar.detect.engine import Detector
@@ -69,6 +77,7 @@ class Pipeline:
         self.first_detection_at: dict[str, float] = {}  # correlation key → monotonic time of first detection
         self.triage_latency: list[float] = []
         self.counts: dict[str, int] = defaultdict(int)
+        self._suppressions: dict[uuid.UUID, tuple[float, list[Any]]] = {}
 
     # ── normalizer ─────────────────────────────────────────────────────────
     async def on_raw(self, msg: Msg) -> None:
@@ -207,6 +216,7 @@ class Pipeline:
         model = champion()
         if model is not None:
             d = replace(d, triage=model.score(d, row))
+        d = await self._apply_suppressions(d)
         await incidents.record_detections(d.org_id, [d])
         DETECTIONS.labels(source=d.source, severity=d.severity).inc()
         self.counts["detections"] += 1
@@ -220,6 +230,32 @@ class Pipeline:
                 "Nj-Detected-At": msg.headers.get("Nj-Detected-At", str(time.monotonic())),
             },
         )
+
+    async def _apply_suppressions(self, d: Detection) -> Detection:
+        """Per-org exceptions ("Lower the noise", "Mark as expected"): the detection is kept, scored suppressed,
+        and its first reason says who allowed it and why, so it never opens an incident on its own."""
+        if d.triage is None:
+            return d
+        hit = self._suppressions.get(d.org_id)
+        if hit is None or time.monotonic() - hit[0] > 30:
+            from nightjar.detect.api import active_suppressions
+
+            try:
+                hit = (time.monotonic(), await active_suppressions(d.org_id))
+            except Exception:
+                hit = (time.monotonic(), [])
+            self._suppressions[d.org_id] = hit
+        match = next((s for s in hit[1] if s.matches(d.rule_id, d.entities)), None)
+        if match is None:
+            return d
+        self.counts["suppressed_by_exception"] += 1
+        why = Reason(
+            feature="exception",
+            value=match.value,
+            contribution=-1.0,
+            text=f"Marked as expected by {match.created_by}: {match.reason}"[:300],
+        )
+        return replace(d, triage=replace(d.triage, suppressed=True, reasons=(why, *d.triage.reasons[:2])))
 
     # ── correlator ─────────────────────────────────────────────────────────
     async def _restore(self, org_id: uuid.UUID) -> None:
@@ -364,6 +400,10 @@ class Pipeline:
         orgs = [org_id] if org_id else list(self.detector._orgs)
         for org in orgs:
             self.detector.set_disabled(org, await disabled_rules(org))
+        if org_id:
+            self._suppressions.pop(org_id, None)
+        else:
+            self._suppressions.clear()
 
 
 HANDLERS = {

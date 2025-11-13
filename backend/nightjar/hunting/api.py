@@ -222,3 +222,42 @@ async def export_snapshot(org_id: uuid.UUID, dest: Path, *, since: datetime) -> 
 
 
 EVENT_COLUMN_NAMES = [n for n, _c in EVENT_COLUMNS]
+
+
+async def event_row(org_id: uuid.UUID, event_id: str) -> dict[str, Any] | None:
+    """The river columns of one event (for templated, plain-language lines), or None."""
+    cols = (
+        "event_id, ts, dataset, action, outcome, category, severity, host_name, user_name, source_ip, source_geo, "
+        "destination_ip, process_name, cloud_api, cloud_access_key_id"
+    )
+    names, rows = await _run(f"SELECT {cols} FROM events WHERE org_id = ? AND event_id = ?", [str(org_id), event_id])
+    return dict(zip(names, rows[0], strict=True)) if rows else None
+
+
+async def minute_totals(org_id: uuid.UUID, time_from: datetime, time_to: datetime) -> list[tuple[datetime, int]]:
+    """Events per minute of event time in [from, to): the river's per-minute totals."""
+    _c, rows = await _run(
+        "SELECT date_trunc('minute', ts) AS m, count(*) FROM events WHERE org_id = ? AND ts >= ? AND ts < ?"
+        " GROUP BY m ORDER BY m",
+        [str(org_id), time_from, time_to],
+    )
+    return [(r[0], int(r[1])) for r in rows]
+
+
+async def hourly_activity(
+    org_id: uuid.UUID, column: str, values: Sequence[str], since: datetime, until: datetime
+) -> dict[str, dict[datetime, int]]:
+    """Events per UTC hour for each user or host in `values` (column `user_name` or `host_name`): the behaviour
+    page's rhythm strips."""
+    if column not in ("user_name", "host_name") or not values:
+        return {}
+    marks = ", ".join("?" for _ in values)
+    _c, rows = await _run(
+        f"SELECT lower({column}), date_trunc('hour', ts) AS h, count(*) FROM events WHERE org_id = ? AND ts >= ?"
+        f" AND ts < ? AND lower({column}) IN ({marks}) GROUP BY 1, 2",
+        [str(org_id), since, until, *[v.lower() for v in values]],
+    )
+    out: dict[str, dict[datetime, int]] = {}
+    for value, hour, n in rows:
+        out.setdefault(value, {})[hour] = int(n)
+    return out

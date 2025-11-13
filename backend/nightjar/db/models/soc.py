@@ -407,6 +407,26 @@ class NoticeVersion(UUIDPkMixin, Base):
 
 
 # ── Hunting, executive briefs, model promotions ──────────────────────────────
+class StepFeedback(UUIDPkMixin, OrgScopedMixin, Base):
+    """A person disagreed with a colleague's step ("Disagree" in the step drawer). Kept as a labelled example:
+    the person's verdict for the detections of the incident at that moment (`label_detection_ids`), for the next
+    triage-model retraining and for the agents' accuracy review."""
+
+    __tablename__ = "step_feedback"
+    __table_args__ = (Index("ix_step_feedback_run_seq", "run_id", "seq"),)
+
+    incident_id: Mapped[uuid.UUID] = mapped_column(UUIDType, index=True)
+    run_id: Mapped[uuid.UUID] = mapped_column(UUIDType)
+    seq: Mapped[int] = mapped_column(Integer)
+    verdict: Mapped[str] = mapped_column(String(24))
+    note: Mapped[str] = mapped_column(Text, default="")
+    recorded_verdict: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    label_detection_ids: Mapped[list] = mapped_column(JSONType, default=list)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType, nullable=True)
+    user_name: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
 class SavedSearch(UUIDPkMixin, OrgScopedMixin, TimestampMixin, Base):
     __tablename__ = "saved_searches"
 

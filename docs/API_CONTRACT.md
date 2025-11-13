@@ -17,13 +17,16 @@ Changing a shape here means changing it in the same commit as the code. `backend
 - Base path **`/api/v1`**. The web app (SvelteKit on :3030) proxies `/api` to the API on :8030, so the browser
   sees one origin and cookies just work.
 - JSON is **camelCase** on the wire. Maps that keep their keys as written: `raw` (original event payload),
-  `fields` (matched detection fields), `detail` (agent step detail), `features` (model feature ids), `params`.
+  `payload` (raw intake on the bus), `fields` (matched detection fields), `detail` (agent step detail), `features`
+  and `robustZ` (model feature ids), `params`.
 - Ids are UUID strings, except event ids (`eventId`, a 32-hex content hash) and incident references (`NJ-1042`).
   Timestamps are ISO-8601 with offset, always UTC from the API (`2025-11-20T03:12:04+00:00`); the web app shows
   them in the viewer's zone and, for regulator clocks, also in the regime's zone. Calendar dates `YYYY-MM-DD`.
   Countries ISO-3166 alpha-2. Durations in seconds (`…Seconds`) unless named otherwise.
-- "Today" and "now" come from the server clock (`clock.now()`), which `NIGHTJAR_DEMO_TODAY` can shift. `GET
-  /auth/me` returns `clock.today` so the web app never trusts the browser date for business logic.
+- "Today" and "now" come from the server clock (`clock.now()`), which `NIGHTJAR_DEMO_TODAY` can shift (and
+  `NIGHTJAR_DEMO_TIME` pin to a time of day, shared by every process through `data/demo-clock.json`). `GET
+  /auth/me` returns `clock.today` and `clock.now`, and every response carries **`X-Nightjar-Now`** (the server's
+  business clock, ISO-8601), so the web app never trusts the browser clock for business logic.
 - Every response carries `X-Request-ID` (echoed when the client sends a valid one). API responses are
   `Cache-Control: no-store`. The SSE stream sends `Cache-Control: no-cache, no-transform` and `X-Accel-Buffering: no`.
 - Anything that came from a log (event messages, command lines, email subjects, file names, user agents, agent
@@ -98,7 +101,7 @@ Org        = { id, name, slug, timezone, profile: OrgProfile, settings: OrgSetti
 Me         = { user: User, activeOrg: Org | null,
                membership: { role, roleLabel, permissions: string[] } | null,
                orgs: OrgSummary[], session: { expiresAt, absoluteExpiresAt },
-               clock: { today: "YYYY-MM-DD", demo: boolean } }
+               clock: { today: "YYYY-MM-DD", now: datetime, demo: boolean } }
 ```
 
 ## 1.3 Roles and permissions
@@ -214,7 +217,7 @@ mapping per format lives in `backend/nightjar/ingest/formats/*.py`; the Sigma fi
 |---|---|---|---|
 | GET | `/events` *(paged)* | `events:read` | `?from=&to=&q=&dataset=&host=&user=&ip=&action=&outcome=` (structured filters only; `q` is a contains match on message/command line) → `NormalizedEventDoc[]` newest first (hunting store) |
 | GET | `/events/{eventId}` | `events:read` | full doc with `raw` |
-| GET | `/events/river` | `watch:read` | `?after=<eventId>&limit=50` → `{ lines: RiverLine[], eventsPerMinute }`, plain-language lines grouped by minute |
+| GET | `/events/river` | `watch:read` | `?after=<eventId>&limit=50` → `{ lines: RiverLine[], eventsPerMinute, minutes: { minute, count }[] }`, plain-language lines grouped by minute; `minutes` = exact event totals for every minute (event time) the lines cover |
 
 ```text
 RiverLine = { eventId, at, text, dataset, severity: Severity|null, anomaly: boolean, incidentId: string|null }
@@ -229,8 +232,11 @@ RiverLine = { eventId, at, text, dataset, severity: Severity|null, anomaly: bool
 | GET | `/detections` *(paged)* | `detections:read` | `?from=&to=&severity=&source=sigma\|ueba\|external&band=likely_real\|uncertain\|likely_noise&incidentId=&ruleId=` newest first |
 | GET | `/detections/{id}` | `detections:read` | `DetectionDoc` with `evidence` |
 | GET | `/rules` | `rules:read` | `RuleInfo[]` `?q=&source=&enabled=&tactic=` |
-| GET | `/rules/{id}` | `rules:read` | `{ rule: RuleInfo, yaml }` |
+| GET | `/rules/{id}` | `rules:read` | `{ rule: RuleInfo, yaml, exceptions: RuleException[] }` (active exceptions for this rule) |
 | PATCH | `/rules/{id}` | `rules:manage` | `{ enabled }` → `RuleInfo` (audited `rule.toggled`; applied within 5 s) |
+| GET | `/suppressions` | `rules:read` | `?ruleId=` → `RuleException[]` (active: not removed, not expired) |
+| POST | `/suppressions` | `rules:manage` | `{ ruleId, field: "user"\|"host"\|"ip", value, reason (10–1,000), expiresInDays? (1–365) }` → `201 RuleException` ("Lower the noise" on a rule; "Mark as expected" on unusual behaviour with `ruleId` `ueba:user:*` / `ueba:host:*`); audited `rule.exception_added`; the scorer applies it within 30 s |
+| DELETE | `/suppressions/{id}` | `rules:manage` | `204`; audited `rule.exception_removed` |
 | GET | `/attack/techniques/{id}` | `rules:read` | `{ techniqueId, name, tactics, description, url }` (ATT&CK v18.1 offline) |
 
 ```text
@@ -244,8 +250,13 @@ DetectionDoc = { id, source, ruleId, ruleTitle, severity, confidence, attack: At
                  incidentId: string|null, evidence?: EventSnapshotDoc[] }
 EventSnapshotDoc = { eventId, timestamp, dataset, action, summary: UntrustedText, host, user, fields }
 RuleInfo = { id, title, source: "sigma"|"ueba"|"nightjar", level, status, logsource, attack: AttackRef[],
-             enabled, hits7d, precisionEstimate: number|null, origin }
+             enabled, hits7d, hits7dDaily: number[7] (oldest day first), exceptions: number,
+             precisionEstimate: number|null, origin }
+RuleException = { id, ruleId, field: "user"|"host"|"ip", value, reason, createdBy, createdAt, expiresAt: string|null }
 ```
+A detection whose rule matches an exception (`ruleId` exactly, or as a prefix when it ends in `*`) and whose
+entities include `value` in `field` is still recorded and searchable, but scored `suppressed: true` with the first
+reason "Marked as expected by <name>: <reason>", so it never opens an incident on its own.
 
 ## 1.8 Incidents
 
@@ -257,6 +268,8 @@ Stages run **Triage → Investigate → Contain → Report** (`stage`); status i
 | GET | `/incidents/{id}` | `incidents:read` | `Incident` |
 | GET | `/incidents/{id}/timeline` | `incidents:read` | `TimelineEntry[]` oldest first (`?audience=executive` returns the plain-language subset) |
 | GET | `/incidents/{id}/detections` | `detections:read` | `DetectionDoc[]` |
+| GET | `/incidents/{id}/evidence` | `incidents:read` | `EvidenceSummary`: what the incident rests on, for every reader (the CISO drafts notices from it); no matched fields, event copies or log text, which stay behind `detections:read` |
+| POST | `/incidents/{id}/evidence` | `incidents:write` | `{ eventId, note? }` → `201 TimelineEntry` (kind `detection`, actor the person, `refId` the event, templated title "Added from a hunt: …"); open incidents only (`422 invalid_transition`); `404` unknown event; `409 conflict` already added; audited `incident.evidence_added` |
 | PATCH | `/incidents/{id}` | `incidents:write` | `{ status?, severity?, assigneeId?, title?, resolution? , version }` → `Incident`; `409 stale_version`; `422 invalid_transition` |
 | POST | `/incidents/{id}/notes` | `incidents:write` | `{ body }` (≤ 4,000 chars) → `TimelineEntry` |
 | POST | `/incidents/{id}/merge` | `incidents:write` | `{ incidentIds: string[] }` → `Incident` (others closed as merged) |
@@ -280,7 +293,19 @@ TimelineEntry = { id, at, kind: "detection"|"anomaly"|"agent"|"handoff"|"approva
                   executive: boolean }
 AssetDoc = { id, name, kind, ips, os, site, jurisdiction, owner, businessService, criticality, tags, isolated, vulnerabilities: KevHitDoc[] }
 IdentityDoc = { id, username, displayName, email, department, title, jurisdiction, manager, privileged, mfa, usualCountries, disabled, kind }
+EvidenceSummary = { detections: { id, source, ruleTitle, severity, attack: AttackRef[], firstSeen, lastSeen, eventCount,
+                                  hosts: string[], users: string[], band, suppressed }[],
+                    huntMatches: TimelineEntry[] }
 ```
+
+### 1.8a Inventory (asset inventory and identity directory)
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/assets` | `incidents:read` | `?q=&kind=&criticality=` → `AssetDoc[]`, crown jewels first, then by name |
+| GET | `/identities` | `incidents:read` | `?q=&kind=&privileged=` → `IdentityDoc[]` by display name |
+
+Read-only: the inventory changes only through approved response actions (isolation, account switches).
 Transitions: `new → triage → investigating → containing → monitoring → resolved → closed`; any open status may go
 to `resolved` with a `resolution.reason` (`contained`, `benign`, `false_positive`, `duplicate`, `merged`); `resolved
 → closed` after 24 h or by hand; `reopen` returns to `investigating`. Severity changes by hand are audited with
@@ -294,6 +319,7 @@ the old/new value.
 | POST | `/incidents/{id}/investigations` | `investigations:run` | `{ reason? }` → `202 RunSummary` (rerun); `503 agents_unavailable` |
 | GET | `/investigations/{runId}` | `investigations:read` | `Run` with all steps |
 | GET | `/investigations/{runId}/steps/{seq}` | `investigations:read` | `AgentStepDoc` with full `detail` |
+| POST | `/investigations/{runId}/steps/{seq}/feedback` | `incidents:write` | "Disagree": `{ verdict: "true_positive"\|"benign"\|"false_positive"\|"needs_review", note? }` → `201 { id, runId, seq, verdict, note, recordedVerdict, labelledDetections, by, at }`. Kept as a labelled example (the incident's detections with the person's verdict, table `step_feedback`) for the next triage retraining; a timeline note and audit `investigation.step_disagreed`; the recorded run is never changed |
 | GET | `/investigations/{runId}/replay` | `investigations:read` | `{ runId, steps: AgentStepDoc[], verification: { inputHashesMatch: boolean, offlineReplayVerdict, recordedVerdict, method: "replayed"\|"recorded" } }` re-runs the offline policy over the recorded inputs and compares (`replayed`, via `agents.replay_verify`); when the agents are unavailable it checks the record is complete instead (`recorded`) |
 
 ```text
@@ -384,6 +410,7 @@ arithmetic is unit-tested around weekends and Thanksgiving.
 | GET | `/incidents/{id}/reporting` | `reporting:read` | `{ assessments: RegimeAssessment[], deadlines: Deadline[], notices: NoticeSummary[] }` |
 | POST | `/incidents/{id}/reporting/{regime}/assess` | `reporting:assess` | `RegimeDetermination` → `RegimeAssessment` (starts or stops the clock; audited `reporting.assessed`, `reporting.clock_started`) |
 | POST | `/incidents/{id}/reporting/sec_8k/delay` | `reporting:assess` | `{ grantedUntil, reference }` (AG delay) |
+| POST | `/incidents/{id}/reporting/{regime}/defer` | `reporting:assess` | "Not yet: decide by…": `{ entityId, decideBy (future, ≤ 30 days), note? }` → `RegimeAssessment` with `deferral`. No clock starts; the open assessment reads "Decision due" with `decideBy` in `/reporting/clocks`; an executive timeline row and audit `reporting.deferred`; once `decideBy` passes, the sweep adds one reminder row. `409 already_decided` after a determination |
 | POST | `/incidents/{id}/notices` | `notices:draft` | `{ regime, type }` → `201 Notice` (drafted from incident facts; offline fake text by default) |
 | GET | `/notices/{id}` | `reporting:read` | `Notice` with versions |
 | PATCH | `/notices/{id}` | `notices:draft` | `{ sections: { key, body }[], version }` → `Notice` (new version; `409 stale_version`) |
@@ -396,18 +423,21 @@ RegimeAssessment = { regime, regimeLabel, jurisdiction, entityId, entityName,
                      proposal: { applies: "yes"|"no"|"assess", reasons: string[], proposedAt },
                      determination: { applies: boolean, significant?: boolean, material?: boolean,
                                       impactLevel?: "significant"|"relevant", awareAt?, materialityDeterminedAt?,
-                                      rationale, by: User, at } | null }
+                                      rationale, by: User, at } | null,
+                     deferral: { decideBy, note, by: string, at } | null }   # only while no determination exists
 RegimeDetermination = { applies: boolean, rationale: string (10–2,000 chars),
                         awareAt?: datetime (nis2, soci, gdpr_art33), materialityDeterminedAt?: datetime (sec_8k),
                         impactLevel?: "significant"|"relevant" (soci), entityId: string }
 Deadline = { id, incidentId, incidentReference, regime, regimeLabel, noticeType, noticeLabel, jurisdiction, entityId,
              startsAt, dueAt, dueAtLocal: { at, timezone }, businessDays: number|null,
              state: "not_started"|"on_track"|"due_soon"|"overdue"|"submitted"|"not_required",
-             remainingSeconds: number|null, noticeId: string|null, submittedAt: string|null, basis: string }
+             remainingSeconds: number|null, noticeId: string|null, submittedAt: string|null, basis: string,
+             decideBy: string|null }
 # remainingSeconds is negative when overdue and null once submitted. businessDays (8-K only) counts New York
 # business days in (today, due day]. A `not_started` entry is an open assessment (proposal yes/assess, no
 # determination yet): id "assessment-<uuid>", noticeType/startsAt/dueAt/dueAtLocal null, noticeLabel
-# "Assessment open", basis = the proposal's reasons. /reporting/clocks lists running clocks soonest first, then
+# "Assessment open" (or "Decision due" with `decideBy` after a deferral), basis = the proposal's reasons.
+# /reporting/clocks lists running clocks soonest first, then
 # open assessments. The one-month NIS2 deadline reads `nis2.progress_report` while the incident is still open.
 NoticeSummary = { id, regime, type, typeLabel, status: "draft"|"approved"|"submitted", version, dueAt, submittedAt }
 Notice = NoticeSummary & { incidentId, entity: { id, name },
@@ -503,7 +533,11 @@ executed containment action (or resolution as benign). Both exclude merged incid
 | GET | `/detections/{id}/triage` | `detections:read` | `TriageScoreDoc` |
 
 ```text
-AnomalyDoc = { id, entityType, entityId, windowStart, windowEnd, score, reasons: Reason[], features, detectionId, incidentId }
+AnomalyDoc = { id, entityType, entityId, windowStart, windowEnd, score, reasons: Reason[], features, detectionId, incidentId,
+               label?, headline?, rhythm?: number[14][24] }
+# The list adds, for the behaviour page: `label` ("Joy Okafor · Accounts payable"), `headline` (the strongest
+# reason) and `rhythm`, events per local hour (org zone) over the 14 days ending on the anomaly's day, each cell
+# 0..0.9 by how far above that hour's usual level it sits and 1 for the anomaly's own window.
 ModelInfo  = { name, version, stage, trainedOn, metrics: { [k]: number }, gatesPassed, promotedBy, cardMarkdown?,
                calibration?: { bin, predicted, observed, count }[], drift?: { feature, psi }[] }
 ```
@@ -575,8 +609,8 @@ recipient's permissions. Payloads are small; fetch details by id.
 | `job.updated` | `{ jobId, kind, status, progress }` | job creator |
 | `brief.ready` | `{ week }` | `exec:read` |
 
-Countdowns tick in the browser from `dueAt` and the server clock offset (`Me.clock` + response `Date` header);
-the API does not stream ticks.
+Countdowns tick in the browser from `dueAt` and the server clock offset (`Me.clock.now` + the `X-Nightjar-Now`
+response header, falling back to `Date`); the API does not stream ticks.
 
 ---
 
@@ -618,6 +652,9 @@ append-only logs (integer ids). `created_at`/`updated_at` on all mutable rows. P
 | pipeline | `pl_rule_overrides` | org_id, rule_id, enabled |
 | | `pl_ueba_baselines` | org_id, entity_type, entity_id, feature, median, mad, p95, n, updated_at |
 | | `pl_correlation_state` | org_id, correlation_key, incident_id, entities, last_seen (warm start; the incident table remains the source of truth) |
+| | `pl_dead_letters` | org_id (nullable: a message that could not be parsed has no org), stream, consumer, subject, original_seq, deliveries, reason, headers (JSON), payload (original body, untrusted text), retried_at, created_at; integer id = the `seq` of `GET /pipeline/dlq`. Mirrors `NJ_DLQ` so the register survives a memory-bus process; written by the DLQ mover, read and retried by the API |
+| | `pl_rule_suppressions` | org_id, rule_id (exact, or a prefix ending in `*`), field (user/host/ip), value, reason, created_by_id, created_by_name, created_at, expires_at, revoked_at, revoked_by_name (`RuleException`, §1.7) |
+| feedback | `step_feedback` | org_id, incident_id, run_id, seq, verdict, note, recorded_verdict, label_detection_ids (JSON), user_id, user_name, created_at (step "Disagree", §1.9) |
 
 The **hunting store** is DuckDB (`data/hunting.duckdb`), not SQLAlchemy: table `events` with the flattened ECS
 columns of §1.6 plus `org_id`, `raw JSON`, partitioned logically by `org_id` and day; owned by the API process (ADR 0004).
@@ -925,8 +962,10 @@ then re-seeds). All data is synthetic and fictional, labelled "Sample data" in t
 Domains use the reserved `.example` TLD; IPs use documentation ranges (192.0.2.0/24, 198.51.100.0/24,
 203.0.113.0/24) except the clearly-labelled sample "known bad" range. **Times are relative** to the demo clock:
 `night` = the most recent 00:00 Europe/Brussels such that now ≥ night + 09:00 (so screenshots after 09:00 show
-"last night"). Recommended screenshot date: `NIGHTJAR_DEMO_TODAY=2025-11-20` (a Thursday), which makes the SEC
-clock read "3 business days" and the Thanksgiving holiday visible in the 8-K arithmetic of later incidents.
+"last night"). Recommended screenshot setting: `NIGHTJAR_DEMO_TODAY=2025-11-20` (a Thursday) with
+`NIGHTJAR_DEMO_TIME=10:00`, which makes the SEC clock read "3 business days" and the Thanksgiving holiday visible
+in the 8-K arithmetic of later incidents. Without `NIGHTJAR_DEMO_TIME` the time of day is the real one, so a seed or
+walkthrough before 09:00 Brussels lands "last night" a day earlier.
 
 Seed phases: (1) platform: orgs, users, memberships, inventory, sign-in history, regulator contacts, ingest
 keys, 35 historical incidents over the previous 45 days (closed, with triage/contain times for the executive

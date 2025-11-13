@@ -69,6 +69,11 @@ class ReasonIn(CamelIn):
     reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=1000)]
 
 
+class HuntMatchIn(CamelIn):
+    event_id: Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^[0-9a-f]{32}$")]
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)] | None = None
+
+
 class RerunIn(CamelIn):
     reason: Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None = None
 
@@ -163,6 +168,121 @@ async def detections(
         ).scalars()
     }
     return [detection_doc(d, scores.get(d.id), incident_ref=inc.reference) for d in rows]
+
+
+@router.get("/{incident_id}/evidence")
+async def evidence_summary(
+    incident_id: str, ctx: RequestContext = Depends(require_perm("incidents:read")), db: AsyncSession = Depends(get_db)
+) -> dict:
+    """What the incident rests on, summarised for every reader (the CISO and the auditor included): per detection
+    the rule, severity, techniques, time span, count and the people and devices involved, plus events added from
+    hunts. No matched fields, event copies or log text: those stay behind `detections:read`."""
+    inc = await get_incident(db, ctx.org_id, incident_id)
+    rows = list(
+        (
+            await db.execute(
+                select(DetectionRow)
+                .where(DetectionRow.org_id == ctx.org_id, DetectionRow.incident_id == inc.id)
+                .order_by(DetectionRow.first_seen)
+            )
+        ).scalars()
+    )
+    scores = {
+        s.detection_id: s
+        for s in (
+            await db.execute(select(TriageScoreRow).where(TriageScoreRow.detection_id.in_([d.id for d in rows])))
+        ).scalars()
+    }
+    items = []
+    for d in rows:
+        ent = d.entities or {}
+        score = scores.get(d.id)
+        items.append(
+            {
+                "id": str(d.id),
+                "source": d.source,
+                "ruleTitle": d.rule_title,
+                "severity": d.severity,
+                "attack": d.attack or [],
+                "firstSeen": d.first_seen.isoformat(),
+                "lastSeen": d.last_seen.isoformat(),
+                "eventCount": len(d.event_ids or []),
+                "hosts": list(ent.get("hosts") or [])[:10],
+                "users": list(ent.get("users") or [])[:10],
+                "band": score.band if score else None,
+                "suppressed": bool(score.suppressed) if score else False,
+            }
+        )
+    hunts = (
+        await db.execute(
+            select(IncidentEvent)
+            .where(
+                IncidentEvent.org_id == ctx.org_id,
+                IncidentEvent.incident_id == inc.id,
+                IncidentEvent.kind == "detection",
+                IncidentEvent.actor_type == "user",
+            )
+            .order_by(IncidentEvent.at)
+        )
+    ).scalars()
+    return {"detections": items, "huntMatches": [timeline_doc(e) for e in hunts]}
+
+
+@router.post("/{incident_id}/evidence", status_code=status.HTTP_201_CREATED)
+async def add_hunt_match(
+    incident_id: str,
+    body: HuntMatchIn,
+    ctx: RequestContext = Depends(require_perm("incidents:write")),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Add an event found while hunting to an open incident's evidence (a timeline row citing the event)."""
+    from nightjar.hunting import api as store
+    from nightjar.hunting.service import river_text
+
+    inc = await get_incident(db, ctx.org_id, incident_id)
+    if inc.status not in OPEN_STATUSES:
+        raise AppError(422, "invalid_transition", "Incident closed", "Reopen the incident before adding evidence.")
+    try:
+        row = await store.event_row(ctx.org_id, body.event_id)
+    except store.SearchTimeoutError as exc:
+        raise AppError(503, "unavailable", "Service unavailable", "Search is busy. Try again.") from exc
+    if row is None:
+        raise AppError(404, "not_found", "Event not found", "Event not found.")
+    dup = (
+        await db.execute(
+            select(IncidentEvent.id).where(
+                IncidentEvent.org_id == ctx.org_id,
+                IncidentEvent.incident_id == inc.id,
+                IncidentEvent.kind == "detection",
+                IncidentEvent.ref_id == body.event_id,
+            )
+        )
+    ).first()
+    if dup is not None:
+        raise conflict("conflict", "This event is already part of the incident's evidence.")
+    entry = await add_timeline(
+        db,
+        ctx.org_id,
+        inc.id,
+        kind="detection",
+        actor_type="user",
+        actor_name=ctx.user.full_name,
+        title=f"Added from a hunt: {river_text(row)}",
+        body=body.note or None,
+        ref_id=body.event_id,
+        at=clock.now(),
+    )
+    await audit(
+        db,
+        ctx,
+        action="incident.evidence_added",
+        resource_type="incident",
+        resource_id=inc.id,
+        metadata={"reference": inc.reference, "eventId": body.event_id},
+    )
+    await announce_updated(db, inc, ["timeline"])
+    await db.commit()
+    return timeline_doc(entry)
 
 
 @router.patch("/{incident_id}")
