@@ -18,12 +18,12 @@
 		['Backup of the Antwerp file server finished', 'server'],
 		['Laptop mel-ws-007 checked in, patched', 'device'],
 		['Firewall turned away 9 scans on the Antwerp gateway', 'network'],
-		['Rémi Dubois signed in from home, Ghent', 'sign-in'],
+		['Raphaël Dubois signed in from home, Ghent', 'sign-in'],
 		['Mail scanned: 312 messages, 4 held', 'mail'],
-		['Night shift badge-in at the Rotterdam depot', 'building'],
+		['Night shift badge-in at the Antwerp warehouse', 'building'],
 		['Cloud storage: 2 files shared with a customer', 'cloud'],
 		['Laptop ant-ws-022 installed updates', 'device'],
-		['Nora Kelly signed in at the Melbourne depot', 'sign-in'],
+		['Nathan Kelly signed in at the Melbourne depot', 'sign-in'],
 		['Payment run scheduled for 06:00', 'finance']
 	];
 	const ODD: [string, string][] = [
@@ -35,7 +35,7 @@
 		['03:12:04', 'Joy in accounts payable signs in from a country she has never signed in from.'],
 		['03:12:31', 'Three alerts become one incident.'],
 		['03:12:58', 'Triage: likely real, 94 in 100. Enrichment: the sender’s domain is two days old.'],
-		['03:13:40', 'Reportable under NIS2. The 24-hour clock starts; the early warning is drafted.']
+		['03:13:40', 'Likely reportable under NIS2. The 24-hour clock counts from now; the early warning is drafted for the CISO.']
 	];
 
 	interface Row { id: number; at: Date; text: string; src: string; odd: boolean }
@@ -87,7 +87,7 @@
 		tickTimer = riverTimer = null;
 	}
 	function mkClock(id: string, label: string, hours: number, start: Date): Deadline {
-		return { id, incidentId: 'replay', incidentReference: 'replay', regime: 'nis2', regimeLabel: 'NIS2', noticeType: id, noticeLabel: label, jurisdiction: 'Belgium', startsAt: start.toISOString(), dueAt: new Date(+start + hours * 3600e3).toISOString(), dueAtLocal: null, businessDays: null, state: 'on_track', remainingSeconds: null, noticeId: null, basis: 'Transport sector, Belgium, significant incident test: met' };
+		return { id, incidentId: 'replay', incidentReference: 'replay', regime: 'nis2', regimeLabel: 'NIS2', noticeType: id, noticeLabel: label, jurisdiction: 'Belgium', startsAt: start.toISOString(), dueAt: new Date(+start + hours * 3600e3).toISOString(), dueAtLocal: null, businessDays: null, state: 'on_track', remainingSeconds: null, noticeId: null, basis: 'Halden Logistics NV, postal and courier services, Belgium: invoices redirected, possible considerable financial loss' };
 	}
 	function dropClocks() {
 		dropReady = !reduced;
@@ -114,7 +114,7 @@
 	async function confirmHold() {
 		authorised = { by: userHeld ? 'you' : 'Marcus Bell, on call', at: new Date(vNow) };
 		mini = 4;
-		say(fmt(vNow), `${userHeld ? 'You held' : 'Marcus, on call, held'} to authorise. Account turned off, two minutes after the first sign.`, true);
+		say(fmt(vNow), `${userHeld ? 'You held' : 'Marcus, on call, held'} to authorise. Account turned off and Joy signed out everywhere.`, true);
 		at(2600, finish);
 		return { label: `Authorised · ${fmt(vNow)}`, sub: `by ${authorised.by}` };
 	}
@@ -145,12 +145,14 @@
 		at(8400, () => miniStep(3));
 		at(9800, () => {
 			dropClocks();
-			say(fmt(vNow), 'Reportable under NIS2. The 24-hour clock starts, and the early warning is already drafted.', true);
+			say(fmt(vNow), 'Likely reportable under NIS2. The 24-hour clock counts from now, and the early warning is drafted for the CISO.', true);
 		});
 		at(12000, () => {
+			// the night moves on while the colleagues finish: the plan is ready at 03:40
+			vNow = nightAt(3, 40, 50);
 			asking = true;
 			speed = 2;
-			say(fmt(vNow), 'Turn off Joy’s account? Nothing happens until a person holds to authorise.');
+			say(fmt(vNow), 'The plan is ready: turn off Joy’s account and sign her out. Nothing happens until a person holds to authorise.');
 		});
 		at(15200, () => {
 			if (!userHeld) hold?.simulate();
@@ -179,10 +181,10 @@
 		vNow = nightAt(3, 13, 40);
 		dropClocks();
 		log = STILL_LOG.map(([ts, text]) => ({ id: ++lid, ts, text, key: true }));
-		vNow = nightAt(3, 14, 12);
+		vNow = nightAt(3, 41, 0);
 		asking = true;
 		authorised = { by: 'Marcus Bell, on call', at: new Date(vNow) };
-		log = [...log, { id: ++lid, ts: fmt(vNow), text: 'Marcus, on call, held to authorise. Account turned off, two minutes after the first sign.', key: true }];
+		log = [...log, { id: ++lid, ts: fmt(vNow), text: 'Marcus, on call, held to authorise. Account turned off and Joy signed out everywhere.', key: true }];
 		done = true;
 		tickTimer = setInterval(() => (vNow = new Date(+vNow + 1000)), 1000);
 	}
@@ -347,7 +349,7 @@
 	<article class="entry" id="t0312">
 		<div class="when mono">03:12<small>reportable</small></div>
 		<div>
-			<h2>When an incident is reportable, the clock starts on its own.</h2>
+			<h2>When an incident may be reportable, the clock is ready before you are.</h2>
 			<p class="lede">Nightjar SOC checks each incident against where you operate and what happened, proposes which clocks apply, and drafts each notice with the required facts filled in from the evidence. A person decides, reviews and submits.</p>
 			<div class="regs">
 				<div class="reg"><b>NIS2 · EU</b><span class="w">Early warning, then full notification, then a final report</span><span class="t mono">24 h · 72 h<small>final report within a month</small></span></div>
