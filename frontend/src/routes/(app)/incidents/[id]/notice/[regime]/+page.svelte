@@ -42,12 +42,25 @@
 				bodies = Object.fromEntries(notice.sections.map((s) => [s.key, s.body]));
 				savedAt = notice.versions.at(-1)?.editedAt ?? null;
 			}
-			const dets = await api.incidents.detections(incidentId).catch(() => null);
-			evidence = dets ? dets.flatMap((x) => x.evidence ?? []) : [];
-			if (!dets || !evidence.length) {
-				// Without detection access (the CISO), cite the incident's own timeline instead.
-				const tl = await api.incidents.timeline(incidentId).catch(() => []);
-				evidence = tl.map((e, k) => ({ ref: `E-${String(k + 1).padStart(2, '0')}`, eventId: e.id, timestamp: e.at, dataset: e.actor.name, action: e.kind, summary: { text: e.title + (e.body ? ` — ${e.body}` : ''), flags: [] }, host: null, user: null, fields: {} }));
+			if (session.can('detections:read')) {
+				const dets = await api.incidents.detections(incidentId).catch(() => []);
+				evidence = dets.flatMap((x) => x.evidence ?? []);
+			}
+			if (!evidence.length) {
+				// Least privilege: the CISO reads the summarised evidence (rule, time span, people and devices), never
+				// the matched fields or log text behind it.
+				const sum = await api.incidents.evidence(incidentId).catch(() => null);
+				evidence = (sum?.detections ?? []).map((d, k) => ({
+					ref: `E-${String(k + 1).padStart(2, '0')}`,
+					eventId: d.id,
+					timestamp: d.firstSeen,
+					dataset: `${d.eventCount} ${d.eventCount === 1 ? 'event' : 'events'}`,
+					action: d.source,
+					summary: { text: `${d.ruleTitle}${[...d.users, ...d.hosts].length ? ` · ${[...d.users, ...d.hosts].slice(0, 4).join(', ')}` : ''}`, field: 'summary', flags: [], truncated: false },
+					host: null,
+					user: null,
+					fields: {}
+				}));
 			}
 			contacts = await api.settings.regulators().catch(() => ({}));
 		} catch (x) {

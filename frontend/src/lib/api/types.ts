@@ -97,7 +97,7 @@ export interface Me {
 	membership: { role: Role; roleLabel: string; permissions: string[] } | null;
 	orgs: OrgSummary[];
 	session: { expiresAt: ISODate; absoluteExpiresAt: ISODate };
-	clock: { today: string; demo: boolean };
+	clock: { today: string; now?: string; demo: boolean };
 }
 export interface Member {
 	id: string;
@@ -179,11 +179,10 @@ export interface RuleInfo {
 	hits7d: number;
 	precisionEstimate: number | null;
 	origin: string;
-	/** web hint (not in contract v1): hits per day for the last 7 days, oldest first */
+	/** hits per day for the last 7 days, oldest first */
 	hits7dDaily?: number[];
-	owner?: string;
-	changedAt?: ISODate;
-	version?: number;
+	/** active per-org exceptions ("Lower the noise", "Mark as expected") */
+	exceptions?: number;
 }
 export interface EventSnapshotDoc {
 	eventId: string;
@@ -217,8 +216,10 @@ export interface Deadline {
 	remainingSeconds: number | null;
 	noticeId: string | null;
 	basis: string;
-	/** web-only: when the notice went out (drives the 10-minute "✓ Sent" cell) */
+	/** when the notice went out (drives the 10-minute "✓ Sent" cell) */
 	submittedAt?: ISODate | null;
+	/** an open assessment with "Not yet: decide by…" recorded */
+	decideBy?: ISODate | null;
 }
 export interface IncidentSummary {
 	id: string;
@@ -290,6 +291,8 @@ export interface RegimeAssessment {
 		by: User;
 		at: ISODate;
 	} | null;
+	/** "Not yet: decide by…" while no determination exists */
+	deferral?: { decideBy: ISODate; note: string; by: string; at: ISODate } | null;
 }
 export interface Ticket {
 	id: string;
@@ -645,4 +648,49 @@ export interface MorningBrief {
 	alerts: { last7d: number; incidentsLast7d: number; suppressedAsNoise: number; reductionPct: number };
 	clocks: Deadline[];
 	highlights: string[];
+}
+
+export type Verdict = 'true_positive' | 'benign' | 'false_positive' | 'needs_review';
+export interface MinuteTotal {
+	minute: ISODate;
+	count: number;
+}
+export interface RuleException {
+	id: string;
+	ruleId: string;
+	field: 'user' | 'host' | 'ip';
+	value: string;
+	reason: string;
+	createdBy: string;
+	createdAt: ISODate;
+	expiresAt: ISODate | null;
+}
+export interface EvidenceItem {
+	id: string;
+	source: string;
+	ruleTitle: string;
+	severity: Severity;
+	attack: AttackRef[];
+	firstSeen: ISODate;
+	lastSeen: ISODate;
+	eventCount: number;
+	hosts: string[];
+	users: string[];
+	band: 'likely_real' | 'uncertain' | 'likely_noise' | null;
+	suppressed: boolean;
+}
+export interface EvidenceSummary {
+	detections: EvidenceItem[];
+	huntMatches: TimelineEntry[];
+}
+export interface StepFeedback {
+	id: string;
+	runId: string;
+	seq: number;
+	verdict: Verdict;
+	note: string;
+	recordedVerdict: string | null;
+	labelledDetections: number;
+	by: string;
+	at: ISODate;
 }

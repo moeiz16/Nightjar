@@ -154,12 +154,12 @@ describe('regulator clocks and notices', () => {
 describe('hunting, audit, tenancy of untrusted text', () => {
 	it('a structured search finds the four link openers', async () => {
 		const { api } = setup('lukas.peeters@halden.example');
-		const r = await api.hunting.search({ from: new Date(+AT - 7 * 864e5).toISOString(), to: AT.toISOString(), filters: [{ field: 'url', op: 'contains', value: 'halden-logistlcs.example' }, { field: 'action', op: 'eq', value: 'url.clicked' }], groupBy: [], metric: 'count', bucket: null, limit: 200 });
+		const r = await api.hunting.search({ from: new Date(+AT - 7 * 864e5).toISOString(), to: AT.toISOString(), filters: [{ field: 'url', op: 'contains', value: 'halden-logistlcs.example' }, { field: 'action', op: 'eq', value: 'network-connection' }], groupBy: [], metric: 'count', bucket: null, limit: 200 });
 		expect(r.totalMatched).toBe(4);
 	});
 	it('instruction-like log text comes back as plain summary text', async () => {
 		const { api } = setup('lukas.peeters@halden.example');
-		const r = await api.hunting.search({ from: new Date(+AT - 864e5).toISOString(), to: AT.toISOString(), filters: [{ field: 'action', op: 'eq', value: 'inbox_rule.created' }], groupBy: [], metric: 'count', bucket: null, limit: 10 });
+		const r = await api.hunting.search({ from: new Date(+AT - 864e5).toISOString(), to: AT.toISOString(), filters: [{ field: 'action', op: 'eq', value: 'inbox-rule-created' }], groupBy: [], metric: 'count', bucket: null, limit: 10 });
 		expect(r.columns.at(-1)).toBe('summary');
 		expect(String(r.rows[0]!.at(-1))).toContain('SYSTEM NOTE');
 	});

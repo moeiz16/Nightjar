@@ -6,6 +6,7 @@ import { eventSourceStream } from '$lib/api/stream';
 import type { Deadline, IncidentSummary, PipelineStatus, RiverLine, ShiftLogEntry, StreamEvent, StreamEventType } from '$lib/api/types';
 import { now } from '$lib/time/clock';
 import { ui } from './ui.svelte';
+import { minuteCounts } from '$lib/util/river';
 
 type Handler<K extends StreamEventType> = (data: Extract<StreamEvent, { type: K }>['data']) => void;
 
@@ -83,6 +84,7 @@ class Live {
 			const r = await api.events.river(undefined, 50);
 			this.river = r.lines;
 			this.eventsPerMinute = r.eventsPerMinute;
+			this.counts = { ...this.counts, ...minuteCounts(r.minutes) };
 		} catch {
 			/* river shows its empty state */
 		}
@@ -98,8 +100,15 @@ class Live {
 				this.connected = true;
 				break;
 			case 'river.batch': {
-				const key = new Date(Math.floor(+now() / 60000) * 60000).toISOString();
-				this.counts[key] = (this.counts[key] ?? 0) + e.data.count;
+				// count each line under its own minute of event time (the same keys the river groups by); events
+				// beyond the lines sent fold into the newest line's minute
+				const keyOf = (at: string) => new Date(Math.floor(+new Date(at) / 60000) * 60000).toISOString();
+				for (const l of e.data.lines) this.counts[keyOf(l.at)] = (this.counts[keyOf(l.at)] ?? 0) + 1;
+				const extra = e.data.count - e.data.lines.length;
+				if (extra > 0) {
+					const newest = e.data.lines.reduce((m, l) => (l.at > m ? l.at : m), e.data.lines[0]?.at ?? now().toISOString());
+					this.counts[keyOf(newest)] = (this.counts[keyOf(newest)] ?? 0) + extra;
+				}
 				this.eventsPerMinute = e.data.eventsPerMinute;
 				// at most 4 rows a second are drawn; the rest fold into the minute's count
 				const lines = e.data.lines.slice(0, 8);

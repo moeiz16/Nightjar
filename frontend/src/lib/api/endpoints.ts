@@ -1,5 +1,5 @@
 // Typed endpoints for every contract route the web app uses (docs/API_CONTRACT.md Part 1).
-import { ApiError, type Client } from './client';
+import type { Client } from './client';
 import type * as T from './types';
 
 const enc = encodeURIComponent;
@@ -12,21 +12,11 @@ export function wireQuery(q: T.HuntQueryDoc): Omit<T.HuntQueryDoc, 'text'> {
 }
 
 const dirCache = new Map<string, Promise<unknown[]>>();
-async function directoryList<X>(c: Client, path: string, pick: (i: T.Incident) => X[], key: (x: X) => string): Promise<X[]> {
+/** The inventory changes only through approved actions, so one fetch per page load is enough. */
+function directoryList<X>(c: Client, path: string): Promise<X[]> {
 	const hit = dirCache.get(path);
 	if (hit) return hit as Promise<X[]>;
-	const p = (async () => {
-		try {
-			return await c.get<X[]>(path);
-		} catch (e) {
-			if (!(e instanceof ApiError) || e.status !== 404) throw e;
-			const list = await c.get<T.Paged<T.IncidentSummary>>('/incidents', { query: { status: 'all', pageSize: 50 } });
-			const docs = await Promise.all(list.items.slice(0, 25).map((i) => c.get<T.Incident>(`/incidents/${enc(i.id)}`).catch(() => null)));
-			const seen = new Map<string, X>();
-			for (const d of docs) if (d) for (const x of pick(d)) seen.set(key(x), x);
-			return [...seen.values()];
-		}
-	})();
+	const p = c.get<X[]>(path);
 	dirCache.set(path, p as Promise<unknown[]>);
 	p.catch(() => dirCache.delete(path));
 	return p;
@@ -58,14 +48,20 @@ export function endpoints(c: Client) {
 		},
 		events: {
 			river: (after?: string, limit = 50) =>
-				c.get<{ lines: T.RiverLine[]; eventsPerMinute: number }>('/events/river', { query: { after, limit } }),
+				c.get<{ lines: T.RiverLine[]; eventsPerMinute: number; minutes?: T.MinuteTotal[] }>('/events/river', { query: { after, limit } }),
 			list: (q: Record<string, string | number | undefined>) => c.get<T.Paged<T.NormalizedEventDoc>>('/events', { query: q }),
 			get: (eventId: string) => c.get<T.NormalizedEventDoc>(`/events/${enc(eventId)}`)
 		},
 		rules: {
 			list: (q: { q?: string; enabled?: boolean } = {}) => c.get<T.RuleInfo[]>('/rules', { query: q }),
-			get: (id: string) => c.get<{ rule: T.RuleInfo; yaml: string }>(`/rules/${enc(id)}`),
+			get: (id: string) => c.get<{ rule: T.RuleInfo; yaml: string; exceptions?: T.RuleException[] }>(`/rules/${enc(id)}`),
 			setEnabled: (id: string, enabled: boolean) => c.patch<T.RuleInfo>(`/rules/${enc(id)}`, { enabled })
+		},
+		exceptions: {
+			list: (ruleId?: string) => c.get<T.RuleException[]>('/suppressions', { query: { ruleId } }),
+			add: (body: { ruleId: string; field: 'user' | 'host' | 'ip'; value: string; reason: string; expiresInDays?: number }) =>
+				c.post<T.RuleException>('/suppressions', body),
+			remove: (id: string) => c.delete<void>(`/suppressions/${enc(id)}`)
 		},
 		incidents: {
 			list: (q: Record<string, string | number | boolean | undefined> = {}) =>
@@ -79,6 +75,12 @@ export function endpoints(c: Client) {
 			actions: (id: string) => c.get<T.ProposalDoc[]>(`/incidents/${enc(id)}/actions`),
 			reporting: (id: string) => c.get<T.IncidentReporting>(`/incidents/${enc(id)}/reporting`),
 			detections: (id: string) => c.get<T.DetectionDoc[]>(`/incidents/${enc(id)}/detections`),
+			/** Summarised evidence every reader may see (the CISO included): no matched fields or log text. */
+			evidence: (id: string) => c.get<T.EvidenceSummary>(`/incidents/${enc(id)}/evidence`),
+			addHuntMatch: (id: string, eventId: string, note?: string) =>
+				c.post<T.TimelineEntry>(`/incidents/${enc(id)}/evidence`, { eventId, note: note || undefined }),
+			defer: (id: string, regime: T.Regime, body: { entityId: string; decideBy: string; note?: string }) =>
+				c.post<T.RegimeAssessment>(`/incidents/${enc(id)}/reporting/${regime}/defer`, body),
 			assess: (id: string, regime: T.Regime, d: T.RegimeDetermination) =>
 				c.post<T.RegimeAssessment>(`/incidents/${enc(id)}/reporting/${regime}/assess`, d),
 			draftNotice: (id: string, regime: T.Regime, type: string) => c.post<T.Notice>(`/incidents/${enc(id)}/notices`, { regime, type })
@@ -86,6 +88,8 @@ export function endpoints(c: Client) {
 		investigations: {
 			get: (runId: string) => c.get<T.Run>(`/investigations/${enc(runId)}`),
 			step: (runId: string, seq: number) => c.get<T.AgentStepDoc>(`/investigations/${enc(runId)}/steps/${seq}`),
+			disagree: (runId: string, seq: number, verdict: T.Verdict, note: string) =>
+				c.post<T.StepFeedback>(`/investigations/${enc(runId)}/steps/${seq}/feedback`, { verdict, note }),
 			rerun: (incidentId: string, reason?: string) => c.post<T.RunSummary>(`/incidents/${enc(incidentId)}/investigations`, { reason })
 		},
 		approvals: {
@@ -133,10 +137,8 @@ export function endpoints(c: Client) {
 				c.get<T.Paged<T.AnomalyDoc>>('/ueba/anomalies', { query: q })
 		},
 		directory: {
-			// Contract gap: v1 has no inventory list endpoints. Try /assets and /identities; when the API answers 404,
-			// assemble the directory from the incidents' assetsDetail / identitiesDetail (same AssetDoc / IdentityDoc).
-			assets: () => directoryList<T.AssetDoc>(c, '/assets', (i) => i.assetsDetail, (a) => a.name),
-			identities: () => directoryList<T.IdentityDoc>(c, '/identities', (i) => i.identitiesDetail, (a) => a.username)
+			assets: () => directoryList<T.AssetDoc>(c, '/assets'),
+			identities: () => directoryList<T.IdentityDoc>(c, '/identities')
 		},
 		settings: {
 			regulators: () => c.get<T.RegimeContacts>('/settings/regulators'),

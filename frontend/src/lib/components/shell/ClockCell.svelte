@@ -2,7 +2,7 @@
 	// One regulator clock in the top bar: label, rolling digits, glyph + word, and the elapsed rule.
 	import type { Deadline } from '$lib/api/types';
 	import Tick from './Tick.svelte';
-	import { clockState, elapsedFraction, hms, secondsLeft, STATE_GLYPH, STATE_WORD, dueLabel, REGIME_TZ } from '$lib/time/clock';
+	import { clockState, elapsedFraction, hms, secondsLeft, shortDay, STATE_GLYPH, STATE_WORD, dueLabel, REGIME_TZ } from '$lib/time/clock';
 	import { clockLabel, noticeHref, clockLongLabel } from '$lib/util/labels';
 
 	let { d, now, href, fast = false }: { d: Deadline; now: Date; href?: string; fast?: boolean } = $props();
@@ -12,7 +12,7 @@
 	const cls = $derived(state === 'on_track' ? 'ok' : state === 'due_soon' ? 'soon' : state === 'overdue' ? 'over' : state === 'not_started' ? 'decide' : state === 'submitted' ? 'sent' : '');
 	const aria = $derived(
 		state === 'not_started'
-			? `${clockLongLabel(d)}, ${d.incidentReference}: not started, materiality decision needed. ${d.basis}`
+			? `${clockLongLabel(d)}, ${d.incidentReference}: not started, ${d.decideBy ? `decision due ${shortDay(d.decideBy, REGIME_TZ[d.regime])}` : 'materiality decision needed'}. ${d.basis}`
 			: `${clockLongLabel(d)}, ${d.incidentReference}: ${STATE_WORD[state]}, ${hms(left)} left, due ${d.dueAt ? dueLabel(d.dueAt, now, REGIME_TZ[d.regime]) : ''} regime time. ${d.basis}`
 	);
 </script>
@@ -21,7 +21,7 @@
 	<span class="lbl">{clockLabel(d)}</span>
 	<span class="row">
 		{#if state === 'not_started'}
-			<span class="t ns">not started</span>
+			<span class="t ns">{d.decideBy ? `decide by ${shortDay(d.decideBy, REGIME_TZ[d.regime])}` : 'not started'}</span>
 		{:else if state === 'submitted'}
 			<span class="t">sent</span>
 		{:else}

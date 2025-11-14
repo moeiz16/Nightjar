@@ -6,7 +6,7 @@
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { live } from '$lib/stores/live.svelte';
-	import { timeOf } from '$lib/time/clock';
+	import { now, timeOf } from '$lib/time/clock';
 
 	let { compact = false }: { compact?: boolean } = $props();
 	let kind = $state<'user' | 'host'>('user');
@@ -17,11 +17,15 @@
 	let draft = $state('');
 	let expected = $state<Record<string, string>>({});
 	let howLong = $state('until the end of the month');
+	let expectWhy = $state('');
 
 	$effect(() => {
 		api.ueba
 			.anomalies({ entityType: kind })
-			.then((r) => (items = r.items))
+			.then((r) => {
+				// one rhythm strip per person or device: the most unusual window (the list comes highest first)
+				items = r.items.filter((a, i, all) => all.findIndex((b) => b.entityId === a.entityId) === i);
+			})
 			.catch((x) => (err = problemMessage(x)));
 	});
 	const refOf = (id: string | null) => live.incidents.find((i) => i.id === id)?.reference ?? null;
@@ -33,10 +37,23 @@
 		if (v >= 0.06) return 'l1';
 		return 'l0';
 	}
-	function markExpected(a: AnomalyDoc) {
-		expected[a.id] = howLong;
-		expecting = null;
-		ui.toast(`Marked as expected ${howLong}. The change is in the activity log.`);
+	function daysFor(choice: string): number | undefined {
+		const t = now();
+		if (choice === 'for today') return 1;
+		if (choice === 'for this week') return 7;
+		if (choice === 'until the end of the month') return Math.max(1, new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate() - t.getDate() + 1);
+		return undefined;
+	}
+	async function markExpected(a: AnomalyDoc) {
+		try {
+			await api.exceptions.add({ ruleId: `ueba:${a.entityType}:*`, field: a.entityType === 'user' ? 'user' : 'host', value: a.entityId, reason: expectWhy.trim(), expiresInDays: daysFor(howLong) });
+			expected[a.id] = howLong;
+			expecting = null;
+			expectWhy = '';
+			ui.toast(`Marked as expected ${howLong}. New alerts like this stay quiet; the change is in the activity log.`);
+		} catch (x) {
+			ui.toast(problemMessage(x), 'bad');
+		}
 	}
 	function openDraft(a: AnomalyDoc) {
 		const name = (a.label ?? a.entityId).split(' · ')[0];
@@ -95,7 +112,7 @@
 			<div class="acts">
 				{#if ref}<a class="btn sm" href="/incidents/{ref}">Open {ref}</a>{:else}<button class="btn sm" type="button" onclick={() => ui.toast('Opening an incident by hand needs a person with incident rights; ask the watch lead.', 'info')} disabled={!session.can('incidents:write')}>Open as incident</button>{/if}
 				<button class="btn sm" type="button" onclick={() => openDraft(a)}>Ask the manager (draft)</button>
-				<button class="btn sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('incidents:write')}>Mark as expected</button>
+				<button class="btn sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Mark as expected</button>
 				<span class="mono faint win">{timeOf(a.windowStart)}–{timeOf(a.windowEnd)}</span>
 			</div>
 			{#if expecting === a.id}
@@ -103,6 +120,7 @@
 					<label class="field"><span>expected for how long?</span>
 						<select class="select" bind:value={howLong}><option>for today</option><option>for this week</option><option>until the end of the month</option><option>from now on</option></select>
 					</label>
+					<label class="field wide"><span>why (kept with the exception)</span><input class="input" bind:value={expectWhy} required minlength="10" placeholder="e.g. quarter-end reporting, agreed with the manager" /></label>
 					<button class="btn pri sm" type="submit">Mark as expected</button>
 				</form>
 			{/if}
@@ -226,9 +244,13 @@
 	}
 	.inline {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 10px;
 		align-items: end;
-		max-width: 520px;
+		max-width: 720px;
+	}
+	.inline .wide {
+		flex: 1 1 240px;
 	}
 	.inline.col {
 		display: grid;

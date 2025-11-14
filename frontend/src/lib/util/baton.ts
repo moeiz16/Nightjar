@@ -14,6 +14,7 @@ export interface BatonRow {
 	why: string | null;
 	state: '' | 'ok' | 'wait';
 	step?: AgentStepDoc;
+	runId?: string;
 	entry?: TimelineEntry;
 	proposal?: ProposalDoc;
 	evidence?: NonNullable<NonNullable<AgentStepDoc['detail']>['evidence']>;
@@ -63,6 +64,7 @@ export function buildBaton(runs: Run[], timeline: TimelineEntry[], proposals: Pr
 				evidence,
 				state: '',
 				step: s,
+				runId: run.id,
 				minor: !isKey
 			});
 		}

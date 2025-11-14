@@ -249,7 +249,7 @@ export function createMockServer(opts: MockServerOptions = {}) {
 		const r = db.rules.find((x) => x.id === rid);
 		if (!r) throw new Problem(404, 'not_found', 'Not found');
 		const { yaml, ...rule } = r;
-		return { rule, yaml };
+		return { rule, yaml, exceptions: [] as T.RuleException[] };
 	});
 	on('PATCH', '/rules/:id', ({ body }, [rid]) => {
 		need('rules:manage');
@@ -283,9 +283,63 @@ export function createMockServer(opts: MockServerOptions = {}) {
 		const list = [...(db.timelines[inc.id] ?? [])].sort((a, b) => a.at.localeCompare(b.at));
 		return query.get('audience') === 'executive' ? list.filter((t) => t.executive) : list;
 	});
+	on('GET', '/incidents/:id/evidence', (_c, [iid]) => {
+		need('incidents:read');
+		const inc = incident(iid!);
+		const ev = db.evidence[inc.id] ?? [];
+		const detections: T.EvidenceItem[] = ev.map((e, k) => ({ id: `${inc.id}-${k}`, source: 'sigma', ruleTitle: e.action.replace(/-/g, ' '), severity: inc.severity, attack: inc.attack, firstSeen: e.timestamp, lastSeen: e.timestamp, eventCount: 1, hosts: e.host ? [e.host] : [], users: e.user ? [e.user] : [], band: 'likely_real', suppressed: false }));
+		return { detections, huntMatches: (db.timelines[inc.id] ?? []).filter((t) => t.kind === 'detection' && t.actor.type === 'user') } satisfies T.EvidenceSummary;
+	});
+	on('POST', '/incidents/:id/evidence', ({ body }, [iid]) => {
+		need('incidents:write');
+		const inc = incident(iid!);
+		const eventId = String(body.eventId ?? '');
+		if ((db.timelines[inc.id] ?? []).some((t) => t.refId === eventId)) throw new Problem(409, 'conflict', 'Conflict', 'This event is already part of the incident’s evidence.');
+		timeline(inc.id, 'detection', { type: 'user', name: me()!.fullName }, 'Added from a hunt');
+		const entry = db.timelines[inc.id]!.at(-1)!;
+		entry.refId = eventId;
+		return entry;
+	});
+	on('POST', '/investigations/:id/steps/:seq/feedback', ({ body }, [rid, seq]) => {
+		need('incidents:write');
+		const run = db.runs.find((r) => r.id === rid);
+		if (!run) throw new Problem(404, 'not_found', 'Not found');
+		const verdict = String(body.verdict) as T.Verdict;
+		timeline(run.incidentId, 'note', { type: 'user', name: me()!.fullName }, `Disagreed with step ${seq}`);
+		return { id: hashOf(rid! + seq).slice(0, 12), runId: run.id, seq: Number(seq), verdict, note: String(body.note ?? ''), recordedVerdict: run.verdict, labelledDetections: (db.evidence[run.incidentId] ?? []).length, by: me()!.fullName, at: now().toISOString() } satisfies T.StepFeedback;
+	});
+	on('POST', '/incidents/:id/reporting/:regime/defer', ({ body }, [iid, regime]) => {
+		need('reporting:assess');
+		const inc = incident(iid!);
+		const a = (db.assessments[inc.id] ?? []).find((x) => x.regime === regime);
+		if (!a) throw new Problem(404, 'not_found', 'Not found');
+		if (a.determination) throw new Problem(409, 'already_decided', 'Conflict', 'This decision has already been recorded.');
+		a.deferral = { decideBy: String(body.decideBy), note: String(body.note ?? ''), by: me()!.fullName, at: now().toISOString() };
+		const dl = db.deadlines.find((d) => d.incidentId === inc.id && d.regime === regime && d.state === 'not_started');
+		if (dl) Object.assign(dl, { decideBy: a.deferral.decideBy, noticeLabel: 'Decision due' });
+		timeline(inc.id, 'clock', { type: 'user', name: me()!.fullName }, `Decision set for ${a.deferral.decideBy.slice(0, 10)}`);
+		return a;
+	});
+	const exceptions: T.RuleException[] = [];
+	on('GET', '/suppressions', ({ query }) => (need('rules:read'), exceptions.filter((x) => !query.get('ruleId') || x.ruleId === query.get('ruleId'))));
+	on('POST', '/suppressions', ({ body }) => {
+		need('rules:manage');
+		const reason = String(body.reason ?? '').trim();
+		if (reason.length < 10) throw new Problem(422, 'validation_error', 'Validation failed', 'Give a reason of at least 10 characters.', [{ field: 'reason', message: 'At least 10 characters.' }]);
+		const x: T.RuleException = { id: hashOf(String(body.ruleId) + body.value + exceptions.length).slice(0, 12), ruleId: String(body.ruleId), field: body.field as T.RuleException['field'], value: String(body.value), reason, createdBy: me()!.fullName, createdAt: now().toISOString(), expiresAt: body.expiresInDays ? new Date(+now() + Number(body.expiresInDays) * 864e5).toISOString() : null };
+		exceptions.push(x);
+		audit('user', me()!.fullName, 'rule.exception_added', `exception added: ${x.field} ${x.value}`, null);
+		return x;
+	});
+	on('DELETE', '/suppressions/:id', (_c, [sid]) => {
+		need('rules:manage');
+		const i = exceptions.findIndex((x) => x.id === sid);
+		if (i < 0) throw new Problem(404, 'not_found', 'Not found');
+		exceptions.splice(i, 1);
+		return undefined;
+	});
 	on('GET', '/incidents/:id/detections', (_c, [iid]) => {
-		// Contract gap: executives draft notices from this evidence; v1 lists only detections:read here.
-		need(['detections:read', 'reporting:read']);
+		need('detections:read');
 		const inc = incident(iid!);
 		const ev = db.evidence[inc.id] ?? [];
 		return [{ id: hashOf(inc.id).slice(0, 12), source: 'sigma', ruleId: null, ruleTitle: inc.title, severity: inc.severity, confidence: 0.9, attack: inc.attack, firstSeen: inc.firstSeen, lastSeen: inc.lastSeen, eventCount: ev.length, summary: inc.summary, incidentId: inc.id, evidence: ev }] satisfies T.DetectionDoc[];

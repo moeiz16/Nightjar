@@ -37,7 +37,7 @@
 	{#each groups as g (g.key)}
 		{@const notable = g.lines.filter((l) => l.anomaly || l.incidentId)}
 		{@const routine = g.lines.filter((l) => !l.anomaly && !l.incidentId)}
-		{@const total = minuteTotal(live.counts[g.key], live.eventsPerMinute || 1284, g.key, live.now)}
+		{@const total = minuteTotal(live.counts[g.key], g.lines.length)}
 		{@const shown = expanded[g.key] ? routine : routine.slice(0, ROUTINE_SHOWN)}
 		<section aria-label="Minute {g.label}">
 			<h3 class="minute mono">{g.label} <span>{total.toLocaleString('en-GB')} in · {notable.length ? `${notable.length} to look at` : 'all routine'}</span></h3>

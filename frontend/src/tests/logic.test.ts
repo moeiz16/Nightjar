@@ -118,13 +118,26 @@ describe('plain-words hunting', () => {
 	const now = new Date('2025-11-20T08:18:23Z');
 	it('turns a sentence into filters', () => {
 		const r = parseHunt('laptops that opened links from halden-logistlcs.example in the last 7 days', now);
-		expect(r.chips.map((c) => c.label)).toEqual(['domain = halden-logistlcs.example', 'event = link opened']);
+		expect(r.chips.map((c) => c.label)).toEqual(['domain = halden-logistlcs.example', 'event = web connection']);
+		expect(r.chips[1]!.filter).toEqual({ field: 'action', op: 'eq', value: 'network-connection' });
 		expect(r.range).toBe('last 7 days');
 		expect(r.query.from).toBe(new Date(+now - 7 * 864e5).toISOString());
 	});
 	it('finds people, devices and addresses', () => {
 		const r = parseHunt('sign-ins for j.okafor on okta from 198.51.100.77', now);
 		expect(r.chips.map((c) => c.filter.field)).toEqual(['source.ip', 'host.name', 'user.name', 'action']);
+	});
+	it('uses the normaliser’s action names', () => {
+		const act = (t: string) => parseHunt(t, now).chips.find((c) => c.filter.field === 'action')?.filter.value;
+		expect(act('people who refused several sign-in prompts')).toBe('mfa-push-denied');
+		expect(act('who approved a sign-in prompt after several refusals')).toBe('mfa-push-approved');
+		expect(act('inbox rules forwarding outside halden')).toBe('inbox-rule-created');
+		expect(act('failed sign-ins on mel-vpn-01 last night')).toBe('logon-failed');
+		expect(act('sign-ins for j.okafor')).toBe('logon');
+		expect(act('new scheduled tasks this week')).toBe('scheduled-task-created');
+		expect(act('invoices downloaded from the bucket')).toBe('s3-get-object');
+		expect(act('secrets in public code')).toBe('secret-exposed');
+		expect(act('devices that uploaded to upload.files-sync.example')).toEqual(['network-connection', 'network-flow']);
 	});
 	it('reads relative ranges from today', () => {
 		expect(parseRange('last 24 hours', now).label).toBe('last 24 hours');
@@ -185,7 +198,8 @@ describe('live stream and river', () => {
 	it('groups river lines by minute, newest first', () => {
 		const g = groupByMinute([{ eventId: '1', at: '2025-11-20T08:17:10Z', text: 'a', dataset: 'x', severity: null, anomaly: false, incidentId: null }, { eventId: '2', at: '2025-11-20T08:18:05Z', text: 'b', dataset: 'x', severity: null, anomaly: true, incidentId: null }], 'Europe/Brussels');
 		expect(g.map((x) => x.label)).toEqual(['09:18', '09:17']);
-		expect(minuteTotal(undefined, 1284, '2025-11-20T08:17:00.000Z', new Date('2025-11-20T08:18:30Z'))).toBeGreaterThan(1200);
+		expect(minuteTotal(undefined, 3)).toBe(3);
+		expect(minuteTotal(1284, 3)).toBe(1284);
 	});
 	it('labels clocks and links them to the notice or the decision', () => {
 		const d = { id: 'd', incidentId: 'i', incidentReference: 'NJ-1038', regime: 'sec_8k', regimeLabel: 'SEC 8-K', noticeType: 'x', noticeLabel: 'Item 1.05', jurisdiction: 'United States', startsAt: null, dueAt: null, dueAtLocal: null, businessDays: null, state: 'not_started', remainingSeconds: null, noticeId: null, basis: '' } as const;

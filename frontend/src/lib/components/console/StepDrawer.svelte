@@ -3,7 +3,7 @@
 	import { slide } from 'svelte/transition';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { api, problemMessage } from '$lib/api';
-	import type { IncidentSummary } from '$lib/api/types';
+	import type { IncidentSummary, Verdict } from '$lib/api/types';
 	import type { BatonRow } from '$lib/util/baton';
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
@@ -16,7 +16,8 @@
 	const confidence = $derived(typeof d.confidence === 'number' ? Math.round(d.confidence * 100) : null);
 	const evidence = $derived(row.evidence ?? (Array.isArray(d.evidence) ? d.evidence : []));
 	let disagreeing = $state(false);
-	let verdict = $state('Likely noise');
+	let verdict = $state<Verdict>('false_positive');
+	const VERDICT_WORDS: Record<Verdict, string> = { false_positive: 'a false alarm', benign: 'expected activity', true_positive: 'a real attack', needs_review: 'not settled yet' };
 	let note = $state('');
 	let busy = $state(false);
 
@@ -24,8 +25,13 @@
 		e.preventDefault();
 		busy = true;
 		try {
-			await api.incidents.note(incident.id, `Disagreed with ${row.who} at ${timeOf(row.at, undefined, true)} (“${row.title}”): ${verdict}. ${note}`.trim());
-			ui.toast(`Recorded your verdict: ${verdict.toLowerCase()}. It also feeds the triage check set.`);
+			if (row.runId && row.step) {
+				const fb = await api.investigations.disagree(row.runId, row.step.seq, verdict, note.trim());
+				ui.toast(`Recorded: ${VERDICT_WORDS[verdict]}. Kept with ${fb.labelledDetections} alerts for the next triage review.`);
+			} else {
+				await api.incidents.note(incident.id, `Disagreed with ${row.who} (“${row.title}”): this is ${VERDICT_WORDS[verdict]}. ${note}`.trim());
+				ui.toast(`Recorded: ${VERDICT_WORDS[verdict]}.`);
+			}
 			disagreeing = false;
 		} catch (x) {
 			ui.toast(problemMessage(x), 'bad');
@@ -80,7 +86,7 @@
 		{:else}
 			<form class="dis" onsubmit={disagree}>
 				<label class="field"><span>your verdict</span>
-					<select class="select" bind:value={verdict}><option>Likely noise</option><option>Likely real</option><option>Needs more evidence</option></select>
+					<select class="select" bind:value={verdict}><option value="false_positive">A false alarm</option><option value="benign">Expected activity</option><option value="true_positive">A real attack</option><option value="needs_review">Needs more evidence</option></select>
 				</label>
 				<label class="field"><span>why (optional)</span><input class="input" bind:value={note} /></label>
 				<div class="row"><button class="btn pri sm" type="submit" disabled={busy}>Record verdict</button><button class="lnk" type="button" onclick={() => (disagreeing = false)}>cancel</button></div>

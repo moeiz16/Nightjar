@@ -2,13 +2,14 @@
 	// The auditor's evidence tile: what each detection cited, quoted as received.
 	import { api } from '$lib/api';
 	import type { DetectionDoc } from '$lib/api/types';
+	import { session } from '$lib/stores/session.svelte';
 	import { timeOf } from '$lib/time/clock';
 	import Untrusted from './Untrusted.svelte';
 
 	let { incidentId }: { incidentId: string | null } = $props();
 	let dets = $state<DetectionDoc[]>([]);
 	$effect(() => {
-		if (!incidentId) return;
+		if (!incidentId || !session.can('detections:read')) return;
 		api.incidents.detections(incidentId).then((d) => (dets = d)).catch(() => (dets = []));
 	});
 	const ev = $derived(dets.flatMap((d) => d.evidence ?? []));

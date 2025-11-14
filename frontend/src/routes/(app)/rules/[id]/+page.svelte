@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import Pane from '$lib/components/shell/Pane.svelte';
 	import { api, problemMessage } from '$lib/api';
-	import type { RuleInfo } from '$lib/api/types';
+	import type { RuleException, RuleInfo } from '$lib/api/types';
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { isTyping } from '$lib/commands';
@@ -18,12 +18,18 @@
 	let lowering = $state(false);
 	let turningOff = $state(false);
 	let offReason = $state('');
-	let exception = $state('');
+	let exceptions = $state<RuleException[]>([]);
+	let exField = $state<'user' | 'host' | 'ip'>('user');
+	let exValue = $state('');
+	let exReason = $state('');
+	let exDays = $state('90');
+	let exBusy = $state(false);
+	const FIELD_WORDS = { user: 'person', host: 'device', ip: 'address' } as const;
 
 	$effect(() => {
 		api.rules
 			.get(page.params.id ?? '')
-			.then((r) => ((rule = r.rule), (yaml = r.yaml)))
+			.then((r) => ((rule = r.rule), (yaml = r.yaml), (exceptions = r.exceptions ?? [])))
 			.catch((x) => (err = problemMessage(x)));
 	});
 	const s = $derived(yaml ? ruleSentence(yaml) : null);
@@ -55,10 +61,32 @@
 			ui.toast(problemMessage(x), 'bad');
 		}
 	}
-	function lower(e: SubmitEvent) {
+	async function lower(e: SubmitEvent) {
 		e.preventDefault();
-		lowering = false;
-		ui.toast(`Proposed to ${rule?.owner ?? 'the rule owner'}: stop alerting when ${exception || 'the backup service account runs it'}. It goes live after they agree.`, 'info');
+		if (!rule) return;
+		exBusy = true;
+		try {
+			const added = await api.exceptions.add({ ruleId: rule.id, field: exField, value: exValue.trim(), reason: exReason.trim(), expiresInDays: exDays ? Number(exDays) : undefined });
+			exceptions = [...exceptions, added];
+			rule = { ...rule, exceptions: (rule.exceptions ?? 0) + 1 };
+			lowering = false;
+			exValue = exReason = '';
+			ui.toast(`Exception added: ${FIELD_WORDS[added.field]} ${added.value}. Applied within 30 seconds and logged with your name.`);
+		} catch (x) {
+			ui.toast(problemMessage(x), 'bad');
+		} finally {
+			exBusy = false;
+		}
+	}
+	async function removeException(x: RuleException) {
+		try {
+			await api.exceptions.remove(x.id);
+			exceptions = exceptions.filter((e) => e.id !== x.id);
+			if (rule) rule = { ...rule, exceptions: Math.max(0, (rule.exceptions ?? 1) - 1) };
+			ui.toast(`Exception removed: ${FIELD_WORDS[x.field]} ${x.value}.`);
+		} catch (e) {
+			ui.toast(problemMessage(e), 'bad');
+		}
 	}
 	const canManage = $derived(session.can('rules:manage'));
 </script>
@@ -93,7 +121,18 @@
 					<button class="btn sm" type="button" onclick={test}>Test on last 7 days ▶</button>
 					{#if tested}<span class="mono" role="status">→ {tested.matches} matches · {tested.confirmed} confirmed · {tested.noise} noise</span>{/if}
 				</div>
-				<p class="meta mono">Owner {rule.owner ?? '—'} · changed {rule.changedAt ? whenShort(rule.changedAt) : '—'} by {rule.owner ?? '—'} · version {rule.version ?? 1} · {rule.origin} · {rule.enabled ? '● on' : '○ off'}</p>
+				<p class="meta mono">{rule.hits7d.toLocaleString('en-GB')} alerts in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
+				{#if exceptions.length}
+					<ul class="excs" aria-label="Exceptions">
+						{#each exceptions as x (x.id)}
+							<li>
+								<span><b>{FIELD_WORDS[x.field]} {x.value}</b> · {x.reason}</span>
+								<span class="mono faint">{x.createdBy} · {whenShort(x.createdAt)}{x.expiresAt ? ` · until ${whenShort(x.expiresAt)}` : ''}</span>
+								{#if canManage}<button class="lnk" type="button" onclick={() => removeException(x)}>remove</button>{/if}
+							</li>
+						{/each}
+					</ul>
+				{/if}
 				<div class="acts">
 					<button class="btn" type="button" onclick={() => (lowering = !lowering)} disabled={!canManage}>Lower the noise…</button>
 					{#if rule.enabled}
@@ -105,15 +144,20 @@
 				</div>
 				{#if lowering}
 					<form class="inline" onsubmit={lower}>
-						<label class="field"><span>stop alerting when…</span>
-							<select class="select" bind:value={exception}>
-								<option value="the backup service account svc-backup runs it">the backup service account (svc-backup) runs it</option>
-								<option value="it happens inside the change window">it happens inside a scheduled change window</option>
-								<option value="the same device alerted in the last hour">the same device alerted in the last hour</option>
+						<label class="field"><span>stop alerting for this</span>
+							<select class="select" bind:value={exField}>
+								<option value="user">person or service account</option>
+								<option value="host">device</option>
+								<option value="ip">address</option>
 							</select>
 						</label>
-						<button class="btn pri sm" type="submit">Propose to the owner</button>
-						{#if filters.length}<span class="mono faint">existing exceptions: {filters.join(', ')}</span>{/if}
+						<label class="field"><span>{FIELD_WORDS[exField]}</span><input class="input" bind:value={exValue} required placeholder={exField === 'user' ? 'e.g. svc-backup' : exField === 'host' ? 'e.g. ant-backup-01' : 'e.g. 192.0.2.10'} /></label>
+						<label class="field wide"><span>why (kept with the exception)</span><input class="input" bind:value={exReason} required minlength="10" placeholder="e.g. nightly backup agent rollout" /></label>
+						<label class="field"><span>for</span>
+							<select class="select" bind:value={exDays}><option value="30">30 days</option><option value="90">90 days</option><option value="">until removed</option></select>
+						</label>
+						<button class="btn pri sm" type="submit" disabled={exBusy}>Add exception</button>
+						{#if filters.length}<span class="mono faint">the rule already ignores: {filters.join(', ')}</span>{/if}
 					</form>
 				{/if}
 				{#if turningOff}
@@ -152,6 +196,28 @@
 	.kb {
 		font-size: 11.5px;
 		margin-top: -8px;
+	}
+	.excs {
+		list-style: none;
+		margin: -6px 0 0;
+		padding: 0;
+		display: grid;
+		gap: 6px;
+		width: 100%;
+	}
+	.excs li {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 12px;
+		align-items: baseline;
+		padding: 8px 0;
+		border-bottom: 1px solid var(--line);
+		font-size: 13.5px;
+		color: var(--ink-2);
+	}
+	.excs b {
+		color: var(--ink);
+		font-weight: 500;
 	}
 	.sentence {
 		margin: 0;
@@ -225,6 +291,9 @@
 		gap: 10px;
 		align-items: end;
 		flex-wrap: wrap;
+	}
+	.inline .wide {
+		flex: 1 1 260px;
 	}
 	@media (max-width: 760px) {
 		.body {

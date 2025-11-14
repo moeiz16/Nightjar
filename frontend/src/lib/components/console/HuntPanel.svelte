@@ -107,12 +107,12 @@
 			err = problemMessage(x);
 		}
 	}
-	async function addTo(eventId: string, what: string) {
+	async function addTo(eventId: string) {
 		const target = ui.scope ?? (live.incidents[0] ? { id: live.incidents[0].id, reference: live.incidents[0].reference } : null);
 		if (!target) return;
 		try {
-			await api.incidents.note(target.id, `Added from a hunt: ${what} (event ${eventId.slice(0, 8)})`);
-			ui.toast(`Added to ${target.reference}.`);
+			await api.incidents.addHuntMatch(target.id, eventId);
+			ui.toast(`Added to ${target.reference}'s evidence, with your name.`);
 		} catch (x) {
 			ui.toast(problemMessage(x), 'bad');
 		}
@@ -157,7 +157,7 @@
 <div class="hunt" class:compact>
 	<form class="bar" onsubmit={run} role="search">
 		<label class="sr" for="huntq">Search events in plain words</label>
-		<input id="huntq" class="q" bind:value={text} placeholder="laptops that opened links from halden-logistlcs.example in the last 7 days" autocomplete="off" />
+		<input id="huntq" class="q" bind:value={text} placeholder="devices that uploaded to upload.files-sync.example in the last 7 days" autocomplete="off" />
 		<span class="kb mono" aria-hidden="true">⏎</span>
 		<div class="acts">
 			<span class="seg" role="group" aria-label="View">
@@ -214,7 +214,7 @@
 								<td class="m">{r.device}</td>
 								<td class="what"><Untrusted value={r.what} inline /></td>
 								<td class="m">
-									{#if r.incident}<a href="/incidents/{r.incident}">{r.incident}</a>{:else if addTarget && session.can('incidents:write')}<button class="lnk" type="button" onclick={() => addTo(r.eventId, r.what.text)}>— add to {addTarget} +</button>{:else}—{/if}
+									{#if r.incident}<a href="/incidents/{r.incident}">{r.incident}</a>{:else if addTarget && session.can('incidents:write')}<button class="lnk" type="button" onclick={() => addTo(r.eventId)}>— add to {addTarget} +</button>{:else}—{/if}
 								</td>
 							</tr>
 						{/each}

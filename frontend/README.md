@@ -29,12 +29,16 @@ authorise, and a separate dawn-washed morning brief.
 
 ## Contract notes
 
-- No inventory list routes in v1: `/assets` and `/identities` are tried first; on 404 the app assembles them from
-  incidents' `assetsDetail` / `identitiesDetail`.
-- The executive cannot read `/incidents/{id}/detections`, so the notice page cites the incident timeline as evidence
-  for the CISO.
-- "Disagree" with a teammate's step, "Add to incident" from a hunt and "Not yet: decide by…" are recorded as
-  incident notes; there are no dedicated endpoints. "Mark as expected" and "Lower the noise" have no endpoint yet.
-- River minute totals are estimated from `eventsPerMinute` plus `river.batch` counts (no per-minute totals).
+- Assets and identities come from `GET /assets` and `GET /identities` (contract §1.8a).
+- Least privilege for evidence: people with `detections:read` see the detections' event copies; the CISO (and
+  anyone else) reads `GET /incidents/{id}/evidence`, a summary without matched fields or log text.
+- "Disagree" posts `/investigations/{runId}/steps/{seq}/feedback`; "add to incident" from a hunt posts
+  `/incidents/{id}/evidence`; "Not yet: decide by…" posts `/incidents/{id}/reporting/{regime}/defer` and the clock
+  bar shows "decide by …"; "Lower the noise" and "Mark as expected" create per-org exceptions (`/suppressions`).
+- The hunting parser emits the normaliser's action names (`logon`, `logon-failed`, `mfa-push-denied`,
+  `inbox-rule-created`, `s3-get-object`, …), the same names saved searches and suggestions use.
+- River minute totals are exact: `GET /events/river` returns `minutes`, and `river.batch` counts add to them.
+- The business clock is the server's: `Me.clock.now` and the `X-Nightjar-Now` header set the offset, so a demo
+  date (and time) reads the same in the browser as on the server.
 - Step details are read defensively: `lookedAt`/`why` when present, otherwise the preceding lookups and the verdict
   summary.

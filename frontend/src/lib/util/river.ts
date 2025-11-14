@@ -15,10 +15,14 @@ export function groupByMinute(lines: RiverLine[], tz?: string): { key: string; l
 	return [...out.values()];
 }
 
-/** Estimated events in a minute: counted from batches where we have them, else the running rate. */
-export function minuteTotal(counted: number | undefined, eventsPerMinute: number, minuteKey: string, at: Date): number {
-	const start = +new Date(minuteKey);
-	const frac = Math.min(1, Math.max(0, (+at - start) / 60000));
-	const jitter = ((start / 60000) % 7) * 9 - 27;
-	return Math.max(counted ?? 0, Math.round((eventsPerMinute + jitter) * frac));
+/** Events in a minute: the exact total from the API (`minutes`) or the live batches, never fewer than the lines shown. */
+export function minuteTotal(counted: number | undefined, linesShown: number): number {
+	return Math.max(counted ?? 0, linesShown);
+}
+
+/** Minute totals from `GET /events/river`, keyed like `groupByMinute`. */
+export function minuteCounts(minutes: { minute: string; count: number }[] | undefined): Record<string, number> {
+	const out: Record<string, number> = {};
+	for (const m of minutes ?? []) out[new Date(Math.floor(+new Date(m.minute) / 60000) * 60000).toISOString()] = m.count;
+	return out;
 }

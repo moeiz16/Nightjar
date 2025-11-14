@@ -41,8 +41,10 @@
 		busy = true;
 		try {
 			if (outcome === 'later') {
-				await api.incidents.note(incidentId, `Materiality decision for ${regimeShort(a.regime)} deferred: decide by ${decideBy}. ${rationale}`.trim());
-				ui.toast(`Recorded: decide by ${shortDay(new Date(decideBy + 'T12:00:00Z'))}. The clock has not started.`, 'info');
+				// end of that business day where the entity sits (17:00 New York for the SEC), as a UTC instant
+				const by = new Date(`${decideBy}T${sec ? '22:00:00Z' : '16:00:00Z'}`);
+				await api.incidents.defer(incidentId, a.regime, { entityId: a.entityId, decideBy: by.toISOString(), note: rationale.trim() });
+				ui.toast(`Recorded: decide by ${shortDay(by, sec ? NY : undefined)}. No clock yet; you will be reminded.`, 'info');
 			} else {
 				const at = now().toISOString();
 				await api.incidents.assess(incidentId, a.regime, {
