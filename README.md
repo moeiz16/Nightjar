@@ -98,8 +98,10 @@ detections, incidents and agent runs are genuine. It then applies the people's d
 - **NJ-1036:** a ransomware precursor on the shared dispatch platform. Gateway session reuse (CVE-2023-4966), LSASS
   dump, PsExec to two crown-jewel servers. Isolation was approved by two people. This is **the reportable
   incident**, with NIS2, SOCI and SEC 8-K clocks running and the NIS2 early warning already submitted.
-- **NJ-1037:** phishing that led to credential misuse, with MFA fatigue and an external forwarding rule. GDPR is
-  left at "assess".
+- **NJ-1037:** phishing that led to credential misuse, with MFA fatigue and an external forwarding rule (the
+  landing page replays it). The CISO judged it significant under NIS2 because supplier invoices were being
+  redirected, so its **24-hour early warning is running and the draft still has fields to complete**. GDPR is left
+  at "assess".
 - **NJ-1038:** a cloud access key used from an unfamiliar network. **Revoking the key is waiting for approval**,
   which is the Hold to authorise demo.
 - **NJ-1039:** a backup software update that **caused 146 alerts, collapsed into one likely-benign incident**.
@@ -107,7 +109,8 @@ detections, incidents and agent runs are genuine. It then applies the people's d
 - **NJ-1041:** unusual data transfer by a contractor account (needs review).
 
 The seed also adds 35 closed historical incidents, weekly briefs and a valid audit chain. All dates are relative
-to the demo clock. Set `NIGHTJAR_DEMO_TODAY=2025-11-20` to view the demo as of that Thursday.
+to the demo clock. Set `NIGHTJAR_DEMO_TODAY=2025-11-20` (and `NIGHTJAR_DEMO_TIME=10:00` to pin the time of day) to
+view the demo as of that Thursday morning.
 
 **Optional real data.** `make data` downloads the OTRF scenarios, the SigmaHQ rule subset, the full ATT&CK bundle
 and the live KEV catalogue into the git-ignored `data/` folder (about 56 MB transferred, about 152 MB on disk).

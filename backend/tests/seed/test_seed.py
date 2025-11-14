@@ -61,7 +61,7 @@ async def test_references_and_last_night(client: httpx.AsyncClient, seeded: dict
         "critical",
     )
     assert by["NJ-1036"]["reportable"] == "yes"
-    assert by["NJ-1037"]["status"] == "monitoring" and by["NJ-1037"]["reportable"] == "assess"
+    assert by["NJ-1037"]["status"] == "monitoring" and by["NJ-1037"]["reportable"] == "yes"
     assert by["NJ-1038"]["status"] == "containing" and by["NJ-1038"]["pendingApprovals"] == 1
     assert (
         by["NJ-1039"]["status"] == "resolved"
@@ -93,6 +93,14 @@ async def test_regulator_clocks_read_as_of_the_demo_date(client: httpx.AsyncClie
     }
     regimes = {(a["regime"], a["determination"]["applies"] if a["determination"] else None) for a in rep["assessments"]}
     assert ("nis2", True) in regimes and ("sec_8k", True) in regimes and ("soci", True) in regimes
+    with clock.travel(DEMO_NOW):  # Joy's mailbox (the landing replay): aware 03:13:40, early warning drafted
+        joy = (await client.get(f"{API}/incidents/NJ-1037/reporting")).json()
+    ew = next(x for x in joy["deadlines"] if x["noticeType"] == "nis2.early_warning")
+    assert ew["startsAt"] == "2025-11-20T02:13:40+00:00" and ew["dueAt"] == "2025-11-21T02:13:40+00:00"
+    assert ew["state"] == "on_track" and ew["noticeId"]
+    assert {n["type"]: n["status"] for n in joy["notices"]} == {"nis2.early_warning": "draft"}
+    gdpr = next(a for a in joy["assessments"] if a["regime"] == "gdpr_art33")
+    assert gdpr["proposal"]["applies"] == "assess" and gdpr["determination"] is None
 
 
 async def test_containment_state_and_pending_hold_to_authorise(client: httpx.AsyncClient, seeded: dict) -> None:

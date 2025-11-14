@@ -938,6 +938,31 @@ async def human_decisions(org_id: uuid.UUID, night: datetime, people: People) ->
                 + timedelta(seconds=40),
                 effector=eff,
             )
+        # Joy's mailbox was redirecting supplier invoice payments: Ingrid treats it as a significant incident under
+        # NIS2 (possible considerable financial loss to others), aware from the first sign-in prompt refusal.
+        await _assess(
+            org_id,
+            n37,
+            "nis2",
+            {
+                "applies": True,
+                "rationale": "Supplier invoices were being forwarded from the accounts payable mailbox to an outside "
+                "address; customers and suppliers could suffer a considerable financial loss.",
+                "entityId": "halden-eu",
+                "awareAt": at(night, 0, 3, 13) + timedelta(seconds=40),
+            },
+            ingrid,
+            at(night, 0, 3, 50),
+        )
+        await _notice(
+            org_id,
+            n37,
+            "nis2",
+            "early_warning",
+            drafter=aiko,
+            drafted=at(night, 0, 3, 58),
+            fills={"contact": "Ingrid Vos, CISO and NIS2 contact point, ingrid.vos@halden.example, +32 3 555 01 20"},
+        )
         await _status(
             org_id,
             n37,
