@@ -1,5 +1,6 @@
 """`python -m nightjar.agents serve [triage|enrichment|response|all]`: triage :8031, enrichment :8032, response
-:8033. `all` (or AGENTS_PROCESS=single) hosts the three agents in one process on their separate ports."""
+:8033. `all` (the default) hosts the three agents in one process on their separate ports; name one agent to run it
+on its own."""
 
 from __future__ import annotations
 

@@ -53,7 +53,7 @@ api:             ## API on :8030 (owns the hunting store; runs the store writer)
 workers:         ## Pipeline workers: normalise, detect, UEBA, score, correlate, dispatch, orchestrate, jobs
 	cd backend && $(BPY) -m nightjar.workers run
 
-agents:          ## Triage :8031, enrichment :8032, response :8033 (AGENTS_PROCESS=single for one process)
+agents:          ## Triage :8031, enrichment :8032, response :8033 in one process (serve triage|enrichment|response for one agent)
 	cd backend && $(BPY) -m nightjar.agents serve all
 
 mcp:             ## Tool servers (intel, assets, identity, ticketing, response) on :8034
@@ -85,8 +85,8 @@ test: test-backend test-frontend  ## All tests
 test-backend:    ## API, platform, pipeline, agent and ML tests (in-process bus; no servers needed)
 	cd backend && $(BPY) -m pytest
 
-test-frontend:   ## Web app type checks + production build
-	$(NPM) run check && $(NPM) run build
+test-frontend:   ## Web app type checks, lint, unit and flow tests, production build
+	$(NPM) run check && $(NPM) run lint && $(NPM) test && $(NPM) run build
 
 lint:            ## Lint and format checks (ruff)
 	$(PY) -m ruff check $(LINT)
