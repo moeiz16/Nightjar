@@ -16,6 +16,7 @@ from nightjar.core.deps import (
     check_csrf,
     client_ip,
     get_db,
+    get_optional_ctx,
     get_user_ctx,
 )
 from nightjar.core.errors import not_found
@@ -129,6 +130,16 @@ async def refresh(
     await db.commit()
     set_session_cookies(response, issued.token)
     return auth_svc.session_out(issued.session)
+
+
+@router.get("/session")
+async def session_status(
+    ctx: RequestContext | None = Depends(get_optional_ctx), db: AsyncSession = Depends(get_db)
+) -> dict:
+    """Like `/me`, but answers `200 { me: null }` when nobody is signed in, so public pages can check quietly."""
+    if ctx is None:
+        return {"me": None}
+    return {"me": await auth_svc.me_payload(db, ctx.user, ctx.session)}
 
 
 @router.get("/me")

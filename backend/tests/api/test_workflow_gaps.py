@@ -303,3 +303,31 @@ async def test_every_response_carries_the_business_clock(client: httpx.AsyncClie
     assert now.date() in (date(2025, 11, 20), date(2025, 11, 21)) and now.tzinfo is not None
     assert r.json()["clock"]["demo"] is True and r.json()["clock"]["now"].startswith("2025-11-2")
     assert abs((datetime.fromisoformat(r.json()["clock"]["now"]) - now.astimezone(UTC)).total_seconds()) < 5
+
+
+async def test_session_status_is_quiet_when_signed_out(client: httpx.AsyncClient) -> None:
+    await f.halden()
+    r = await client.get(f"{API}/auth/session")
+    assert r.status_code == 200 and r.json() == {"me": None}
+    await f.sign_in(client, f.HALDEN["auditor"])
+    me = (await client.get(f"{API}/auth/session")).json()["me"]
+    assert me["user"]["email"] == f.HALDEN["auditor"] and me["clock"]["today"]
+
+
+async def test_saved_search_alerts_are_rerun_by_the_sweeper(client: httpx.AsyncClient) -> None:
+    from nightjar.services.sweeper import run_alerting_searches
+
+    h = await f.halden()
+    await handle_normalized([f.event(h["org_id"], action="logon-failed", outcome="failure") for _ in range(3)])
+    headers = await f.sign_in(client, f.HALDEN["analyst"])
+    body = {
+        "name": "Failed sign-ins",
+        "query": {"filters": [{"field": "action", "op": "eq", "value": "logon-failed"}], "relativeHours": 24},
+    }
+    saved = (await client.post(f"{API}/hunting/saved", json=body, headers=headers)).json()
+    assert saved["alert"] is False and saved["schedule"] == "on demand"
+    on = await client.patch(f"{API}/hunting/saved/{saved['id']}", json={"alert": True}, headers=headers)
+    assert on.status_code == 200 and on.json()["alert"] is True and on.json()["schedule"] == "every 15 min"
+    assert await run_alerting_searches() == 1
+    again = next(s for s in (await client.get(f"{API}/hunting/saved")).json() if s["id"] == saved["id"])
+    assert again["lastCount"] == 3 and again["lastRunAt"]

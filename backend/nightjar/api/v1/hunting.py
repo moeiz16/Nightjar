@@ -38,12 +38,14 @@ class SavedIn(CamelIn):
     name: Name
     description: str = Field(default="", max_length=2000)
     query: HuntQueryIn
+    alert: bool = False
 
 
 class SavedPatchIn(CamelIn):
     name: Name | None = None
     description: str | None = Field(default=None, max_length=2000)
     query: HuntQueryIn | None = None
+    alert: bool | None = None
 
 
 class RunIn(CamelIn):
@@ -124,6 +126,7 @@ async def create_saved(
         description=body.description,
         query=_stored(body.query),
         created_by=ctx.user.id,
+        alert=body.alert,
     )
     db.add(s)
     await db.flush()
@@ -146,8 +149,15 @@ async def patch_saved(
         s.description = body.description
     if body.query is not None:
         s.query = _stored(body.query)
+    if body.alert is not None:
+        s.alert = body.alert
     await audit(
-        db, ctx, action="hunt.updated", resource_type="saved_search", resource_id=s.id, metadata={"name": s.name}
+        db,
+        ctx,
+        action="hunt.updated",
+        resource_type="saved_search",
+        resource_id=s.id,
+        metadata={"name": s.name, **({"alert": body.alert} if body.alert is not None else {})},
     )
     await db.commit()
     return await _doc(db, s)

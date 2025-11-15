@@ -113,6 +113,9 @@ def fields_doc() -> list[dict]:
     ]
 
 
+ALERT_MINUTES = 15
+
+
 def saved_doc(s: SavedSearch, user: User | None) -> dict:
     from nightjar.services.auth import user_out
 
@@ -125,6 +128,8 @@ def saved_doc(s: SavedSearch, user: User | None) -> dict:
         "createdAt": s.created_at.isoformat() if s.created_at else None,
         "lastRunAt": s.last_run_at.isoformat() if s.last_run_at else None,
         "lastCount": s.last_count,
+        "alert": bool(s.alert),
+        "schedule": f"every {ALERT_MINUTES} min" if s.alert else "on demand",
     }
 
 

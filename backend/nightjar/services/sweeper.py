@@ -4,13 +4,15 @@
 * expire pending approvals after 24 hours;
 * close incidents resolved more than 24 hours ago;
 * hand approved actions to the response agent again if it was unavailable at approval time;
-* announce the pipeline's plain status (`pipeline.status`) on change and every 30 seconds.
+* announce the pipeline's plain status (`pipeline.status`) on change and every 30 seconds;
+* re-run saved searches marked "alert me" every 15 minutes and keep their last count.
 """
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
+import time
 from datetime import timedelta
 
 import structlog
@@ -25,6 +27,26 @@ from nightjar.db.session import session_scope
 log = structlog.get_logger(__name__)
 SWEEP_SECONDS = 30.0
 _last_status: str | None = None
+_last_alert_run: float = 0.0
+
+
+async def run_alerting_searches() -> int:
+    """Saved searches with `alert` on, re-run on the current window; returns how many ran."""
+    from nightjar.db.models.soc import SavedSearch
+    from nightjar.hunting import api as store
+    from nightjar.hunting.service import query_from_doc, stored_query_in
+
+    ran = 0
+    async with session_scope() as db:
+        for s in (await db.execute(select(SavedSearch).where(SavedSearch.alert.is_(True)))).scalars():
+            try:
+                result = await store.search(query_from_doc(s.org_id, stored_query_in(s.query)))
+            except Exception as exc:
+                log.warning("alert_search_failed", saved=str(s.id), error=type(exc).__name__)
+                continue
+            s.last_run_at, s.last_count = clock.now(), result.total_matched
+            ran += 1
+    return ran
 
 
 async def sweep_once(*, announce_pipeline: bool = True) -> dict[str, int]:
@@ -34,8 +56,13 @@ async def sweep_once(*, announce_pipeline: bool = True) -> dict[str, int]:
     from nightjar.regimes.service import sweep as sweep_clocks
     from nightjar.services.pipeline import execute_approved_action, pipeline_health
 
-    global _last_status
-    stats = {"clocks": 0, "expired": 0, "closed": 0, "dispatched": 0}
+    global _last_status, _last_alert_run
+    stats = {"clocks": 0, "expired": 0, "closed": 0, "dispatched": 0, "alerts": 0}
+    from nightjar.hunting.service import ALERT_MINUTES
+
+    if time.monotonic() - _last_alert_run >= ALERT_MINUTES * 60:
+        _last_alert_run = time.monotonic()
+        stats["alerts"] = await run_alerting_searches()
     async with session_scope() as db:
         stats["clocks"] = await sweep_clocks(db)
         for p in (await db.execute(select(ActionProposal).where(ActionProposal.status == "pending"))).scalars():

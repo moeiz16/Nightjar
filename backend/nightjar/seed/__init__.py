@@ -244,6 +244,7 @@ async def _brightline_incident(org_id, night: datetime) -> None:
         )
 
 
+ALERTING = {"Refused sign-in prompts by person", "Programs reading sign-in secrets", "New mailbox forwarding rules"}
 SAVED = [
     (
         "Refused sign-in prompts by person",
@@ -319,6 +320,8 @@ async def _saved_searches(org_id, people) -> None:
                     description=desc,
                     created_by=by_first[who].id,
                     query=query_doc(filters=filters, group_by=group, hours=hours),  # type: ignore[arg-type]
+                    # the watch is alerted on new matches for the patterns behind last night's incidents
+                    alert=name in ALERTING,
                 )
             )
 

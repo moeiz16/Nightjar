@@ -21,6 +21,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -436,6 +437,8 @@ class SavedSearch(UUIDPkMixin, OrgScopedMixin, TimestampMixin, Base):
     created_by: Mapped[uuid.UUID | None] = mapped_column(UUIDType, nullable=True)
     last_run_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     last_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # "Alert me": the API's sweeper re-runs the search every ALERT_MINUTES and posts to the shift log on new matches
+    alert: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
 
 
 class WeeklyBrief(UUIDPkMixin, OrgScopedMixin, TimestampMixin, Base):

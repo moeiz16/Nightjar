@@ -91,6 +91,7 @@ limit: `429 rate_limited` with `Retry-After`. Sign-in also pauses one email for 
 | POST | `/auth/logout` | – | `204` |
 | POST | `/auth/refresh` | – | `{ expiresAt, absoluteExpiresAt }` |
 | GET | `/auth/me` | – | `Me` |
+| GET | `/auth/session` | – | `{ me: Me \| null }`: always `200`, so public pages check for a session without a `401` in the console |
 | POST | `/auth/switch-org` | `{ orgId }` | `Me` |
 | POST | `/auth/password` | `{ currentPassword, newPassword }` | `204` (other sessions ended) |
 
@@ -470,8 +471,8 @@ SQL from clients is never accepted.
 | GET | `/hunting/fields` | `hunting:read` | `{ field, label, type: "string"\|"number"\|"ip"\|"time", ops: string[] }[]` |
 | POST | `/hunting/search` | `hunting:read` | `HuntQueryDoc` → `HuntResultDoc` (`422 invalid_query`; 10 s timeout → `503 unavailable`) |
 | GET | `/hunting/saved` | `hunting:read` | `SavedSearch[]` |
-| POST | `/hunting/saved` | `hunting:write` | `{ name, description, query: HuntQueryDoc }` → `201 SavedSearch` |
-| PATCH | `/hunting/saved/{id}` | `hunting:write` | partial |
+| POST | `/hunting/saved` | `hunting:write` | `{ name, description, query: HuntQueryDoc, alert? }` → `201 SavedSearch` |
+| PATCH | `/hunting/saved/{id}` | `hunting:write` | partial `{ name?, description?, query?, alert? }` |
 | DELETE | `/hunting/saved/{id}` | `hunting:write` | `204` |
 | POST | `/hunting/saved/{id}/run` | `hunting:read` | `{ from?, to? }` → `HuntResultDoc` (audited `hunt.run`) |
 | GET | `/hunting/suggestions` | `hunting:read` | `Suggestion[]` plain-language ideas from recent techniques, anomalies and known-exploited vulnerabilities on owned assets |
@@ -484,7 +485,10 @@ HuntQueryDoc = { from, to, relativeHours?: number, filters: { field, op: "eq"|"n
 # host.name, user.name, source.ip, destination.ip, summary (summary = the untrusted message text: plain text only).
 # With them: [bucket], …groupBy, then "count" or "distinct <field>". Matching is case-insensitive.
 HuntResultDoc = { columns: string[], rows: any[][], totalMatched, elapsedMs, truncated }
-SavedSearch = { id, name, description, query: HuntQueryDoc, createdBy: User, createdAt, lastRunAt, lastCount }
+SavedSearch = { id, name, description, query: HuntQueryDoc, createdBy: User, createdAt, lastRunAt, lastCount,
+                alert: boolean, schedule: "on demand"|"every 15 min" }
+# `alert` ("alert me", set on create or PATCH) makes the API's sweeper re-run the search every 15 minutes and keep
+# lastRunAt / lastCount current; the saved-searches page marks one with new matches ◇.
 Suggestion = { id, title, why, query: HuntQueryDoc, basis: { kind: "technique"|"anomaly"|"vulnerability", ref } }
 ```
 Example suggestion: title "Look for other people who approved a sign-in prompt after several refusals", why "Joy
@@ -646,7 +650,7 @@ append-only logs (integer ids). `created_at`/`updated_at` on all mutable rows. P
 | reporting | `regime_assessments` | org_id, incident_id, regime, entity_id, proposal (JSON), determination (JSON), unique (incident_id, regime, entity_id) |
 | | `deadlines` | org_id, incident_id, regime, notice_type, starts_at, due_at, state, notice_id, basis |
 | | `notices`, `notice_versions` | org_id, incident_id, regime, type, status, version, sections (JSON), approved_by/at, submission (JSON) |
-| hunting | `saved_searches` | org_id, name, description, query (JSON), created_by, last_run_at, last_count |
+| hunting | `saved_searches` | org_id, name, description, query (JSON), created_by, last_run_at, last_count, alert |
 | executive | `weekly_briefs` | org_id, week (unique per org), headline, sections, metrics, generated_by |
 | models | `model_promotions` | org_id, model_name, version, stage, promoted_by, note (MLflow holds runs and metrics) |
 | pipeline | `pl_rule_overrides` | org_id, rule_id, enabled |
