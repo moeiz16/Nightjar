@@ -333,7 +333,9 @@ Alert to triaged is measured from the first detection recorded to the verdict re
 | In process (`make eval`, all stages concurrent) | 0.55 s | 0.68 s | 0.86 s |
 | Real `nats-server`, HTTP A2A agents, Streamable HTTP tool servers (`scripts/measure_latency.py`) | 0.43 s | 0.53 s | 0.54 s |
 
-Over the real transports, the whole 5,798-event night replays to its last verdict in 8.3 s.
+Over the real transports, the whole 5,798-event night replays to its last verdict in 8.3 s. On the full live stack,
+measured from the raw event posted to the webhook rather than from the detection, a credential-dump event reaches a
+recorded verdict in 1.15 s at p50 (see below).
 
 ### Governance
 
@@ -366,13 +368,38 @@ Snapshot with every table: [eval/RESULTS.md](eval/RESULTS.md).
 
 ### Tests and performance
 
-<!-- TODO(coordinator): QA fills in the measured numbers below: backend and web test counts, lint/typecheck
-status, the end-to-end journey check, API p50/p95 for the main screens, memory per process with `make dev`
-running, and `make reset` / `make train` durations. -->
+Measured on one laptop with everything running offline (`nats-server`, API, workers, agents, tool servers and the
+production web build) and the demo clock set to 20 November 2025.
 
-- **Tests:** _TODO: backend pytest count and areas; web Vitest count._ Ruff, mypy and svelte-check: _TODO_.
-- **End-to-end:** _TODO._
-- **Speed:** _TODO: API p50/p95 table._
+- **Tests:** 552 backend tests (pytest: platform, API, RBAC, tenant isolation, approvals and tokens, clock maths,
+  hunting, seed, pipeline, detection, ML, agents and safety) and 108 web tests (Vitest: API client, clock maths,
+  hold to authorise, untrusted text, hunting, rules, the brief and end-to-end flows through the mock API). Ruff,
+  mypy, svelte-check and ESLint are clean, and `alembic check` finds no drift.
+- **Time to triage on the live stack:** a native Sysmon LSASS-dump event posted through an ingest key on five fresh
+  hosts reached a recorded triage verdict at **p50 1.15 s, max 1.18 s**. That path runs ingest → NATS → normaliser
+  → Sigma → scorer → correlator → incident → the three teammates over A2A with the tool servers.
+- **Ingest throughput:** 20,000 events in batches of 500 through the webhook. Intake accepted 2,571 events/s.
+  All 20,000 were searchable in the hunting store after 15.0 s (about 1,330 events/s end to end) while detection,
+  behaviour checks and scoring consumed the same stream.
+- **Seed:** `make reset` takes 11.6 s. The seed itself is 10.0 s, of which 8.2 s is the night replay through the
+  real pipeline and agents. It produces 41 incidents, 394 detections and 259 audit rows.
+- **API speed** (40 sequential requests per endpoint after warm-up, signed in):
+
+| Request | p50 | p95 |
+|---|---|---|
+| The Watch (`/watch`) | 30 ms | 33 ms |
+| Incident list / incident detail | 16 ms / 15 ms | 20 ms / 18 ms |
+| Incident timeline | 11 ms | 13 ms |
+| Regulator clocks (`/reporting/clocks`) | 16 ms | 19 ms |
+| Morning brief / executive posture | 24 ms / 37 ms | 27 ms / 40 ms |
+| Event river | 22 ms | 27 ms |
+| Hunt with group-by over ~25k events | 14 ms | 16 ms |
+| Detection rules / behaviour anomalies | 22 ms / 26 ms | 26 ms / 29 ms |
+| Activity log | 11 ms | 13 ms |
+
+- **Memory** (resident, MB, ranges because macOS compresses idle pages): API 124–255, workers 48–308, the three
+  agents in one process 24–89, tool servers 21–65, `nats-server` 27–58.
+- **Web build:** the production build takes 3.3 s and the client bundle is 2.0 MB.
 - **Toolchain checks** (`make smoke`, on an 8 GB laptop): `nats-server` resident memory 22.8 MB; 745 of 745
   SigmaHQ rules in the downloaded subset parse and compile; DuckDB stores 50k events in 0.8 MB and runs a
   time-bucketed window query in 24 ms.
