@@ -14,8 +14,14 @@ from nightjar import clock
 app = typer.Typer(no_args_is_help=True, add_completion=False, help="Nightjar SOC agents (A2A)")
 
 
+@app.callback()
+def main() -> None:
+    """Keeps `serve` a named subcommand (a one-command Typer app would otherwise take `serve` as the argument)."""
+
+
 @app.command()
 def serve(which: str = typer.Argument("all")) -> None:
+    """Serve the triage, enrichment and response agents (`all`) or one of them."""
     import uvicorn
 
     from nightjar.agents.a2a import agent_url
