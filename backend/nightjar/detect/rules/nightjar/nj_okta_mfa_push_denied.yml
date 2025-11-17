@@ -12,7 +12,7 @@ detection:
   condition: selection
 level: informational
 ---
-title: Repeated sign-in prompts refused (prompt bombing)
+title: Repeated sign-in prompts refused (MFA fatigue)
 id: 00df2ee1-7f10-5758-926c-9ef79e964e00
 status: stable
 description: Three or more push prompts refused for one person within ten minutes, typical of an attacker who holds the password and hopes the person approves a prompt to make them stop.

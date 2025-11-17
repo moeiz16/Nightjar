@@ -807,7 +807,7 @@ async def human_decisions(org_id: uuid.UUID, night: datetime, people: People) ->
                 approvers=release,
                 executed_at=at(night, -1, 13, 52),
                 proposer="lukas",
-                rationale="Servers rebuilt from clean images and checked; dispatch can leave manual fallback.",
+                rationale="Servers rebuilt from clean images and checked; dispatch can return from manual working.",
                 effector=await isolate(host, False),
             )
         async with session_scope() as db:  # the outage and its reach are known after recovery, not at triage
@@ -826,7 +826,7 @@ async def human_decisions(org_id: uuid.UUID, night: datetime, people: People) ->
                     await clock_svc.propose_for_incident(db, row)
         aware = at(night, -1, 4, 52)
         rationale = (
-            "Dispatch ran on manual fallback for about nine hours across EU, US and AU depots; the attacker "
+            "Dispatch ran by hand for about nine hours across EU, US and AU depots; the attacker "
             "reached the Antwerp warehouse server."
         )
         await _assess(
@@ -844,7 +844,7 @@ async def human_decisions(org_id: uuid.UUID, night: datetime, people: People) ->
             {
                 "applies": True,
                 "rationale": "Linehaul East scheduling ran on manual "
-                "fallback; a relevant impact on the availability of the asset.",
+                "working; a relevant impact on the availability of the asset.",
                 "entityId": "halden-au",
                 "impactLevel": "relevant",
                 "awareAt": aware,

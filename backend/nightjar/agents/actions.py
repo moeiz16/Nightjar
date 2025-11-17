@@ -78,7 +78,7 @@ ACTIONS: dict[str, ActionSpec] = {
             "revoke_access_key",
             "access_key",
             "Withdraw this cloud access key",
-            "Anything using this key (including the build pipeline) stops working until a new key is issued",
+            "Anything using this key (including automated deployments) stops working until a new key is issued",
             False,
             "revoke_access_key",
             "revoke_access_key",
