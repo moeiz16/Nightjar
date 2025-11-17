@@ -1,4 +1,5 @@
 <script lang="ts">
+	const MFA_WORDS: Record<string, string> = { push: 'phone approval', totp: 'authenticator code', fido2: 'security key', sms: 'text message code', none: 'password only' };
 	// People and service accounts (DESIGN.md §6.13): a ledger of who signs in where, and what is unusual.
 	import { page } from '$app/state';
 	import Pane from '$lib/components/shell/Pane.svelte';
@@ -46,7 +47,7 @@
 						<tr>
 							<td><b class="nm">{p.displayName}</b><small class="mono">{p.username}</small></td>
 							<td>{p.department} · {SITE[p.jurisdiction] ?? p.jurisdiction}</td>
-							<td class="m">{p.kind === 'service' ? 'machine sign-in only' : `${p.usualCountries.join(', ') || '—'} · ${p.mfa} prompt`}</td>
+							<td class="m">{p.kind === 'service' ? 'machine sign-in only' : `${p.usualCountries.join(', ') || '—'} · ${MFA_WORDS[p.mfa] ?? p.mfa}`}</td>
 							<td class="m">{#if u.length}<span class="amber">◇ {u.length}</span> <span class="faint">{u[0]?.headline?.slice(0, 40)}…</span>{:else}—{/if}</td>
 							<td class="m">{#if p.disabled}<span class="lav">turned off</span>{:else if p.privileged}<span>◆ privileged</span>{:else}normal{/if}</td>
 						</tr>

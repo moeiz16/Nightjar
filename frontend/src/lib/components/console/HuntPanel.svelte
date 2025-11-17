@@ -149,6 +149,12 @@
 			};
 		});
 	});
+	// grouped searches (saved searches and suggestions often count by person, device or address) come back as
+	// columns + a count, not events: shown as a small ledger with plain column names
+	const grouped = $derived(!!result && !result.columns.includes('timestamp'));
+	const COL_WORDS: Record<string, string> = { 'user.name': 'person', 'host.name': 'device', 'source.ip': 'from address', 'destination.ip': 'to address', 'cloud.accessKeyId': 'access key', 'process.name': 'program', action: 'what happened', dataset: 'source', bucket: 'when', count: 'events', outcome: 'outcome' };
+	const colWord = (c: string) => COL_WORDS[c] ?? (c.startsWith('distinct ') ? `different ${COL_WORDS[c.slice(9)] ?? c.slice(9)}` : c.replace(/[._]/g, ' '));
+	const cell = (c: string, v: unknown) => (v === null || v === undefined || v === '' ? '—' : c === 'bucket' ? whenShort(String(v)) : c === 'user.name' ? (names[String(v)] ?? String(v)) : typeof v === 'number' ? v.toLocaleString('en-GB') : String(v));
 	const devices = $derived(new Set(rows.map((r) => r.device)).size);
 	const people = $derived(new Set(rows.map((r) => r.who)).size);
 	const addTarget = $derived(ui.scope?.reference ?? live.incidents[0]?.reference ?? null);
@@ -199,10 +205,21 @@
 
 	{#if result}
 		<div class="sum mono" aria-live="polite">
-			<span><b>{result.totalMatched}</b> matches · {devices} devices · {people} people</span>
-			<span class="faint">searched {((result.searched ?? 0) / 1e6).toFixed(1)} m events</span>
+			<span><b>{result.totalMatched.toLocaleString('en-GB')}</b> matches{#if grouped} · {result.rows.length} {result.rows.length === 1 ? 'group' : 'groups'}{:else} · {devices} devices · {people} people{/if}</span>
+			<span class="faint">{#if result.searched}searched {(result.searched / 1e6).toFixed(1)} m events · {/if}answered in {Math.max(1, Math.round(result.elapsedMs))} ms</span>
 		</div>
-		{#if view === 'list'}
+		{#if grouped}
+			<div class="tblwrap">
+				<table class="ledger">
+					<thead><tr>{#each result.columns as c (c)}<th class:m={c === 'count' || c.startsWith('distinct ')}>{colWord(c)}</th>{/each}</tr></thead>
+					<tbody>
+						{#each result.rows as r, k (k)}
+							<tr>{#each result.columns as c, i (c)}<td class:m={c === 'count' || c.startsWith('distinct ') || c === 'bucket'}>{cell(c, r[i])}</td>{/each}</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else if view === 'list'}
 			<div class="tblwrap">
 				<table class="ledger">
 					<thead><tr><th>time</th><th>who</th><th>device</th><th>what</th><th>incident</th></tr></thead>
@@ -232,7 +249,7 @@
 				{/each}
 			</ol>
 		{/if}
-		{#if !rows.length}<p class="none">Nothing matched. Try fewer filters or a longer time range.</p>{/if}
+		{#if !result.rows.length}<p class="none">Nothing matched. Try fewer filters or a longer time range.</p>{/if}
 	{:else if !busy}
 		<p class="none">Ask in plain words: who, which device, what happened, and when. Field names are optional.</p>
 	{/if}

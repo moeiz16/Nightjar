@@ -29,6 +29,8 @@ export function endpoints(c: Client) {
 			login: (email: string, password: string) => c.post<T.Me>('/auth/login', { email, password }),
 			logout: () => c.post<void>('/auth/logout'),
 			me: () => c.get<T.Me>('/auth/me'),
+			/** 200 with `me: null` when signed out: public pages check without an error in the console */
+			session: () => c.get<{ me: T.Me | null }>('/auth/session'),
 			refresh: () => c.post<{ expiresAt: string; absoluteExpiresAt: string }>('/auth/refresh'),
 			switchOrg: (orgId: string) => c.post<T.Me>('/auth/switch-org', { orgId })
 		},

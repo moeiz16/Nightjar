@@ -79,6 +79,8 @@ export function rankCommands(commands: Command[], query: string, opts: { scope?:
 		const score = (fromKeywords ? { ...m, ranges: [] } : m).score + (scope && c.scope === scope ? 25 : 0) - (c.disabled ? 15 : 0);
 		out.push({ command: c, match: { score, ranges: fromKeywords ? [] : m.ranges } });
 	}
+	// nothing in the focused incident matches (e.g. another incident's reference): look everywhere instead
+	if (!out.length && scope && !opts.widened && query.trim()) return rankCommands(commands, query, { ...opts, widened: true });
 	return out.sort(
 		(a, b) => GROUP_ORDER.indexOf(a.command.group) - GROUP_ORDER.indexOf(b.command.group) || b.match.score - a.match.score
 	);

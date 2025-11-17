@@ -52,8 +52,8 @@ class Session {
 	load(force = false): Promise<Me | null> {
 		if (this.loaded && !force) return Promise.resolve(this.me);
 		this.#pending ??= api.auth
-			.me()
-			.then((me) => (this.set(me), me))
+			.session()
+			.then(({ me }) => (this.set(me), me))
 			.catch(() => (this.set(null), null))
 			.finally(() => (this.#pending = null));
 		return this.#pending;

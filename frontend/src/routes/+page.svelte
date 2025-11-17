@@ -57,6 +57,7 @@
 	let done = $state(false);
 	let dropReady = false;
 	let rid = 0;
+	let generation = $state(0);
 	let lid = 0;
 	let timers: ReturnType<typeof setTimeout>[] = [];
 	let tickTimer: ReturnType<typeof setInterval> | null = null;
@@ -190,6 +191,7 @@
 	}
 	function replay() {
 		clearAll();
+		generation++;
 		vNow = vStart;
 		rows = [];
 		log = [];
@@ -247,11 +249,14 @@
 		<aside class="col l" aria-label="Events coming in">
 			<div class="ph"><b>events</b><span>Halden Logistics</span><span class="rate teal">1,284/min</span></div>
 			<div class="river">
-				{#each rows as r (r.id)}
-					<div class="ev" class:odd={r.odd} in:fly={{ y: -6, duration: reduced ? 0 : 320 }} out:send={{ key: r.id }}>
-						<span class="tm mono">{r.odd ? '◇ ' : ''}{fmt(r.at)}</span><span>{r.text}<br /><span class="src mono">{r.src}</span></span>
-					</div>
-				{/each}
+				<!-- a replay starts a fresh river: the old rows go at once instead of 24 crossfades -->
+				{#key generation}
+					{#each rows as r (r.id)}
+						<div class="ev" class:odd={r.odd} in:fly={{ y: -6, duration: reduced ? 0 : 320 }} out:send={{ key: r.id }}>
+							<span class="tm mono">{r.odd ? '◇ ' : ''}{fmt(r.at)}</span><span>{r.text}<br /><span class="src mono">{r.src}</span></span>
+						</div>
+					{/each}
+				{/key}
 			</div>
 		</aside>
 

@@ -35,7 +35,7 @@
 			const rep = await api.incidents.reporting(incidentId);
 			all = rep.deadlines;
 			const want = page.url.searchParams.get('n');
-			const d = rep.deadlines.find((x) => x.noticeId === want) ?? rep.deadlines.find((x) => x.regime === regime && x.noticeId && x.state !== 'submitted') ?? rep.deadlines.find((x) => x.regime === regime && x.noticeId) ?? null;
+			const d = (want ? rep.deadlines.find((x) => x.noticeId === want) : undefined) ?? rep.deadlines.find((x) => x.regime === regime && x.noticeId && x.state !== 'submitted') ?? rep.deadlines.find((x) => x.regime === regime && x.noticeId) ?? null;
 			deadline = d;
 			if (d?.noticeId) notice = await api.notices.get(d.noticeId);
 			if (notice) {

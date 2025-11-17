@@ -100,6 +100,8 @@ describe('⌘K', () => {
 		const cmds = [c('a', 'Hold NJ-1038 key', 'do', 'NJ-1038'), c('b', 'Hold NJ-1036 server', 'do', 'NJ-1036'), c('w', 'The watch')];
 		expect(rankCommands(cmds, '', { scope: 'NJ-1038' }).map((r) => r.command.id)).toEqual(['a', 'w']);
 		expect(rankCommands(cmds, '', { scope: 'NJ-1038', widened: true }).map((r) => r.command.id).sort()).toEqual(['a', 'b', 'w']);
+		// another incident's reference finds it even while scoped
+		expect(rankCommands(cmds, 'NJ-1036', { scope: 'NJ-1038' }).map((r) => r.command.id)).toEqual(['b']);
 	});
 	it('groups do / go to / switch in that order', () => {
 		const cmds = [c('s', 'Theme', 'switch'), c('g', 'Rules', 'go to'), c('d', 'Decline', 'do')];

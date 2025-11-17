@@ -15,7 +15,10 @@
 	let { children } = $props();
 	let ready = $state(false);
 	onMount(async () => {
-		onSessionEnded(() => goto(`/sign-in?next=${encodeURIComponent(page.url.pathname)}`));
+		onSessionEnded(() => {
+			// the handler outlives this layout: never send the sign-in page to itself
+			if (!page.url.pathname.startsWith('/sign-in')) goto(`/sign-in?next=${encodeURIComponent(page.url.pathname)}`);
+		});
 		const q = page.url.searchParams.get('theme');
 		document.documentElement.dataset.theme = q === 'dark' || q === 'light' ? q : ui.briefTheme;
 		const me = await session.load();

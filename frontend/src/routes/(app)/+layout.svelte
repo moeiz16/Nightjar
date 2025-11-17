@@ -16,7 +16,10 @@
 	let ready = $state(false);
 
 	onMount(async () => {
-		onSessionEnded(() => goto(`/sign-in?next=${encodeURIComponent(page.url.pathname + page.url.search)}`));
+		onSessionEnded(() => {
+			// the handler outlives this layout: never send the sign-in page to itself
+			if (!page.url.pathname.startsWith('/sign-in')) goto(`/sign-in?next=${encodeURIComponent(page.url.pathname + page.url.search)}`);
+		});
 		const me = await session.load();
 		if (!me) {
 			goto(`/sign-in?next=${encodeURIComponent(page.url.pathname + page.url.search)}`, { replaceState: true });

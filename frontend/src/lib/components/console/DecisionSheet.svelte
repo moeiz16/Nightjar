@@ -51,7 +51,8 @@
 					applies: outcome === 'yes',
 					rationale: rationale.trim(),
 					entityId: a.entityId,
-					...(sec ? { material: outcome === 'yes', materialityDeterminedAt: at } : { awareAt: at, significant: outcome === 'yes', ...(a.regime === 'soci' ? { impactLevel: impact } : {}) })
+					// the API derives material / significant from `applies` (contract RegimeDetermination)
+					...(sec ? { materialityDeterminedAt: at } : { awareAt: at, ...(a.regime === 'soci' ? { impactLevel: impact } : {}) })
 				});
 				ui.toast(
 					outcome === 'yes'

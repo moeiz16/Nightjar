@@ -163,6 +163,7 @@ export function createMockServer(opts: MockServerOptions = {}) {
 		return undefined;
 	});
 	on('GET', '/auth/me', () => meDoc());
+	on('GET', '/auth/session', () => ({ me: me() && membership() ? meDoc() : null }));
 	on('POST', '/auth/refresh', () => {
 		const m = meDoc();
 		return m.session;

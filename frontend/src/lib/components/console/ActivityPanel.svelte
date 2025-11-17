@@ -59,7 +59,14 @@
 		if (autoExport && rows.length) exportPack();
 	});
 	const AREAS: [string, string][] = [['', 'everything'], ['approval.', 'approvals'], ['notice.', 'notices'], ['reporting.', 'clocks'], ['settings.', 'settings']];
-	const actor = (r: AuditEntry) => (r.actorType === 'agent' ? `${r.actorName} (teammate)` : r.actorName);
+	// the investigation colleagues sign as "Triage agent" in the log; people read them as colleagues
+	const actor = (r: AuditEntry) => (r.actorType === 'agent' ? r.actorName.replace(/\s*agent$/i, '') + ' colleague' : r.actorName);
+	const TYPE_WORDS: Record<string, string> = { incident: 'incident', rule: 'detection rule', saved_search: 'saved search', member: 'member', invitation: 'invitation', ingest_key: 'event source key', notice: 'notice', approval: 'action', user: 'account', organization: 'organisation', settings: 'settings', model: 'model card', weekly_brief: 'weekly brief' };
+	const about = (r: AuditEntry): string | null => {
+		const ref = (r.metadata as Record<string, unknown> | null)?.reference;
+		if (typeof ref === 'string' && ref.startsWith('NJ-')) return ref;
+		return r.resourceId?.startsWith('NJ-') ? r.resourceId : null;
+	};
 </script>
 
 <div class="act" class:compact>
@@ -96,8 +103,8 @@
 						<td class="m">{whenShort(r.createdAt)}<span class="sr"> {timeOf(r.createdAt, undefined, true)}</span></td>
 						<td class="who" class:tm={r.actorType === 'agent'}>{actor(r)}</td>
 						<td>{r.label}</td>
-						{#if !compact}<td class="m">{#if r.resourceId?.startsWith('NJ-')}<a href="/incidents/{r.resourceId}">{r.resourceId}</a>{:else}{r.resourceId ?? '—'}{/if}</td>{/if}
-						<td class="m seal" title="seal {r.hash} · follows {r.prevHash.slice(0, 8)}">·{r.hash.slice(0, 4)}</td>
+						{#if !compact}<td class="m">{#if about(r)}<a href="/incidents/{about(r)}">{about(r)}</a>{:else}{TYPE_WORDS[r.resourceType ?? ''] ?? (r.resourceType ? r.resourceType.replace(/_/g, ' ') : '—')}{/if}</td>{/if}
+						<td class="m seal" title="Sealed to the entry before it; Verify the log checks every seal">·{r.hash.slice(0, 4)}</td>
 					</tr>
 				{/each}
 			</tbody>
