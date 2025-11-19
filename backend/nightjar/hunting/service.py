@@ -229,17 +229,31 @@ _last_river: dict[uuid.UUID, float] = {}
 RIVER_EVERY_S = 2.0
 
 
+_held: dict[uuid.UUID, list[NormalizedEvent]] = {}
+_held_count: dict[uuid.UUID, int] = {}
+
+
 async def handle_normalized(events: Sequence[NormalizedEvent]) -> None:
-    """Append a batch to DuckDB and announce up to 20 river lines per org (at most every 2 s per org)."""
+    """Append a batch to DuckDB and announce up to 20 river lines per org (at most every 2 s per org). Events that
+    arrive between announcements are held, so each `river.batch` counts everything since the previous one."""
+    from nightjar.stream.runtime import note_events
+
     await store_api.append_events(events)
+    note_events(len(events))  # the API's own intake rate, for pipeline health on the watch
     by_org: dict[uuid.UUID, list[NormalizedEvent]] = {}
     for e in events:
         by_org.setdefault(e.org_id, []).append(e)
     loop = asyncio.get_running_loop()
-    for org_id, evs in by_org.items():
+    for org_id, fresh in by_org.items():
+        held = _held.setdefault(org_id, [])
+        held.extend(fresh)
+        if len(held) > 2000:  # keep the newest; the count below still covers every event
+            del held[: len(held) - 2000]
+        _held_count[org_id] = _held_count.get(org_id, 0) + len(fresh)
         if loop.time() - _last_river.get(org_id, -1e9) < RIVER_EVERY_S:
             continue
         _last_river[org_id] = loop.time()
+        evs, count = _held.pop(org_id), _held_count.pop(org_id, 0)
         newest = sorted(evs, key=lambda e: e.timestamp, reverse=True)[:20]
         rows = [
             {
@@ -267,7 +281,7 @@ async def handle_normalized(events: Sequence[NormalizedEvent]) -> None:
                 db,
                 org_id,
                 "river.batch",
-                {"count": len(evs), "lines": await river_lines(db, org_id, rows), "eventsPerMinute": epm},
+                {"count": count, "lines": await river_lines(db, org_id, rows), "eventsPerMinute": epm},
                 permission="watch:read",
             )
 

@@ -127,6 +127,10 @@ class Live {
 			case 'notice.updated':
 				this.#scheduleClocks();
 				break;
+			case 'incident.created':
+			case 'detection.created':
+				this.#scheduleRiverLinks();
+				break;
 			case 'approval.requested':
 				this.pendingApprovals++;
 				break;
@@ -137,6 +141,26 @@ class Live {
 				break;
 		}
 		for (const fn of this.#handlers.get(e.type) ?? []) fn(e.data);
+	}
+	#refreshRiver: ReturnType<typeof setTimeout> | null = null;
+	/** A line reaches the river before its detection and incident exist: once they do, re-read the newest lines
+	 *  and carry their incident and behaviour links over, so the event stops being folded away as routine. */
+	#scheduleRiverLinks() {
+		if (this.#refreshRiver) return;
+		this.#refreshRiver = setTimeout(async () => {
+			this.#refreshRiver = null;
+			try {
+				const r = await api.events.river(undefined, 200);
+				const linked = new Map(r.lines.filter((l) => l.incidentId || l.anomaly).map((l) => [l.eventId, l]));
+				if (!linked.size) return;
+				const seen = new Set(this.river.map((l) => l.eventId));
+				this.river = [...this.river.map((l) => linked.get(l.eventId) ?? l), ...[...linked.values()].filter((l) => !seen.has(l.eventId))]
+					.sort((a, b) => b.at.localeCompare(a.at))
+					.slice(0, 200);
+			} catch {
+				/* the next batch brings the links */
+			}
+		}, 700);
 	}
 	#scheduleClocks() {
 		if (this.#refreshClocks) clearTimeout(this.#refreshClocks);

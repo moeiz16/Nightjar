@@ -332,7 +332,7 @@ class ResponseExecutor(BaseExecutor):
 # ─────────────────────────────────────────────────────────────────────────────
 def _verdict_text(ctx: Any, verdict: str, p: policy.PolicyInputs) -> str:
     probs = (
-        f" The triage model rates the strongest alert at {p.max_probability:.2f}."
+        f" The strongest alert scores {round(p.max_probability * 100)} in 100 for being real."
         if p.max_probability is not None
         else ""
     )
