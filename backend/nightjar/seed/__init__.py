@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import shutil
 import time
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -125,7 +126,9 @@ async def run(*, use_pipeline: bool = True) -> dict:
         try:
             from nightjar.workers.inline import run_scenario
 
-            await run_scenario(halden_id, "halden-night", end_at=None, auto_investigate=True)
+            await run_scenario(
+                halden_id, "halden-night", end_at=None, auto_investigate=True, investigate_at=_investigated_at
+            )
             mode = "pipeline"
         except (ImportError, NotImplementedError, AttributeError) as exc:
             log.info("seed_pipeline_unavailable", error=type(exc).__name__)
@@ -340,6 +343,19 @@ def _drop_local_files(sqlite: Path | None) -> None:
     for p in targets:
         p.unlink(missing_ok=True)
     shutil.rmtree(s.nats_store_dir, ignore_errors=True)
+
+
+async def _investigated_at(incident_id: uuid.UUID) -> datetime | None:
+    """When the colleagues looked at a replayed incident: half a minute after its latest detection, and no later
+    than 32 minutes after its first (NJ-1036: first sign 04:10, verdict 04:42, as in API contract Part 6)."""
+    from nightjar.db.models.soc import Incident
+    from nightjar.db.session import session_scope
+
+    async with session_scope() as db:
+        inc = await db.get(Incident, incident_id)
+        if inc is None:
+            return None
+        return min(inc.last_seen + timedelta(seconds=30), inc.first_seen + timedelta(minutes=32))
 
 
 async def reset(*, use_pipeline: bool = True) -> dict:

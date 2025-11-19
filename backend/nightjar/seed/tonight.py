@@ -961,7 +961,11 @@ async def human_decisions(org_id: uuid.UUID, night: datetime, people: People) ->
             "early_warning",
             drafter=aiko,
             drafted=at(night, 0, 3, 58),
-            fills={"contact": "Ingrid Vos, CISO and NIS2 contact point, ingrid.vos@halden.example, +32 3 555 01 20"},
+            # whether suppliers abroad were among the redirected invoices is not known yet: left for the CISO
+            fills={
+                "contact": "Ingrid Vos, CISO and NIS2 contact point, ingrid.vos@halden.example, +32 3 555 01 20",
+                "cross_border": "[to be confirmed]",
+            },
         )
         await _status(
             org_id,

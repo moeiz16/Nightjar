@@ -99,6 +99,8 @@ async def test_regulator_clocks_read_as_of_the_demo_date(client: httpx.AsyncClie
     assert ew["startsAt"] == "2025-11-20T02:13:40+00:00" and ew["dueAt"] == "2025-11-21T02:13:40+00:00"
     assert ew["state"] == "on_track" and ew["noticeId"]
     assert {n["type"]: n["status"] for n in joy["notices"]} == {"nis2.early_warning": "draft"}
+    draft = (await client.get(f"{API}/notices/{ew['noticeId']}")).json()
+    assert draft["missing"] == ["cross_border"]
     gdpr = next(a for a in joy["assessments"] if a["regime"] == "gdpr_art33")
     assert gdpr["proposal"]["applies"] == "assess" and gdpr["determination"] is None
 

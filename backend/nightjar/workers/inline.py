@@ -6,7 +6,9 @@ offline model). Used by the demo seed (phase 2), `make eval` and the end-to-end 
 The stages are the real handlers; only the transport is in-process. Investigations are dispatched after the
 scenario's detections have been correlated (the dispatcher consumer starts once the detection stages are
 drained), so each triage run sees its incident's full evidence and incidents keep the reference order of API
-contract Part 6. Pass `concurrent_dispatch=True` to dispatch as incidents open (latency measurements).
+contract Part 6. Pass `concurrent_dispatch=True` to dispatch as incidents open (latency measurements), or
+`investigate_at` (incident id → moment) to run each investigation at its own moment on the business clock, so a
+replayed night's agent steps, verdicts and proposals carry night-time timestamps (the demo seed).
 """
 # ruff: noqa: ASYNC109  (explicit per-call timeouts are part of the bus interface)
 
@@ -103,6 +105,32 @@ def _store_writer() -> Callable[[Sequence[NormalizedEvent]], Awaitable[None]] | 
         return None
 
 
+InvestigateAt = Callable[[uuid.UUID], Awaitable[datetime | None]]
+
+
+async def _dispatch_timed(
+    pipeline: Pipeline,
+    when: InvestigateAt,
+    *,
+    store: Callable[[Sequence[NormalizedEvent]], Awaitable[None]] | None,
+) -> None:
+    """Start each investigation, and let it finish, with the business clock at `when(incident id)`."""
+    from nightjar import clock
+
+    bus = pipeline.bus
+    assert isinstance(bus, MemoryBus)
+    while True:
+        msgs = await bus.fetch("dispatcher", 1, 0.0)
+        if not msgs:
+            break
+        m = msgs[0]
+        at = await when(uuid.UUID(codec.loads(m.data)["incidentId"]))
+        with clock.travel(at) if at else contextlib.nullcontext():
+            await handle_one(bus, "dispatcher", m, pipeline.on_incident_opened)
+            await _drain(pipeline, ("orchestrator", "responder"), store=store)
+    await _drain(pipeline, ("dispatcher", "orchestrator", "responder"), store=store)
+
+
 async def run_scenario(
     org_id: uuid.UUID,
     scenario_id: str = "halden-night",
@@ -113,6 +141,7 @@ async def run_scenario(
     concurrent_dispatch: bool = False,
     include_dlq_sample: bool = True,
     anchor: datetime | None = None,
+    investigate_at: InvestigateAt | None = None,
 ) -> list[IncidentRef]:
     """Seed entry point: returns the incidents created, in creation (= reference) order."""
     return (
@@ -125,6 +154,7 @@ async def run_scenario(
             concurrent_dispatch=concurrent_dispatch,
             include_dlq_sample=include_dlq_sample,
             anchor=anchor,
+            investigate_at=investigate_at,
         )
     ).created
 
@@ -140,6 +170,7 @@ async def run_scenario_detailed(
     include_dlq_sample: bool = True,
     anchor: datetime | None = None,
     events: Sequence[tuple[datetime, dict[str, Any], str | None]] | None = None,
+    investigate_at: InvestigateAt | None = None,
 ) -> ScenarioRun:
     from nightjar.mcp_servers.host import reset_inline_host
 
@@ -181,7 +212,10 @@ async def run_scenario_detailed(
                 await _drain(pipeline, DETECTION_STAGES, store=store)
                 await pipeline.flush_ueba()
                 await _drain(pipeline, DETECTION_STAGES, store=store)
-                await _drain(pipeline, ("dispatcher", "orchestrator", "responder"), store=store)
+                if investigate_at is not None:
+                    await _dispatch_timed(pipeline, investigate_at, store=store)
+                else:
+                    await _drain(pipeline, ("dispatcher", "orchestrator", "responder"), store=store)
             out.created = list(pipeline.created)
             out.runs = list(pipeline.runs)
             out.counts = dict(pipeline.counts)
