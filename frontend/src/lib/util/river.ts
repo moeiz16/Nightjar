@@ -26,3 +26,15 @@ export function minuteCounts(minutes: { minute: string; count: number }[] | unde
 	for (const m of minutes ?? []) out[new Date(Math.floor(+new Date(m.minute) / 60000) * 60000).toISOString()] = m.count;
 	return out;
 }
+
+/** One line per event (a batch can repeat a line already shown, or one linked after the fact): keeps the first,
+ *  but carries an incident or behaviour link from any copy. */
+export function uniqueLines(lines: RiverLine[], max: number): RiverLine[] {
+	const byId = new Map<string, RiverLine>();
+	for (const l of lines) {
+		const had = byId.get(l.eventId);
+		if (!had) byId.set(l.eventId, l);
+		else if (!had.incidentId && !had.anomaly && (l.incidentId || l.anomaly)) byId.set(l.eventId, { ...had, incidentId: l.incidentId, anomaly: l.anomaly });
+	}
+	return [...byId.values()].slice(0, max);
+}

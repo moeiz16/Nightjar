@@ -6,11 +6,12 @@ import { eventSourceStream } from '$lib/api/stream';
 import type { Deadline, IncidentSummary, PipelineStatus, RiverLine, ShiftLogEntry, StreamEvent, StreamEventType } from '$lib/api/types';
 import { now } from '$lib/time/clock';
 import { ui } from './ui.svelte';
-import { minuteCounts } from '$lib/util/river';
+import { minuteCounts, uniqueLines } from '$lib/util/river';
 
 type Handler<K extends StreamEventType> = (data: Extract<StreamEvent, { type: K }>['data']) => void;
 
 export { groupByMinute, minuteTotal } from '$lib/util/river';
+
 
 class Live {
 	now = $state(now());
@@ -82,7 +83,7 @@ class Live {
 	async loadRiver() {
 		try {
 			const r = await api.events.river(undefined, 50);
-			this.river = r.lines;
+			this.river = uniqueLines(r.lines, 160);
 			this.eventsPerMinute = r.eventsPerMinute;
 			this.counts = { ...this.counts, ...minuteCounts(r.minutes) };
 		} catch {
@@ -90,7 +91,7 @@ class Live {
 		}
 	}
 	showHeld() {
-		this.river = [...this.held, ...this.river].slice(0, 160);
+		this.river = uniqueLines([...this.held, ...this.river], 160);
 		this.held = [];
 	}
 
@@ -112,8 +113,8 @@ class Live {
 				this.eventsPerMinute = e.data.eventsPerMinute;
 				// at most 4 rows a second are drawn; the rest fold into the minute's count
 				const lines = e.data.lines.slice(0, 8);
-				if (this.holdRiver) this.held = [...lines, ...this.held].slice(0, 99);
-				else this.river = [...lines, ...this.river].slice(0, 160);
+				if (this.holdRiver) this.held = uniqueLines([...lines, ...this.held], 99);
+				else this.river = uniqueLines([...lines, ...this.river], 160);
 				break;
 			}
 			case 'pipeline.status':
@@ -157,9 +158,8 @@ class Live {
 				const linked = new Map(r.lines.filter((l) => l.incidentId || l.anomaly).map((l) => [l.eventId, l]));
 				if (!linked.size) return;
 				const seen = new Set(this.river.map((l) => l.eventId));
-				this.river = [...this.river.map((l) => linked.get(l.eventId) ?? l), ...[...linked.values()].filter((l) => !seen.has(l.eventId))]
-					.sort((a, b) => b.at.localeCompare(a.at))
-					.slice(0, 200);
+				const merged = [...this.river.map((l) => linked.get(l.eventId) ?? l), ...[...linked.values()].filter((l) => !seen.has(l.eventId))];
+				this.river = uniqueLines(merged.sort((a, b) => b.at.localeCompare(a.at)), 200);
 			} catch {
 				/* the next batch brings the links */
 			}

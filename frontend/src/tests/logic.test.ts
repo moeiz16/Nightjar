@@ -7,7 +7,7 @@ import { parseHunt, parseRange, chipsFromQuery } from '$lib/util/hunt';
 import { parseYaml, ruleSentence, ruleOneLine } from '$lib/util/sigma';
 import { briefHeadline, decisionQuestion, firstSentence, nightIndex, numberWord } from '$lib/util/brief';
 import { parseFrame } from '$lib/api/stream';
-import { groupByMinute, minuteTotal } from '$lib/util/river';
+import { groupByMinute, minuteTotal, uniqueLines } from '$lib/util/river';
 import { clockLabel, noticeHref } from '$lib/util/labels';
 
 const p = (o: Partial<ProposalDoc> = {}): ProposalDoc => ({
@@ -202,6 +202,8 @@ describe('live stream and river', () => {
 		expect(g.map((x) => x.label)).toEqual(['09:18', '09:17']);
 		expect(minuteTotal(undefined, 3)).toBe(3);
 		expect(minuteTotal(1284, 3)).toBe(1284);
+		const line = (eventId: string, incidentId: string | null = null) => ({ eventId, at: '2025-11-20T09:11:00Z', text: 't', dataset: 'x', severity: null, anomaly: false, incidentId });
+		expect(uniqueLines([line('a'), line('b'), line('a', 'inc-1')], 10).map((l) => [l.eventId, l.incidentId])).toEqual([['a', 'inc-1'], ['b', null]]);
 	});
 	it('labels clocks and links them to the notice or the decision', () => {
 		const d = { id: 'd', incidentId: 'i', incidentReference: 'NJ-1038', regime: 'sec_8k', regimeLabel: 'SEC 8-K', noticeType: 'x', noticeLabel: 'Item 1.05', jurisdiction: 'United States', startsAt: null, dueAt: null, dueAtLocal: null, businessDays: null, state: 'not_started', remainingSeconds: null, noticeId: null, basis: '' } as const;
