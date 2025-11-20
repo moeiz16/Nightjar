@@ -74,7 +74,7 @@ async def stream(
     *,
     after_id: int | None,
     max_seconds: float = MAX_STREAM_SECONDS,
-) -> AsyncIterator[dict[str, str]]:
+) -> AsyncIterator[dict[str, Any]]:
     """Yield SSE frames. `after_id=None` starts at the newest event (no backlog)."""
     maker = get_sessionmaker()
     uid = str(user_id)
@@ -84,7 +84,7 @@ async def stream(
     started = idle_since = loop.time()
     SSE_CLIENTS.inc()
     try:
-        yield {"retry": "3000", "event": "ready", "id": str(cursor), "data": json.dumps({"lastEventId": cursor})}
+        yield {"retry": 3000, "event": "ready", "id": str(cursor), "data": json.dumps({"lastEventId": cursor})}
         while loop.time() - started < max_seconds:
             async with maker() as db:
                 rows = (
@@ -113,5 +113,5 @@ async def stream(
         SSE_CLIENTS.dec()
 
 
-def sse_response(frames: AsyncIterator[dict[str, str]]) -> EventSourceResponse:
+def sse_response(frames: AsyncIterator[dict[str, Any]]) -> EventSourceResponse:
     return EventSourceResponse(frames, headers=SSE_HEADERS, ping=None)

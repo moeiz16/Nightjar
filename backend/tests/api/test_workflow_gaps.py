@@ -331,3 +331,19 @@ async def test_saved_search_alerts_are_rerun_by_the_sweeper(client: httpx.AsyncC
     assert await run_alerting_searches() == 1
     again = next(s for s in (await client.get(f"{API}/hunting/saved")).json() if s["id"] == saved["id"])
     assert again["lastCount"] == 3 and again["lastRunAt"]
+
+
+async def test_the_live_stream_serves_frames_over_http(client: httpx.AsyncClient, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Through the real EventSourceResponse (the frame dicts alone do not exercise its field validation)."""
+    import functools
+
+    from nightjar.api.v1 import events as events_api
+    from nightjar.core.events import stream
+
+    monkeypatch.setattr(events_api, "stream", functools.partial(stream, max_seconds=0.8))
+    await f.halden()
+    await f.sign_in(client, f.HALDEN["auditor"])
+    async with client.stream("GET", f"{API}/events/stream") as r:
+        assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
+        body = (await r.aread()).decode()
+    assert "retry: 3000" in body and "event: ready" in body
