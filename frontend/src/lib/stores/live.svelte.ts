@@ -128,6 +128,9 @@ class Live {
 				this.#scheduleClocks();
 				break;
 			case 'incident.created':
+				this.loadWatch();
+				this.#scheduleRiverLinks();
+				break;
 			case 'detection.created':
 				this.#scheduleRiverLinks();
 				break;
