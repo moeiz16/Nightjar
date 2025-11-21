@@ -208,10 +208,11 @@ async def posture(db: AsyncSession, org_id: uuid.UUID, *, as_of: datetime | None
     for s in sorted(sums, key=lambda s: -SEVERITY_ORDER.get(s["severity"], 0)):
         if s["reportable"] == "yes" and s["nextDeadline"]:
             d = s["nextDeadline"]
+            local = datetime.fromisoformat(d["dueAtLocal"]["at"])
+            place = d["dueAtLocal"]["timezone"].split("/")[-1].replace("_", " ")
             highlights.append(
                 f"{s['reference']} is reportable; next: {d['noticeLabel']} due "
-                f"{d['dueAtLocal']['at'][:16].replace('T', ' ')} "
-                f"({d['dueAtLocal']['timezone']})."
+                f"{local.strftime('%a')} {local.day} {local.strftime('%b %H:%M')} {place} time."
             )
     if alerts["last7d"]:
         highlights.append(

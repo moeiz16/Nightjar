@@ -72,6 +72,13 @@ CONTAINMENT = frozenset(
 ROLE_PERMISSION = {"responder": "actions:approve", "executive": "actions:approve_crown_jewel"}
 ROLE_LABELS = {"responder": "Incident responder", "executive": "CISO / executive"}
 
+_APPROVERS = {"responder": "an incident responder", "executive": "the CISO"}
+
+
+def _approver(role: str) -> str:
+    """Who an approval waits for, in a sentence ("an incident responder and the CISO")."""
+    return _APPROVERS.get(role, ROLE_LABELS.get(role, role).lower())
+
 
 class TargetNotInIncidentError(ValueError):
     pass
@@ -208,7 +215,7 @@ async def request(
         },
     )
     if destructive:
-        who = " and ".join(ROLE_LABELS[r].lower() for r in roles)
+        who = " and ".join(_approver(r) for r in roles)
         await add_timeline(
             db,
             inc.org_id,
@@ -217,7 +224,7 @@ async def request(
             title=f"Proposed: {label.lower()} ({p.target})",
             actor_type="user" if proposed_by else "agent",
             actor_name=p.proposed_by_name,
-            body=f"Waiting for approval by an {who}." if roles else None,
+            body=f"Waiting for approval by {who}." if roles else None,
             ref_id=p.id,
         )
         await emit(
@@ -379,7 +386,7 @@ async def decide(
                 inc.id,
                 kind="approval",
                 title=f"{user.full_name} approved: {label.lower()} ({p.target}); waiting for the "
-                f"{' and '.join(ROLE_LABELS[r].lower() for r in left)}",
+                f"{' and '.join(_approver(r).removeprefix('an ').removeprefix('the ') for r in left)}",
                 actor_type="user",
                 actor_name=user.full_name,
                 body=note,

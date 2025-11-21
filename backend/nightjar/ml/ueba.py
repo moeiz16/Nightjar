@@ -237,7 +237,26 @@ def _reason_text(feature: str, value: float, median: float) -> str:
         return "Active at an hour this account is rarely active"
     if feature in ("newCountry", "hostingNetwork") and value:
         return label[0].upper() + label[1:]
+    if value == 1:  # "1 program started", not "1 programs started"
+        label = _SINGULAR.get(feature, label)
     return f"{_fmt(value)} {label}; usually {_fmt(median)}"
+
+
+_SINGULAR = {
+    "signIns": "sign-in",
+    "mfaDenied": "refused sign-in prompt",
+    "distinctSrcIps": "different source address",
+    "processStarts": "program started",
+    "newProcesses": "program never seen before",
+    "distinctDestinations": "outside destination",
+    "newShares": "file share never opened before",
+    "mailItemsRead": "mailbox item read",
+    "distinctUsers": "different account",
+    "newUsers": "account never seen on this computer",
+    "connectionsOut": "outbound connection",
+    "newDestinations": "destination never contacted before",
+    "serviceInstalls": "service installed",
+}
 
 
 # ─────────────────────────────────────────────────────────────────────────────

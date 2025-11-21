@@ -64,7 +64,9 @@ async def list_audit(
             await db.execute(
                 select(AuditLog)
                 .where(*conds)
-                .order_by(AuditLog.id.desc())
+                .order_by(
+                    AuditLog.created_at.desc(), AuditLog.id.desc()
+                )  # newest first by time; the chain itself follows id
                 .offset((page - 1) * page_size)
                 .limit(page_size)
             )
