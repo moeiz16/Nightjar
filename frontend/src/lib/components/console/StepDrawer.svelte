@@ -70,7 +70,7 @@
 		<div class="blk">
 			<h4>evidence cited</h4>
 			<ul class="ev">
-				{#each evidence as e (e.ref)}
+				{#each evidence as e, i (i)}
 					<li>
 						<span class="mono faint">{e.ref} · {timeOf(e.at, undefined, true)} · {e.source}</span>
 						<Untrusted value={e.text} label={null} />

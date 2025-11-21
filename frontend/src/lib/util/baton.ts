@@ -51,7 +51,7 @@ export function buildBaton(runs: Run[], timeline: TimelineEntry[], proposals: Pr
 			const evidence = Array.isArray(d.evidence)
 				? d.evidence
 				: s.kind === 'verdict' && run.verdictDetail?.evidence
-					? run.verdictDetail.evidence.map((e, k) => ({ ref: e.ref || `E-${String(k + 1).padStart(2, '0')}`, at: s.startedAt, source: e.kind, text: typeof e.text === 'string' ? { text: e.text, flags: [] } : e.text }))
+					? run.verdictDetail.evidence.map((e, k) => ({ ref: `E-${String(k + 1).padStart(2, '0')}`, at: s.startedAt, source: e.kind, text: typeof e.text === 'string' ? { text: e.text, flags: [] } : e.text }))
 					: [];
 			rows.push({
 				key: `${run.id}:${s.seq}`,
