@@ -9,7 +9,7 @@
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { demoNight, dueLabel, elapsedFraction, hmParts, longDate, NY, REGIME_TZ, sec8k, secondsLeft, shortDay, timeOf, clockState, STATE_GLYPH, STATE_WORD } from '$lib/time/clock';
-	import { briefHeadline, decisionQuestion, firstSentence } from '$lib/util/brief';
+	import { briefHeadline, decisionQuestion } from '$lib/util/brief';
 	import { actionTitle } from '$lib/util/approvals';
 	import { clockLongLabel } from '$lib/util/labels';
 
@@ -69,13 +69,12 @@
 		const parts = overnight
 			.filter((i) => i.verdict === 'true_positive' && (i.severity === 'high' || i.severity === 'critical'))
 			.slice(0, 2)
-			.map((i) => `At ${timeOf(i.firstSeen)} ${firstSentence(summaries[i.id] ?? i.title).replace(/^(A|An|The) /, (w) => w.toLowerCase())}`);
+			.map((i) => `At ${timeOf(i.firstSeen)}: ${plainTitle(i.title)}.`);
 		return parts.join(' ');
 	}
-	let summaries = $state<Record<string, string>>({});
-	$effect(() => {
-		for (const i of overnight) if (!summaries[i.id]) api.incidents.get(i.id).then((x) => (summaries[i.id] = x.summary)).catch(() => undefined);
-	});
+	// incident titles are the plain story ("Cloud access key … used from an unfamiliar network"); the stored
+	// summaries list detections and read like a log
+	const plainTitle = (t: string) => t.replace(/\s*→\s*/g, ' leading to ').replace(/^(A|An|The) /, (w) => w.toLowerCase());
 	const benign = $derived(overnight.filter((i) => i.verdict === 'benign'));
 	function askLead() {
 		ui.toast(`Asked ${responder}, the watch lead, to call you before 10:00.`, 'info');
@@ -141,7 +140,7 @@
 			<h3 id="ov" class="mono">Overnight, in plain words</h3>
 			<ol class="night">
 				{#each overnight as i (i.id)}
-					<li><span class="t mono">{timeOf(i.firstSeen)}</span><p>{firstSentence(summaries[i.id] ?? i.title)} {#if i.verdict === 'benign'}<b>Closed as noise.</b>{:else if i.status === 'monitoring' || i.status === 'resolved'}<b>Contained.</b>{:else if i.pendingApprovals}Response is waiting for a person to authorise the next step.{:else if i.verdict === 'needs_review'}A person is looking at it this morning.{/if}</p></li>
+					<li><span class="t mono">{timeOf(i.firstSeen)}</span><p>{plainTitle(i.title).replace(/^./, (c) => c.toUpperCase())}. {#if i.verdict === 'benign'}<b>Closed as noise.</b>{:else if i.status === 'monitoring' || i.status === 'resolved'}<b>Contained.</b>{:else if i.pendingApprovals}Response is waiting for a person to authorise the next step.{:else if i.verdict === 'needs_review'}A person is looking at it this morning.{/if}</p></li>
 				{/each}
 			</ol>
 			<p class="sign mono">— the night watch: Triage, Enrichment and Response, with {responder} on call</p>

@@ -151,6 +151,13 @@ describe('plain-words hunting', () => {
 });
 
 describe('rules as sentences', () => {
+	it('reads the bundle\'s correlation rules and normalised field names', () => {
+		const y = `title: Sign-in prompt refused\nname: nj_mfa_push_denied\nlogsource: {product: okta, service: okta}\ndetection:\n  selection:\n    event.action: mfa-push-denied\n  condition: selection\n---\ntitle: Repeated sign-in prompts refused (MFA fatigue)\ncorrelation:\n  type: event_count\n  rules: [nj_mfa_push_denied]\n  group-by: [user.name]\n  timespan: 10m\n  condition: {gte: 3}\n`;
+		const s = ruleSentence(y);
+		expect(s.when).toBe('a sign-in');
+		expect(s.clauses).toEqual(['the event is a refused sign-in prompt']);
+		expect(s.count).toBe('3 or more times for the same person within 10 minutes');
+	});
 	const y = `title: T\nlogsource:\n  product: m365\n  service: audit\ndetection:\n  selection:\n    Operation: New-InboxRule\n    ForwardTo|contains: '@'\n  filter_internal:\n    ForwardTo|endswith: '@halden.example'\n  condition: selection and not filter_internal\n`;
 	it('parses the Sigma subset', () => {
 		const d = parseYaml(y);

@@ -11,6 +11,16 @@ function scalar(raw: string): Yaml {
 	if (v === 'true' || v === 'false') return v === 'true';
 	if (v === 'null' || v === '~') return null;
 	if (/^-?\d+(\.\d+)?$/.test(v)) return Number(v);
+	// flow collections on one line: {product: okta, service: okta} and [user.name, source.ip]
+	if (v.startsWith('{') && v.endsWith('}')) {
+		const out: { [k: string]: Yaml } = {};
+		for (const part of v.slice(1, -1).split(',')) {
+			const m = /^\s*([^:]+):\s*(.*)$/.exec(part);
+			if (m) out[m[1]!.trim()] = scalar(m[2]!);
+		}
+		return out;
+	}
+	if (v.startsWith('[') && v.endsWith(']')) return v.slice(1, -1).split(',').map((x) => scalar(x)).filter((x) => x !== null);
 	return v;
 }
 
@@ -75,7 +85,24 @@ const FIELD: Record<string, string> = {
 	'cs-host': 'the website',
 	'cs-bytes': 'the upload size',
 	EventID: 'the Windows event',
-	SubjectUserName: 'the account'
+	SubjectUserName: 'the account',
+	// the bundle's own rules use the normalised (ECS-like) names
+	'event.action': 'the event',
+	'event.outcome': 'the result',
+	'process.name': 'the program',
+	'process.executable': 'the program',
+	'process.command_line': 'the command line',
+	'process.parent.name': 'the program that started it',
+	'user.name': 'the account',
+	'source.ip': 'the address',
+	'source.geo.country': 'the country',
+	'destination.ip': 'the destination',
+	'cloud.api': 'the cloud action',
+	'cloud.access_key_id': 'the access key',
+	'email.sender': 'the sender',
+	'network.bytes_out': 'the data sent',
+	'threat.indicator.verdict': 'the threat intelligence verdict',
+	url: 'the link'
 };
 const SOURCE: Record<string, string> = {
 	'm365/audit': 'a Microsoft 365 mailbox change',
@@ -84,7 +111,15 @@ const SOURCE: Record<string, string> = {
 	'windows/security': 'a Windows security event',
 	'aws/cloudtrail': 'a cloud account action',
 	'fortigate/vpn': 'a remote-access sign-in',
-	'/proxy': 'a web upload'
+	'/proxy': 'a web upload',
+	'okta/okta': 'a sign-in',
+	'windows/sysmon': 'something happens on a Windows computer',
+	'aws/s3access': 'a cloud storage file is read',
+	'nightjar/mail': 'an email arrives',
+	'nightjar/remote_access': 'someone uses remote access',
+	'nightjar/edr': 'endpoint protection raises an alert',
+	'nightjar/synthetic': 'an outside alert arrives',
+	'nightjar/untrusted_text': 'any log text arrives'
 };
 const VALUE: Record<string, string> = {
 	'New-InboxRule': 'creating an inbox rule',
@@ -92,7 +127,16 @@ const VALUE: Record<string, string> = {
 	'mfa.push.denied': 'a refused sign-in prompt',
 	SUCCESS: 'success',
 	IAMUser: 'a cloud user',
-	'4698': 'a scheduled task was created'
+	'4698': 'a scheduled task was created',
+	'mfa-push-denied': 'a refused sign-in prompt',
+	'mfa-push-approved': 'an approved sign-in prompt',
+	'logon-failed': 'a failed sign-in',
+	logon: 'a sign-in',
+	'inbox-rule-created': 'a new inbox rule',
+	'email-delivered': 'a delivered email',
+	's3-get-object': 'a file read from cloud storage',
+	'secret-exposed': 'a secret found in public code',
+	'session-ip-changed': 'a session moving to another address'
 };
 
 const label = (f: string) => FIELD[f] ?? f.replace(/[._-]/g, ' ');
@@ -143,6 +187,19 @@ export function ruleSentence(yaml: string): Sentence {
 		(neg ? negatives : positives).push(...words);
 	}
 	let count: string | null = null;
+	// a Sigma correlation document (`---` after the base rule): "3 or more times for the same person within 10 minutes"
+	const corr = doc.correlation as Record<string, Yaml> | undefined;
+	if (corr && typeof corr === 'object') {
+		const c = corr.condition;
+		const [op, raw] = c && typeof c === 'object' && !Array.isArray(c) ? (Object.entries(c)[0] ?? ['', null]) : ['gte', /(\d+)/.exec(String(c ?? ''))?.[1] ?? null];
+		const n = raw === null || raw === undefined ? null : Number(raw) + (op === 'gt' ? 1 : 0);
+		const groupBy = corr['group-by'];
+		const by = (Array.isArray(groupBy) ? String(groupBy[0] ?? '') : String(groupBy ?? '').replace(/[[\]]/g, '')).trim();
+		const who = by === 'user.name' ? 'the same person' : by === 'source.ip' ? 'the same address' : by === 'host.name' ? 'the same computer' : by ? `the same ${label(by)}` : '';
+		const span = String(corr.timespan ?? '');
+		const win = span ? ` within ${span.replace(/(\d+)m$/, '$1 minutes').replace(/(\d+)h$/, '$1 hours')}` : '';
+		if (n) count = `${n} or more times${who ? ` for ${who}` : ''}${win}`;
+	}
 	if (agg) {
 		const m = /count\((\w*)\)\s*by\s*(\w+)\s*(>=|>)\s*(\d+)/.exec(agg);
 		if (m) {

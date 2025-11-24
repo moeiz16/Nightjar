@@ -121,7 +121,7 @@
 					<button class="btn sm" type="button" onclick={test}>Test on last 7 days ▶</button>
 					{#if tested}<span class="mono" role="status">→ {tested.matches} matches · {tested.confirmed} confirmed · {tested.noise} noise</span>{/if}
 				</div>
-				<p class="meta mono">{rule.hits7d.toLocaleString('en-GB')} alerts in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
+				<p class="meta mono">{rule.hits7d.toLocaleString('en-GB')} {rule.hits7d === 1 ? 'alert' : 'alerts'} in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
 				{#if exceptions.length}
 					<ul class="excs" aria-label="Exceptions">
 						{#each exceptions as x (x.id)}

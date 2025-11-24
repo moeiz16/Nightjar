@@ -21,6 +21,7 @@
 	let deadline = $state<Deadline | null>(null);
 	let all = $state<Deadline[]>([]);
 	let evidence = $state<NonNullable<DetectionDoc['evidence']>>([]);
+	let summarised = $state(false); // the CISO's view: detection summaries, not events as received
 	let contacts = $state<RegimeContacts>({});
 	let bodies = $state<Record<string, string>>({});
 	let err = $state('');
@@ -46,6 +47,7 @@
 				const dets = await api.incidents.detections(incidentId).catch(() => []);
 				evidence = dets.flatMap((x) => x.evidence ?? []);
 			}
+			summarised = !evidence.length;
 			if (!evidence.length) {
 				// Least privilege: the CISO reads the summarised evidence (rule, time span, people and devices), never
 				// the matched fields or log text behind it.
@@ -152,6 +154,7 @@
 							{#if s.key === 'contact' && regimeContacts.length && canEdit}
 								<select id="f-{s.key}" class="select" bind:value={bodies[s.key]}>
 									<option value="">Confirm a contact person…</option>
+									{#if bodies[s.key] && !regimeContacts.some((c) => bodies[s.key] === `${c.name}, ${c.role.toLowerCase()}, ${c.phone}`)}<option value={bodies[s.key]}>{bodies[s.key]}</option>{/if}
 									{#each regimeContacts as c (c.email)}<option value="{c.name}, {c.role.toLowerCase()}, {c.phone}">{c.name} · {c.role}</option>{/each}
 								</select>
 							{:else if canEdit}
@@ -210,7 +213,7 @@
 				{@const ref = e.ref ?? `E-${String(i + 1).padStart(2, '0')}`}
 				<li id="ev-{ref}" class:lit={lit === ref}>
 					<span class="mono head"><b>{ref}</b> {timeOf(e.timestamp, undefined, true)} · {e.dataset}{e.host ? ` · ${e.host}` : ''}</span>
-					<Untrusted value={e.summary} />
+					<Untrusted value={e.summary} label={summarised ? null : undefined} />
 				</li>
 			{:else}
 				<li class="mono faint">Click an [E-xx] in the draft to highlight it here.</li>

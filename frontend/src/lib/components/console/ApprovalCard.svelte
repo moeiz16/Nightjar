@@ -100,7 +100,7 @@
 		{#if total > 1}<span class="mono faint n">{index} of {total}</span>{/if}
 	</div>
 	<h2 id="ap-{p.id}">{title}</h2>
-	<div class="by mono">{p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
+	<div class="by mono">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
 	<dl class="facts">
 		<div><dt>does</dt><dd>{p.expectedEffect}</dd></div>
 		<div><dt>why</dt><dd>{p.rationale} {#if onwhy}<button class="lnk" type="button" onclick={onwhy}>why ↗</button>{/if}</dd></div>

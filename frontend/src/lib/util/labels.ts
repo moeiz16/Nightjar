@@ -5,17 +5,19 @@ const COUNTRY_SHORT: Record<string, string> = { Belgium: 'BE', 'United States': 
 export function regimeShort(r: Regime | string): string {
 	return r === 'sec_8k' ? 'SEC 8-K' : r === 'gdpr_art33' ? 'GDPR' : r === 'nis2' ? 'NIS2' : r === 'soci' ? 'SOCI' : String(r).toUpperCase();
 }
+/** "NIS2 early warning" → "early warning": the regime is already named beside it. */
+const noticeOnly = (label: string) => label.replace(/^(NIS2|SOCI|GDPR|SEC)\s+/i, '');
 export function clockLabel(d: Deadline, withRef = false): string {
 	const parts = [regimeShort(d.regime), COUNTRY_SHORT[d.jurisdiction] ?? d.jurisdiction];
 	if (d.state === 'not_started') parts.push(d.incidentReference);
-	else parts.push(d.noticeLabel);
+	else parts.push(noticeOnly(d.noticeLabel));
 	if (withRef && d.state !== 'not_started') parts.push(d.incidentReference);
 	return parts.join(' · ');
 }
 export function clockLongLabel(d: Deadline): string {
 	const country = d.jurisdiction;
-	if (d.regime === 'sec_8k') return `SEC Form 8-K, ${d.noticeLabel} · ${country}`;
-	return `${regimeShort(d.regime)} ${d.noticeLabel} · ${country}`;
+	if (d.regime === 'sec_8k') return `SEC ${d.noticeLabel.replace(/^SEC\s+/, '')} · ${country}`;
+	return `${regimeShort(d.regime)} ${noticeOnly(d.noticeLabel)} · ${country}`;
 }
 export function noticeHref(d: Deadline): string {
 	return d.state === 'not_started' || !d.noticeId ? `/incidents/${d.incidentReference}?decide=${d.regime}` : `/incidents/${d.incidentReference}/notice/${d.regime}?n=${d.noticeId}`;

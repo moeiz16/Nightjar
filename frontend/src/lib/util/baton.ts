@@ -38,7 +38,9 @@ export function buildBaton(runs: Run[], timeline: TimelineEntry[], proposals: Pr
 			const isKey = KEY_KINDS.has(s.kind);
 			if (s.kind === 'tool_call') {
 				const list = pendingLookups.get(s.agent) ?? [];
-				list.push(plainLookup(s).replace(/^checked /, '').replace(/\.$/, '').toLowerCase());
+				// "Looked up attack technique T1552.001" → "attack technique T1552.001" (the row says "looked at …")
+				const what = plainLookup(s).replace(/^(checked:?|looked (up|at))\s+/i, '').replace(/\.$/, '');
+				list.push(what.charAt(0).toLowerCase() + what.slice(1));
 				pendingLookups.set(s.agent, list);
 			}
 			if (!isKey && !opts.all) continue;
@@ -79,7 +81,9 @@ export function buildBaton(runs: Run[], timeline: TimelineEntry[], proposals: Pr
 		const t = +new Date(p.createdAt);
 		let idx = -1;
 		rows.forEach((r, i) => {
-			if (r.step?.kind === 'proposal' && Math.abs(+new Date(r.at) - t) < 90_000) idx = i;
+			if (r.step?.kind !== 'proposal' || Math.abs(+new Date(r.at) - t) >= 90_000) return;
+			// the step that names this action's target wins over other proposals made in the same minute
+			if (idx < 0 || r.title.includes(p.target)) idx = i;
 		});
 		if (idx >= 0) {
 			rows[idx] = { ...rows[idx]!, state: 'wait', proposal: p };

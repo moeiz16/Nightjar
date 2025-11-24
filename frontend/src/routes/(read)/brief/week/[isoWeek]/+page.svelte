@@ -51,6 +51,15 @@
 	const m = $derived(brief?.metrics);
 	const dots = $derived(inWeek.map((i) => i));
 	const noiseClosed = $derived(inWeek.filter((i) => i.verdict === 'benign').length);
+	const reportableCount = $derived(inWeek.filter((i) => i.reportable === 'yes').length);
+	/** 137.6 s → "about 2 minutes", 1,369 s → "about 23 minutes", 5,400 s → "about 1.5 hours". */
+	function duration(seconds: number | null | undefined): string {
+		if (seconds === null || seconds === undefined) return 'no time recorded';
+		if (seconds < 90) return `${Math.max(1, Math.round(seconds))} seconds`;
+		if (seconds < 90 * 60) return `about ${Math.round(seconds / 60)} minutes`;
+		const h = seconds / 3600;
+		return `about ${h < 10 ? h.toFixed(1).replace(/\.0$/, '') : Math.round(h)} hours`;
+	}
 </script>
 
 <svelte:head><title>Weekly report {week} · Nightjar SOC</title></svelte:head>
@@ -91,9 +100,9 @@
 
 		<section class="facts">
 			<h2 class="mono">The numbers, in sentences</h2>
-			<p><b>Clocks:</b> {inWeek.filter((i) => i.reportable === 'yes').length} reportable {inWeek.filter((i) => i.reportable === 'yes').length === 1 ? 'incident' : 'incidents'}; every notice due this week went out on time, recorded with who submitted it.</p>
-			<p><b>Noise:</b> triage closed {m.alerts.suppressedAsNoise.toLocaleString('en-GB')} alerts as noise ({m.alerts.reductionPct}% fewer pages than rules alone), and {noiseClosed} {noiseClosed === 1 ? 'incident was' : 'incidents were'} closed as harmless.</p>
-			<p><b>Speed:</b> median time to a triage verdict was {m.meanTimeToTriage.last7dSeconds} s ({m.meanTimeToTriage.last30dSeconds} s over 30 days); median time to contain after a person approved was {Math.round(m.meanTimeToContain.last7dSeconds / 60)} min.</p>
+			<p><b>Clocks:</b> {#if reportableCount}{reportableCount} reportable {reportableCount === 1 ? 'incident' : 'incidents'}; every notice due this week went out on time, recorded with who submitted it.{:else}no incident this week needed a regulator notice.{/if}</p>
+			<p><b>Noise:</b> {m.alerts.last7d.toLocaleString('en-GB')} alerts became {m.alerts.incidentsLast7d} {m.alerts.incidentsLast7d === 1 ? 'incident' : 'incidents'} ({m.alerts.reductionPct}% fewer things to look at than rules alone){#if m.alerts.suppressedAsNoise}; triage set {m.alerts.suppressedAsNoise.toLocaleString('en-GB')} aside as noise{/if}, and {noiseClosed} {noiseClosed === 1 ? 'incident was' : 'incidents were'} closed as harmless.</p>
+			<p><b>Speed:</b> the first verdict on an incident took {duration(m.meanTimeToTriage.last7dSeconds)} on average ({duration(m.meanTimeToTriage.last30dSeconds)} over 30 days); containment followed in {duration(m.meanTimeToContain.last7dSeconds)}.</p>
 			<svg class="dotplot" viewBox="0 0 640 60" role="img" aria-label="Time to contain per incident this week">
 				<line x1="0" y1="30" x2="640" y2="30" stroke="var(--rule-2)" />
 				{#each [0, 15, 30, 45, 60] as t (t)}<text x={t * 10 + 10} y="54" font-size="11" font-family="var(--mono)" fill="var(--faint)">{t} min</text>{/each}
