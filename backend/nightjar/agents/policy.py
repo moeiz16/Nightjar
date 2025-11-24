@@ -202,13 +202,15 @@ def evidence_for(ctx: IncidentContext, enrichment: dict[str, Any] | None) -> tup
         ctx.detections, key=lambda d: (-SEVERITY_ORDER[d.severity], -(d.triage.probability if d.triage else 0))
     )
     for d in top[:4]:
-        prob = f"; {round(d.triage.probability * 100)} in 100 likely real" if d.triage else ""
+        prob = f"; {min(99, round(d.triage.probability * 100))} in 100 likely real" if d.triage else ""
         out.append(Evidence("detection", str(d.id), f"{d.rule_title} ({d.severity}{prob})"))
         if d.triage and d.triage.reasons:
             out.append(Evidence("model_reason", str(d.id), d.triage.reasons[0].text))
     for a in sorted(ctx.anomalies, key=lambda a: -a.score)[:2]:
         why = a.reasons[0].text if a.reasons else "unusual behaviour"
-        out.append(Evidence("anomaly", str(a.id), f"{a.entity_id}: {why} ({round(a.score * 100)} in 100 unusual)"))
+        out.append(
+            Evidence("anomaly", str(a.id), f"{a.entity_id}: {why} ({min(99, round(a.score * 100))} in 100 unusual)")
+        )
     for i in (enrichment or {}).get("indicators", [])[:3]:
         if i.get("verdict") in ("malicious", "suspicious") or i.get("kev"):
             out.append(
