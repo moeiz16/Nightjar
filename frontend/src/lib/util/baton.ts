@@ -21,6 +21,8 @@ export interface BatonRow {
 	minor: boolean;
 }
 
+/** What a verdict's evidence is, in words (the API's kinds are identifiers). */
+const EVIDENCE_KIND: Record<string, string> = { detection: 'alert', scoring_reason: 'why it scored high', model_reason: 'why it scored high', anomaly: 'unusual behaviour', intel: 'threat intelligence', ticket: 'service desk' };
 const KEY_KINDS = new Set<AgentStepDoc['kind']>(['finding', 'verdict', 'proposal', 'guardrail', 'error']);
 const PEOPLE_KINDS = new Set<TimelineEntry['kind']>(['approval', 'clock', 'notice', 'note']);
 
@@ -53,7 +55,7 @@ export function buildBaton(runs: Run[], timeline: TimelineEntry[], proposals: Pr
 			const evidence = Array.isArray(d.evidence)
 				? d.evidence
 				: s.kind === 'verdict' && run.verdictDetail?.evidence
-					? run.verdictDetail.evidence.map((e, k) => ({ ref: `E-${String(k + 1).padStart(2, '0')}`, at: s.startedAt, source: e.kind, text: typeof e.text === 'string' ? { text: e.text, flags: [] } : e.text }))
+					? run.verdictDetail.evidence.map((e, k) => ({ ref: `E-${String(k + 1).padStart(2, '0')}`, at: s.startedAt, source: EVIDENCE_KIND[e.kind] ?? e.kind.replace(/_/g, ' '), text: typeof e.text === 'string' ? { text: e.text, flags: [] } : e.text }))
 					: [];
 			rows.push({
 				key: `${run.id}:${s.seq}`,

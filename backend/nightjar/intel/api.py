@@ -209,14 +209,14 @@ def lookup_indicator(kind: str, value: str) -> IndicatorFinding:
             type=kind if kind in ("ip", "domain", "url", "hash") else "ip",  # type: ignore[arg-type]
             value=val,
             verdict=row["verdict"],
-            source="bundled intel (sample feed)",
+            source="sample threat feed",
             detail=row["detail"],
         )
     return IndicatorFinding(
         type=kind if kind in ("ip", "domain", "url", "hash") else "ip",  # type: ignore[arg-type]
         value=val,
         verdict="unknown",
-        source="bundled intel (sample feed)",
+        source="sample threat feed",
         detail="No match in the bundled feed.",
     )
 

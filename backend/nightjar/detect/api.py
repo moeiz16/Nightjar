@@ -102,7 +102,16 @@ def get_rule(org_id: uuid.UUID, rule_id: str) -> tuple[RuleInfo, str] | None:
     if meta is None:
         return None
     overrides = _sync_overrides(org_id)
-    return book.info(rule_id, enabled=overrides.get(rule_id, True), precision=_precision().get(rule_id)), meta.yaml_text
+    text = meta.yaml_text
+    if meta.correlation:
+        # a correlation rule reads with the base rules it counts (Sigma's multi-document form): base first, `---`
+        import re
+
+        names = re.findall(r"[\w-]+", (re.search(r"rules:\s*\[([^\]]*)\]", text) or ["", ""])[1])
+        bases = [m.yaml_text.strip() for m in book.meta.values() if m.name in names and not m.correlation]
+        if bases:
+            text = "\n---\n".join([*bases, text.strip()]) + "\n"
+    return book.info(rule_id, enabled=overrides.get(rule_id, True), precision=_precision().get(rule_id)), text
 
 
 async def set_rule_enabled(org_id: uuid.UUID, rule_id: str, *, enabled: bool) -> RuleInfo:
