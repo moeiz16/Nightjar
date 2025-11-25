@@ -229,7 +229,7 @@
 								<td class="m">{whenShort(r.at)}</td>
 								<td>{r.who}</td>
 								<td class="m">{r.device}</td>
-								<td class="what"><Untrusted value={r.what} inline /></td>
+								<td class="what">{#if r.what.text?.trim()}<Untrusted value={r.what} inline />{:else}<span class="faint">no message</span>{/if}</td>
 								<td class="m">
 									{#if r.incident}<a href="/incidents/{r.incident}">{r.incident}</a>{:else if addTarget && session.can('incidents:write')}<button class="lnk" type="button" onclick={() => addTo(r.eventId)}>— add to {addTarget} +</button>{:else}—{/if}
 								</td>

@@ -37,7 +37,7 @@ function possessive(name: string): string {
 /** "Isolate mem-dispatch-01", "Turn off Joy’s account", "Withdraw the deploy key". */
 export function actionTitle(p: ProposalDoc, people: IdentityDoc[] = []): string {
 	const person = people.find((x) => x.username === p.target);
-	const first = person?.kind === 'person' ? person.displayName.split(' ')[0]! : null;
+	const first = person && person.kind !== 'service' ? person.displayName.split(' ')[0]! : null;
 	switch (p.kind) {
 		case 'isolate_host':
 			return `Isolate ${p.target}`;

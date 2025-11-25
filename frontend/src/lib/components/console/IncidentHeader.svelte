@@ -15,7 +15,7 @@
 	});
 	const cur = $derived(STAGES.indexOf(incident.stage));
 	const resolved = $derived(incident.status === 'resolved' || incident.status === 'closed');
-	const people = $derived(incident.identitiesDetail.filter((i) => i.kind === 'person'));
+	const people = $derived(incident.identitiesDetail.filter((i) => i.kind !== 'service'));
 	const running = $derived(clocks.filter((c) => c.incidentId === incident.id && c.state !== 'submitted').length);
 </script>
 

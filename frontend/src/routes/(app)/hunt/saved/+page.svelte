@@ -57,7 +57,7 @@
 				</tbody>
 			</table>
 		</div>
-		<p class="foot mono faint">“Alert me” turns a saved search into a detection with an owner; it then appears in Rules.</p>
+		<p class="foot mono faint">“Alert me” runs the search again every 15 minutes; a search with matches is marked ◇.</p>
 	</Pane>
 </div>
 

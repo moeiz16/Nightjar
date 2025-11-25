@@ -21,9 +21,9 @@
 		if (u) q = u;
 	});
 	const SITE: Record<string, string> = { EU: 'Antwerp', US: 'Memphis', AU: 'Melbourne' };
-	const shown = $derived(people.filter((p) => (kind === 'all' || p.kind === kind) && (!q || (p.displayName + p.username + p.department).toLowerCase().includes(q.toLowerCase()))));
+	const shown = $derived(people.filter((p) => (kind === 'all' || (kind === 'service') === (p.kind === 'service')) && (!q || (p.displayName + p.username + p.department).toLowerCase().includes(q.toLowerCase()))));
 	const unusual = (u: string) => anomalies.filter((a) => a.entityId === u);
-	const persons = $derived(people.filter((p) => p.kind === 'person').length);
+	const persons = $derived(people.filter((p) => p.kind !== 'service').length);
 </script>
 
 <svelte:head><title>People · Nightjar SOC</title></svelte:head>

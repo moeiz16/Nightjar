@@ -271,7 +271,8 @@ export interface IdentityDoc {
 	mfa: string;
 	usualCountries: string[];
 	disabled: boolean;
-	kind: 'person' | 'service';
+	/** the directory says employee, contractor or service; everything but service is a person */
+	kind: 'person' | 'employee' | 'contractor' | 'service';
 }
 export interface RegimeAssessment {
 	regime: Regime;
