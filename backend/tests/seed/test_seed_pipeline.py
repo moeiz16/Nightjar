@@ -29,7 +29,7 @@ async def test_replayed_investigations_happen_during_the_night(client: httpx.Asy
         inc = (await client.get(f"{API}/incidents/{ref}")).json()
         first, last = datetime.fromisoformat(inc["firstSeen"]), datetime.fromisoformat(inc["lastSeen"])
         decided = datetime.fromisoformat(inc["triage"]["decidedAt"])
-        assert first < decided <= first + timedelta(minutes=32, seconds=1), ref
+        assert first < decided <= min(last + timedelta(seconds=31), first + timedelta(minutes=32, seconds=1)), ref
         tl = (await client.get(f"{API}/incidents/{inc['id']}/timeline")).json()
         agent_rows = [datetime.fromisoformat(e["at"]) for e in tl if e["actor"]["type"] == "agent"]
         assert agent_rows and max(agent_rows) < DEMO_NOW - timedelta(hours=5), ref
