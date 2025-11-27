@@ -371,10 +371,17 @@ Snapshot with every table: [eval/RESULTS.md](eval/RESULTS.md).
 Measured on one laptop with everything running offline (`nats-server`, API, workers, agents, tool servers and the
 production web build) and the demo clock set to 20 November 2025.
 
-- **Tests:** 552 backend tests (pytest: platform, API, RBAC, tenant isolation, approvals and tokens, clock maths,
-  hunting, seed, pipeline, detection, ML, agents and safety) and 108 web tests (Vitest: API client, clock maths,
+- **Tests:** 556 backend tests (pytest: platform, API, RBAC, tenant isolation, approvals and tokens, clock maths,
+  hunting, seed, pipeline, detection, ML, agents and safety) and 109 web tests (Vitest: API client, clock maths,
   hold to authorise, untrusted text, hunting, rules, the brief and end-to-end flows through the mock API). Ruff,
   mypy, svelte-check and ESLint are clean, and `alembic check` finds no drift.
+- **Browser journeys on the live stack:** 52 steps with system Chrome, signed in as each role (the landing replay
+  and hold, the watch and ⌘K, the incident replay and step drawer, hold to authorise, self-approval refused, the
+  CISO's co-approval on a crown jewel, a NIS2 notice drafted, completed and submitted, the SEC decision, hunting,
+  rules, unusual behaviour, the brief and weekly report, settings, the activity log, sign out, and a live event
+  posted through an ingest key showing up on the watch about a second later). Zero console errors, zero failed
+  requests, no horizontal overflow at 390 px and no engineering words, raw ids or hashes in the visible text,
+  with motion on and with reduced motion.
 - **Time to triage on the live stack:** a native Sysmon LSASS-dump event posted through an ingest key on five fresh
   hosts reached a recorded triage verdict at **p50 1.15 s, max 1.18 s**. That path runs ingest → NATS → normaliser
   → Sigma → scorer → correlator → incident → the three teammates over A2A with the tool servers.
@@ -412,9 +419,16 @@ seed and the evaluation gates, plus svelte-check and the production build of the
 All screens use the synthetic Halden Logistics demo with the clock set to late November 2025. Images live in
 [`docs/screenshots/`](docs/screenshots/).
 
-<!-- TODO(coordinator): add the screenshot grid once QA has written the images to docs/screenshots/
-(landing replay, the Watch, incident with baton timeline, Hold to authorise, notice draft, clock bar, hunting,
-unusual behaviour, rules, morning brief, activity log, day watch and mobile). -->
+| | |
+|---|---|
+| ![The landing page replays a night at Halden Logistics; three alerts become one incident and the NIS2 clock starts](docs/screenshots/landing-replay.jpg) | ![The watch: live event intake, the incident being worked and approvals awaiting a person, under the regulator clock bar](docs/screenshots/the-watch.jpg) |
+| **Landing replay.** One night at the sample company, from the first odd sign-in to the regulator clock. | **The watch.** Events, the incident in hand and approvals, under running deadlines. |
+| ![An incident's investigation as a baton timeline across the triage, enrichment and response teammates](docs/screenshots/incident-baton.jpg) | ![Hold to authorise: withdrawing a leaked cloud access key waits for a person to press and hold](docs/screenshots/hold-to-authorise.jpg) |
+| **Baton timeline.** The AI teammates' investigation, replayable step by step. | **Hold to authorise.** Nothing is switched off until a person holds; crown jewels need two. |
+| ![A NIS2 early-warning draft with one required field still to confirm](docs/screenshots/nis2-notice-draft.jpg) | ![Unusual behaviour: 14 days of hourly activity per person with the outlier marked](docs/screenshots/unusual-behaviour.jpg) |
+| **Notice draft.** Filled from the evidence; the missing fact is flagged before submission. | **Unusual behaviour.** Each person and device against their own normal. |
+| ![The CISO's morning brief in its dawn edition](docs/screenshots/ciso-morning-brief.jpg) | ![The watch on a phone](docs/screenshots/phone-watch.jpg) |
+| **Morning brief.** A two-minute read for the CISO, decisions included. | **On a phone.** One pane at a time for whoever is on call. |
 
 ## Compliance alignment
 
