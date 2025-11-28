@@ -1,9 +1,8 @@
-// Global keyboard: ⌘K / Ctrl K, ⌘B, g-chords, and the tile keys (⌘\ split, ⌘[ ⌘] focus, ⌥W / ⌘W close,
-// ⌘⇧↵ zoom). Keys never fire while typing in a field.
+// Global keyboard: ⌘K / Ctrl K, ⌘B, g-chords and Alt+1…8 for the watch bar's windows. Keys never fire while
+// typing in a field.
 import { goto } from '$app/navigation';
-import { page } from '$app/state';
 import { G_CHORDS, isTyping } from '$lib/commands';
-import { ui } from '$lib/stores/ui.svelte';
+import { ui, WINDOWS } from '$lib/stores/ui.svelte';
 import { session } from '$lib/stores/session.svelte';
 
 export function handleShellKey(e: KeyboardEvent, state: { g: number }): boolean {
@@ -21,30 +20,15 @@ export function handleShellKey(e: KeyboardEvent, state: { g: number }): boolean 
 		goto('/brief');
 		return true;
 	}
-	const onWatch = page.url.pathname === '/watch';
-	if (mod && e.key === '\\') {
-		e.preventDefault();
-		if (!onWatch) goto('/watch');
-		ui.split();
-		return true;
-	}
-	if (mod && (e.key === '[' || e.key === ']')) {
-		e.preventDefault();
-		ui.move(e.key === '[' ? -1 : 1);
-		return true;
-	}
-	if ((mod && k === 'w') || (e.altKey && (k === 'w' || e.code === 'KeyW'))) {
-		if (onWatch && ui.tiles.length > 1) {
+	// Alt+1 … Alt+8: the numbered windows of the watch bar (e.code, so Option on a Mac works too)
+	if (e.altKey && !mod && /^Digit[1-8]$/.test(e.code)) {
+		const w = WINDOWS.find((x) => x.n === Number(e.code.slice(5)));
+		if (w && (!w.perm || session.can(w.perm))) {
 			e.preventDefault();
-			ui.close();
+			goto(w.href);
 			return true;
 		}
 		return false;
-	}
-	if (mod && e.shiftKey && e.key === 'Enter') {
-		e.preventDefault();
-		ui.zoomed = !ui.zoomed;
-		return true;
 	}
 	if (isTyping(e.target) || mod || e.altKey) return false;
 	if (k === 'g') {
@@ -70,10 +54,5 @@ export function useShellKeys() {
 		};
 		window.addEventListener('keydown', fn);
 		return () => window.removeEventListener('keydown', fn);
-	});
-	$effect(() => {
-		if (session.me) ui.saveLayout(session.me.user.id);
-		void ui.tiles.length;
-		void ui.tiles.join();
 	});
 }

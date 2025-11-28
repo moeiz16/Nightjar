@@ -44,7 +44,7 @@
 			{#each [...notable, ...shown].sort((a, b) => b.at.localeCompare(a.at)) as l (l.eventId)}
 				<div class="ev" class:odd={l.anomaly} class:inc={!!l.incidentId} in:fly={{ y: -6, duration: prefersReducedMotion.current ? 0 : 320 }}>
 					<span class="g mono" aria-hidden="true">{l.anomaly ? '◇' : l.incidentId ? '▸' : '·'}</span>
-					<p>
+					<p class:raw={!l.incidentId && !l.anomaly} class:resolve={!!l.incidentId}>
 						{#if l.incidentId && !landing}<a href="/incidents/{refs[l.incidentId] ?? l.incidentId}">{l.text}</a>{:else}{l.text}{/if}
 						<small class="mono">{timeOf(l.at, undefined, true)} · {l.anomaly ? 'unusual behaviour' : l.incidentId ? `${refs[l.incidentId] ?? 'incident'} · awaiting you` : (DS[l.dataset] ?? l.dataset)}</small>
 					</p>
@@ -63,6 +63,11 @@
 </div>
 
 <style>
+	/* routine lines read as the log they are; a line that joins an incident resolves into plain words */
+	.ev p.raw {
+		font-variation-settings: 'MONO' 1;
+		font-size: 12.5px;
+	}
 	.river {
 		position: relative;
 	}

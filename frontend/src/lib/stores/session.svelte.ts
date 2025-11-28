@@ -26,7 +26,7 @@ class Session {
 	can(perm: string): boolean {
 		return this.me?.membership?.permissions.includes(perm) ?? false;
 	}
-	/** Landing route after sign-in: executives land on the brief instead of tiles (DESIGN.md §3). */
+	/** Landing route after sign-in: executives land on the brief instead of the watch (DESIGN.md §3). */
 	home(): string {
 		return this.role === 'executive' ? '/brief' : '/watch';
 	}

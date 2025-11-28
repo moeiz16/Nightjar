@@ -1,18 +1,17 @@
 <script lang="ts">
-	// ⌘K: the navigation (DESIGN.md §3). Groups do / go to / switch, scoped to the focused incident first; Tab widens
-	// it to everything. "?" asks the watch a question and answers in a hunt tile.
+	// ⌘K (DESIGN.md §3): do / go to / switch, scoped to the incident in front of you first; Tab widens it to
+	// everything. "?" asks the watch a question and answers on the hunt page. A Skeleton Modal dropping from the axis.
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { cubicOut } from 'svelte/easing';
-	import { fade } from 'svelte/transition';
 	import { api } from '$lib/api';
 	import type { AssetDoc, IdentityDoc, ProposalDoc, RuleInfo, SavedSearch } from '$lib/api/types';
 	import { groupRanked, highlight, rankCommands, type Command } from '$lib/commands';
 	import { live } from '$lib/stores/live.svelte';
 	import { session } from '$lib/stores/session.svelte';
-	import { ui, TILE_LABEL, type TileKind } from '$lib/stores/ui.svelte';
+	import { ui } from '$lib/stores/ui.svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { hm, secondsLeft } from '$lib/time/clock';
 	import { clockLongLabel, noticeHref } from '$lib/util/labels';
 
@@ -62,15 +61,6 @@
 	}
 
 	const commands = $derived.by((): Command[] => {
-		if (ui.paletteMode === 'tile') {
-			return (Object.keys(TILE_LABEL) as TileKind[]).map((k) => ({
-				id: 'tile-' + k, group: 'switch', icon: '▦', title: `Show ${TILE_LABEL[k]} in this tile`, hint: ui.tiles.includes(k) ? 'open' : '',
-				run: () => {
-					ui.swap(k);
-					close();
-				}
-			}));
-		}
 		const list: Command[] = [];
 		const can = (p: string) => session.can(p);
 		// ---------- do ----------
@@ -115,9 +105,7 @@
 		// ---------- switch ----------
 		list.push({ id: 'brief', group: 'switch', icon: '☼', title: 'Morning brief (executive view)', keys: ['⌘', 'B'], run: () => go('/brief') });
 		list.push({ id: 'theme', group: 'switch', icon: '◐', title: ui.theme === 'dark' ? 'Day watch (light theme)' : 'Night (dark theme)', keywords: 'theme light dark', run: () => (ui.toggleTheme(), close()) });
-		for (const r of ['analyst', 'responder', 'auditor'] as const) list.push({ id: 'layout-' + r, group: 'switch', icon: '▦', title: `Layout: ${r}`, keywords: 'tiles preset', run: () => (ui.setPreset(r), go('/watch')) });
-		list.push({ id: 'split', group: 'switch', icon: '▦', title: 'Split the focused tile', keys: ['⌘', '\\'], run: () => (ui.split(), go('/watch')) });
-		list.push({ id: 'zoom', group: 'switch', icon: '▢', title: 'Zoom the focused tile', keys: ['⌘', '⇧', '↵'], run: () => ((ui.zoomed = !ui.zoomed), close()) });
+		for (const r of ['analyst', 'responder', 'auditor'] as const) list.push({ id: 'layout-' + r, group: 'switch', icon: '▤', title: `Turnover as ${r === 'analyst' ? 'an' : 'a'} ${r}`, keywords: 'layout preset handover sections', run: () => (ui.setPreset(r), go('/watch')) });
 		list.push({ id: 'typing', group: 'switch', icon: '⌨', title: ui.holdByTyping ? 'Confirm actions by holding' : 'Confirm actions by typing the name instead of holding', keywords: 'accessibility hold', run: () => (ui.setHoldByTyping(!ui.holdByTyping), close()) });
 		list.push({ id: 'signout', group: 'switch', icon: '⏻', title: 'Sign out', keywords: 'log out', run: async () => (close(), await session.logout(), goto('/sign-in')) });
 		return list;
@@ -159,22 +147,15 @@
 			if (ui.scope) widened = !widened;
 		}
 	}
-	const scale = (_n: Element) => ({
-		duration: prefersReducedMotion.current ? 120 : 160,
-		easing: cubicOut,
-		css: (t: number) => (prefersReducedMotion.current ? `opacity:${t}` : `opacity:${t}; transform: translate(-50%, ${(1 - t) * -6}px) scale(${0.985 + 0.015 * t})`)
-	});
 	let idx = 0;
 	const indexOf = (id: string) => flat.findIndex((r) => r.command.id === id);
 	void idx;
 </script>
 
-{#if ui.paletteOpen}
-	<div class="scrim" transition:fade={{ duration: 120 }} onclick={(e) => e.target === e.currentTarget && close()} role="presentation">
-		<div class="palette" role="dialog" aria-modal="true" aria-label="Go to anything" transition:scale>
+<Sheet kind="dialog" label="Go to anything" width="640px" bind:open={ui.paletteOpen} onclose={() => returnFocus?.focus?.()} initialFocus={() => input}>
+		<div class="palette">
 			<div class="in">
-				{#if ui.scope && !widened && ui.paletteMode !== 'tile'}<span class="scope">{ui.scope.reference}</span>{/if}
-				{#if ui.paletteMode === 'tile'}<span class="scope">tile</span>{/if}
+				{#if ui.scope && !widened}<span class="scope">{ui.scope.reference}</span>{/if}
 				<input
 					bind:this={input}
 					bind:value={query}
@@ -184,7 +165,7 @@
 					aria-controls="pal-list"
 					aria-activedescendant={flat[active] ? 'pal-' + flat[active]!.command.id : undefined}
 					aria-label="Search commands, or type ? to ask the watch"
-					placeholder={ui.paletteMode === 'tile' ? 'Show in this tile…' : 'Go to anything, do something, or type ? to ask'}
+					placeholder="Go to anything, do something, or type ? to ask"
 					autocomplete="off"
 					spellcheck="false"
 				/>
@@ -195,7 +176,7 @@
 					<div class="grp">
 						<h6>ask the watch</h6>
 						<button class="it on" type="button" onclick={ask}>
-							<span class="ic">?</span><span>{query.trim().replace(/^\?\s*/, '') || 'which laptops opened the link?'}</span><span class="hint">answer in a hunt tile <kbd>⏎</kbd></span>
+							<span class="ic">?</span><span>{query.trim().replace(/^\?\s*/, '') || 'which laptops opened the link?'}</span><span class="hint">answer on the hunt page <kbd>⏎</kbd></span>
 						</button>
 					</div>
 				{:else if !flat.length}
@@ -238,33 +219,13 @@
 				<span class="ask">type “?” to ask the watch</span>
 			</div>
 		</div>
-	</div>
-{/if}
+</Sheet>
 
 <style>
-	.scrim {
-		position: fixed;
-		inset: 0;
-		background: rgba(3, 6, 10, 0.55);
-		backdrop-filter: blur(2px);
-		z-index: 50;
-	}
-	:global(:root[data-theme='light']) .scrim {
-		background: rgba(20, 35, 45, 0.22);
-	}
 	.palette {
-		position: absolute;
-		left: 50%;
-		top: 96px;
-		transform: translateX(-50%);
-		width: min(640px, calc(100vw - 24px));
-		border-radius: 10px;
-		background: var(--pane);
-		border: 1px solid var(--line-strong);
-		box-shadow: var(--shadow);
-		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		min-height: 0;
 		max-height: calc(100vh - 140px);
 	}
 	.in {
@@ -278,6 +239,7 @@
 	}
 	.scope {
 		font: 500 11.5px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--teal);
 		border: 1px solid var(--teal-line);
 		border-radius: 4px;
@@ -292,6 +254,7 @@
 		outline: 0;
 		color: var(--ink);
 		font: 400 17px/1 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	input::placeholder {
 		color: var(--faint);
@@ -306,6 +269,7 @@
 	h6 {
 		margin: 4px 10px 6px;
 		font: 400 11px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	.it {
@@ -315,13 +279,14 @@
 		width: 100%;
 		min-height: 40px;
 		padding: 0 10px;
-		border-radius: 6px;
+		border-radius: 3px;
 		color: var(--ink-2);
 		text-align: left;
 	}
 	.it .ic {
 		width: 20px;
 		font: 500 13px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 		text-align: center;
 		flex: none;
@@ -338,6 +303,7 @@
 		gap: 6px;
 		align-items: center;
 		font: 400 12px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 		white-space: nowrap;
 		flex: none;
@@ -348,6 +314,9 @@
 	}
 	.it.on .ic {
 		color: var(--teal);
+	}
+	.it.on .hint {
+		color: var(--ink-2);
 	}
 	.it.off {
 		opacity: 0.6;
@@ -368,6 +337,7 @@
 		padding: 10px 18px;
 		border-top: 1px solid var(--line);
 		font: 400 11.5px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 		flex: none;
 		flex-wrap: wrap;
@@ -382,8 +352,7 @@
 	}
 	@media (max-width: 760px) {
 		.palette {
-			top: 12px;
-			max-height: calc(100vh - 90px);
+			max-height: calc(100vh - 120px);
 		}
 		.ft .ask {
 			display: none;

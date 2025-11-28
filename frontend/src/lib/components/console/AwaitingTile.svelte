@@ -54,7 +54,7 @@
 {:else}
 	<div class="quiet">
 		<p>Nothing is waiting for {firstName || 'you'}.</p>
-		<p class="mono faint">New approvals land here and in the status line.</p>
+		<p class="mono faint">New approvals land here and as ‖ on the shift axis.</p>
 	</div>
 {/each}
 
@@ -68,7 +68,7 @@
 				<li class:todo={!s.filled}><span class="k mono" aria-hidden="true">{s.filled ? '✓' : '◐'}</span><span>{s.filled ? s.title : `${s.title}: confirm`}<span class="sr">{s.filled ? ' (filled)' : ' (missing)'}</span></span></li>
 			{/each}
 		</ul>
-		<div class="btns"><a class="btn pri" href={noticeHref(urgent)}>Open the draft</a><a class="btn" href="{noticeHref(urgent)}&compare=1">Compare with evidence</a></div>
+		<div class="btns"><a class="btn preset-filled-surface-950-50" href={noticeHref(urgent)}>Open the draft</a><a class="btn preset-outlined-surface-300-700" href="{noticeHref(urgent)}&compare=1">Compare with evidence</a></div>
 		{#if missing.length}<p class="mono miss">◐ {missing.length} required {missing.length === 1 ? 'field' : 'fields'} still missing · {clockState(urgent, live.now) === 'on_track' ? 'on track' : 'due soon'}</p>{/if}
 	</section>
 {/if}
@@ -113,6 +113,7 @@
 	h3 {
 		margin: 10px 0 2px;
 		font: 600 15px/1.3 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	.to {
 		font-size: 12.5px;
