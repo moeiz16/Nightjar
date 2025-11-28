@@ -1,0 +1,224 @@
+/* Nightjar: a Skeleton v3 theme generated from the night-watch palette (frontend/DESIGN.md §0, §8).
+   One set of scales serves both modes; Skeleton's light/dark pairings (primary-700-300 …) pick the day or the
+   night value from `color-scheme`, which follows <html data-theme>. */
+
+:root {
+	--spacing: 0.25rem;
+	--text-scaling: 1;
+	--base-font-color: var(--color-surface-950);
+	--base-font-color-dark: var(--color-surface-50);
+	--base-font-family: 'Recursive Variable', ui-sans-serif, system-ui, sans-serif;
+	--base-font-size: 14px;
+	--base-line-height: 1.45;
+	--base-font-weight: 400;
+	--base-font-style: normal;
+	--base-letter-spacing: 0em;
+	--heading-font-color: inherit;
+	--heading-font-color-dark: inherit;
+	--heading-font-family: inherit;
+	--heading-font-weight: 600;
+	--heading-font-style: normal;
+	--heading-letter-spacing: -0.01em;
+	--anchor-font-color: var(--color-primary-700);
+	--anchor-font-color-dark: var(--color-primary-300);
+	--anchor-font-family: inherit;
+	--anchor-font-size: inherit;
+	--anchor-line-height: inherit;
+	--anchor-font-weight: inherit;
+	--anchor-font-style: inherit;
+	--anchor-letter-spacing: inherit;
+	--anchor-text-decoration: none;
+	--anchor-text-decoration-hover: underline;
+	--anchor-text-decoration-active: none;
+	--anchor-text-decoration-focus: none;
+	--body-background-color: var(--color-surface-100);
+	--body-background-color-dark: var(--color-surface-950);
+	/* controls are 3 px; bands and sheets are hard-edged */
+	--radius-base: 3px;
+	--radius-container: 0px;
+	--default-border-width: 1px;
+	--default-divide-width: 1px;
+	--default-ring-width: 1px;
+
+	/* surface: day sunk #F6F8F9 … night bg #070B10. 200-800 = hairline, 300-700 = strong rule */
+	--color-surface-50: #f6f8f9;
+	--color-surface-100: #e9eef0;
+	--color-surface-200: #dce3e7;
+	--color-surface-300: #c4ced4;
+	--color-surface-400: #8191a0;
+	--color-surface-500: #5f6e78;
+	--color-surface-600: #3a4855;
+	--color-surface-700: #283646;
+	--color-surface-800: #1a2430;
+	--color-surface-900: #0c1219;
+	--color-surface-950: #070b10;
+	--color-surface-contrast-dark: var(--color-surface-950);
+	--color-surface-contrast-light: var(--color-surface-50);
+	--color-surface-contrast-50: var(--color-surface-contrast-dark);
+	--color-surface-contrast-100: var(--color-surface-contrast-dark);
+	--color-surface-contrast-200: var(--color-surface-contrast-dark);
+	--color-surface-contrast-300: var(--color-surface-contrast-dark);
+	--color-surface-contrast-400: var(--color-surface-contrast-dark);
+	--color-surface-contrast-500: var(--color-surface-contrast-light);
+	--color-surface-contrast-600: var(--color-surface-contrast-light);
+	--color-surface-contrast-700: var(--color-surface-contrast-light);
+	--color-surface-contrast-800: var(--color-surface-contrast-light);
+	--color-surface-contrast-900: var(--color-surface-contrast-light);
+	--color-surface-contrast-950: var(--color-surface-contrast-light);
+
+	/* primary: mint teal. 300 is the night accent #3CE6C8, 700 the day accent #087565 */
+	--color-primary-50: #e7fbf7;
+	--color-primary-100: #c4f6ec;
+	--color-primary-200: #8eeedb;
+	--color-primary-300: #3ce6c8;
+	--color-primary-400: #22c9ad;
+	--color-primary-500: #14a68f;
+	--color-primary-600: #0d917c;
+	--color-primary-700: #087565;
+	--color-primary-800: #0a5f53;
+	--color-primary-900: #08423a;
+	--color-primary-950: #062a24;
+	--color-primary-contrast-dark: var(--color-primary-950);
+	--color-primary-contrast-light: #ffffff;
+	--color-primary-contrast-50: var(--color-primary-contrast-dark);
+	--color-primary-contrast-100: var(--color-primary-contrast-dark);
+	--color-primary-contrast-200: var(--color-primary-contrast-dark);
+	--color-primary-contrast-300: var(--color-primary-contrast-dark);
+	--color-primary-contrast-400: var(--color-primary-contrast-dark);
+	--color-primary-contrast-500: var(--color-primary-contrast-dark);
+	--color-primary-contrast-600: var(--color-primary-contrast-dark);
+	--color-primary-contrast-700: var(--color-primary-contrast-light);
+	--color-primary-contrast-800: var(--color-primary-contrast-light);
+	--color-primary-contrast-900: var(--color-primary-contrast-light);
+	--color-primary-contrast-950: var(--color-primary-contrast-light);
+
+	/* secondary: lavender, "waiting for a person" and ◆ decisions. 300 night #B6A8FF, 700 day #5B45C9 */
+	--color-secondary-50: #f3f0ff;
+	--color-secondary-100: #e4ddff;
+	--color-secondary-200: #cfc4ff;
+	--color-secondary-300: #b6a8ff;
+	--color-secondary-400: #9a87f5;
+	--color-secondary-500: #7d68e6;
+	--color-secondary-600: #6a54d6;
+	--color-secondary-700: #5b45c9;
+	--color-secondary-800: #47349f;
+	--color-secondary-900: #32246f;
+	--color-secondary-950: #1f1645;
+	--color-secondary-contrast-dark: var(--color-secondary-950);
+	--color-secondary-contrast-light: #ffffff;
+	--color-secondary-contrast-50: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-100: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-200: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-300: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-400: var(--color-secondary-contrast-dark);
+	--color-secondary-contrast-500: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-600: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-700: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-800: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-900: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-950: var(--color-secondary-contrast-light);
+
+	/* tertiary: steel, routine and quiet lines */
+	--color-tertiary-50: #f1f4f6;
+	--color-tertiary-100: #dfe5e9;
+	--color-tertiary-200: #c4ced4;
+	--color-tertiary-300: #a5b3be;
+	--color-tertiary-400: #8191a0;
+	--color-tertiary-500: #687886;
+	--color-tertiary-600: #53626e;
+	--color-tertiary-700: #3f4c57;
+	--color-tertiary-800: #2b3943;
+	--color-tertiary-900: #1a242c;
+	--color-tertiary-950: #0e151b;
+	--color-tertiary-contrast-dark: var(--color-tertiary-950);
+	--color-tertiary-contrast-light: #ffffff;
+	--color-tertiary-contrast-50: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-100: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-200: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-300: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-400: var(--color-tertiary-contrast-dark);
+	--color-tertiary-contrast-500: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-600: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-700: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-800: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-900: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-950: var(--color-tertiary-contrast-light);
+
+	/* success: contained, sent (the teal family leaning green) */
+	--color-success-50: #e8faf1;
+	--color-success-100: #c6f2dc;
+	--color-success-200: #95e6bf;
+	--color-success-300: #5fd6a0;
+	--color-success-400: #34c085;
+	--color-success-500: #1fa36d;
+	--color-success-600: #168a5b;
+	--color-success-700: #11744c;
+	--color-success-800: #0e5a3b;
+	--color-success-900: #0a3f2a;
+	--color-success-950: #06281a;
+	--color-success-contrast-dark: var(--color-success-950);
+	--color-success-contrast-light: #ffffff;
+	--color-success-contrast-50: var(--color-success-contrast-dark);
+	--color-success-contrast-100: var(--color-success-contrast-dark);
+	--color-success-contrast-200: var(--color-success-contrast-dark);
+	--color-success-contrast-300: var(--color-success-contrast-dark);
+	--color-success-contrast-400: var(--color-success-contrast-dark);
+	--color-success-contrast-500: var(--color-success-contrast-dark);
+	--color-success-contrast-600: var(--color-success-contrast-light);
+	--color-success-contrast-700: var(--color-success-contrast-light);
+	--color-success-contrast-800: var(--color-success-contrast-light);
+	--color-success-contrast-900: var(--color-success-contrast-light);
+	--color-success-contrast-950: var(--color-success-contrast-light);
+
+	/* warning: amber, due soon. 300 night #F2B84B, 700 day #8A5D00 */
+	--color-warning-50: #fdf6e3;
+	--color-warning-100: #fbe9bd;
+	--color-warning-200: #f8d98d;
+	--color-warning-300: #f2b84b;
+	--color-warning-400: #dc9d2a;
+	--color-warning-500: #b8800f;
+	--color-warning-600: #9c6c05;
+	--color-warning-700: #8a5d00;
+	--color-warning-800: #6b4800;
+	--color-warning-900: #4a3200;
+	--color-warning-950: #2c1d00;
+	--color-warning-contrast-dark: var(--color-warning-950);
+	--color-warning-contrast-light: #ffffff;
+	--color-warning-contrast-50: var(--color-warning-contrast-dark);
+	--color-warning-contrast-100: var(--color-warning-contrast-dark);
+	--color-warning-contrast-200: var(--color-warning-contrast-dark);
+	--color-warning-contrast-300: var(--color-warning-contrast-dark);
+	--color-warning-contrast-400: var(--color-warning-contrast-dark);
+	--color-warning-contrast-500: var(--color-warning-contrast-dark);
+	--color-warning-contrast-600: var(--color-warning-contrast-light);
+	--color-warning-contrast-700: var(--color-warning-contrast-light);
+	--color-warning-contrast-800: var(--color-warning-contrast-light);
+	--color-warning-contrast-900: var(--color-warning-contrast-light);
+	--color-warning-contrast-950: var(--color-warning-contrast-light);
+
+	/* error: overdue, critical. 400 night #FF6B5E, 700 day #B42318 */
+	--color-error-50: #fff0ee;
+	--color-error-100: #ffdcd7;
+	--color-error-200: #ffb8ae;
+	--color-error-300: #ff8a7d;
+	--color-error-400: #ff6b5e;
+	--color-error-500: #e5483b;
+	--color-error-600: #c9342a;
+	--color-error-700: #b42318;
+	--color-error-800: #8c1b13;
+	--color-error-900: #5f130d;
+	--color-error-950: #3a0b07;
+	--color-error-contrast-dark: var(--color-error-950);
+	--color-error-contrast-light: #ffffff;
+	--color-error-contrast-50: var(--color-error-contrast-dark);
+	--color-error-contrast-100: var(--color-error-contrast-dark);
+	--color-error-contrast-200: var(--color-error-contrast-dark);
+	--color-error-contrast-300: var(--color-error-contrast-dark);
+	--color-error-contrast-400: var(--color-error-contrast-dark);
+	--color-error-contrast-500: var(--color-error-contrast-light);
+	--color-error-contrast-600: var(--color-error-contrast-light);
+	--color-error-contrast-700: var(--color-error-contrast-light);
+	--color-error-contrast-800: var(--color-error-contrast-light);
+	--color-error-contrast-900: var(--color-error-contrast-light);
+	--color-error-contrast-950: var(--color-error-contrast-light);
+}

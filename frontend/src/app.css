@@ -1,13 +1,23 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/geist/wght.css';
-@import '@fontsource-variable/geist-mono/wght.css';
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton/optional/presets';
+@import './lib/theme/nightjar.css';
+@import '@fontsource-variable/recursive/mono.css';
 
-/* Nightjar SOC tokens (frontend/DESIGN.md §7–§10). Night is the default; "day watch" is the console in
-   light; the brief has its own dawn / night-edition reading tokens under .brief. */
+@source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+
+/* Skeleton's light/dark pairings and Tailwind's dark: variant follow the attribute the app already sets. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Nightjar SOC tokens (frontend/DESIGN.md §0 and §8). Night is the default; "day watch" is the console in light;
+   the brief has its own dawn / night-edition tokens under .brief. The Skeleton theme (lib/theme/nightjar.css) is
+   built from the same values, so component presets and these tokens never disagree.
+   Type is one family, Recursive: Sans Linear for what a person reads, Mono Linear (the MONO axis at 1) for what a
+   machine wrote or a clock counts. */
 
 @theme inline {
-	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	--font-sans: 'Recursive Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Recursive Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 	--color-bg: var(--bg);
 	--color-pane: var(--pane);
 	--color-raised: var(--raised);
@@ -23,14 +33,11 @@
 	--color-amber: var(--amber);
 	--color-red: var(--red);
 	--color-lav: var(--lav);
-	--radius-ctl: 6px;
-	--radius-chip: 4px;
-	--radius-hold: 8px;
-	--radius-pop: 10px;
 	--ease-tick: cubic-bezier(0.2, 0.9, 0.1, 1);
 	--ease-drop: cubic-bezier(0.2, 1.3, 0.35, 1);
 	--ease-stamp: cubic-bezier(0.2, 1.4, 0.3, 1);
 	--ease-dawn: cubic-bezier(0.3, 0.7, 0, 1);
+	--ease-step: cubic-bezier(0.3, 0.8, 0.2, 1);
 }
 
 :root {
@@ -54,9 +61,19 @@
 	--lav: #b6a8ff;
 	--lav-wash: rgba(182, 168, 255, 0.1);
 	--sel: rgba(60, 230, 200, 0.16);
+	--night: rgba(0, 0, 0, 0.32);
 	--shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-	--sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-	--mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	--sans: 'Recursive Variable', ui-sans-serif, system-ui, sans-serif;
+	--mono: 'Recursive Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	/* the shift grid: lane labels | the night | the deadline gutter. The axis and every chart share it. */
+	--gut: 150px;
+	--dl: minmax(250px, 32%);
+}
+@media (max-width: 1100px) {
+	:root {
+		--gut: 56px;
+		--dl: 210px;
+	}
 }
 :root[data-theme='light'] {
 	color-scheme: light;
@@ -70,54 +87,60 @@
 	--ink-2: #2b3943;
 	--muted: #53626e;
 	--faint: #5f6e78;
-	--teal: #0a7f6d;
+	--teal: #087565;
 	--teal-ink: #ffffff;
-	--teal-wash: rgba(10, 127, 109, 0.08);
-	--teal-line: rgba(10, 127, 109, 0.45);
+	--teal-wash: rgba(8, 117, 101, 0.08);
+	--teal-line: rgba(8, 117, 101, 0.45);
 	--amber: #8a5d00;
 	--red: #b42318;
 	--lav: #5b45c9;
 	--lav-wash: rgba(91, 69, 201, 0.07);
-	--sel: rgba(10, 127, 109, 0.1);
+	--sel: rgba(8, 117, 101, 0.1);
+	--night: rgba(11, 20, 27, 0.05);
 	--shadow: 0 24px 70px rgba(14, 30, 40, 0.18);
 }
 
-* {
-	box-sizing: border-box;
-}
-html,
-body {
-	margin: 0;
-}
-body {
-	background: var(--bg);
-	color: var(--ink);
-	font: 400 14px/1.45 var(--sans);
-	-webkit-font-smoothing: antialiased;
-	font-feature-settings: 'ss01';
-}
-button {
-	font: inherit;
-	color: inherit;
-	background: none;
-	border: 0;
-	padding: 0;
-	cursor: pointer;
-}
-button:disabled {
-	cursor: not-allowed;
-}
-a {
-	color: inherit;
-}
-input,
-select,
-textarea {
-	font: inherit;
-	color: inherit;
+/* Element resets live in the base layer so Skeleton's utilities and presets (backgrounds, borders, padding,
+   colours on buttons and links) win over them. */
+@layer base {
+	* {
+		box-sizing: border-box;
+	}
+	html,
+	body {
+		margin: 0;
+	}
+	body {
+		background: var(--bg);
+		color: var(--ink);
+		font: 400 14px/1.45 var(--sans);
+		font-variation-settings: 'MONO' 0;
+		-webkit-font-smoothing: antialiased;
+	}
+	button {
+		font: inherit;
+		color: inherit;
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+	}
+	button:disabled {
+		cursor: not-allowed;
+	}
+	a {
+		color: inherit;
+	}
+	input,
+	select,
+	textarea {
+		font: inherit;
+		color: inherit;
+	}
 }
 .mono {
 	font-family: var(--mono);
+	font-variation-settings: 'MONO' 1;
 	font-feature-settings: 'tnum', 'zero';
 }
 .tnum {
@@ -161,7 +184,7 @@ textarea {
 	background: var(--teal);
 	color: var(--teal-ink);
 	padding: 8px 12px;
-	border-radius: 6px;
+	border-radius: 3px;
 	font-weight: 500;
 }
 .skip-link:focus {
@@ -183,103 +206,81 @@ textarea {
 	flex: none;
 }
 .brand b {
-	font: 500 14px/1 var(--mono);
+	font: 600 14px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	letter-spacing: -0.01em;
 	color: var(--ink);
 }
 .brand i {
 	font: 400 14px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	font-style: normal;
 	color: var(--muted);
 }
 
-/* ---------- keycaps, buttons ---------- */
+/* ---------- the Nightjar skin over Skeleton's utilities ---------- */
 kbd {
 	font: 500 11px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	color: var(--ink-2);
 	padding: 3px 5px;
-	border-radius: 4px;
+	border-radius: 3px;
 	border: 1px solid var(--line-strong);
 	border-bottom-width: 2px;
 	background: var(--sunk);
 	white-space: nowrap;
 }
-.kbtn {
-	display: inline-flex;
-	align-items: center;
-	gap: 10px;
+.btn {
 	height: 32px;
-	padding: 0 10px 0 12px;
-	border: 1px solid var(--line-strong);
-	border-radius: 6px;
-	color: var(--muted);
+	padding-inline: 12px;
 	font-size: 13px;
-	white-space: nowrap;
+	font-weight: 500;
+	line-height: 1;
+	gap: 8px;
 }
-.kbtn:hover {
+.btn[class*='preset-outlined'] {
 	color: var(--ink);
+	background: transparent;
+}
+.btn[class*='preset-outlined']:hover:not(:disabled) {
+	filter: none;
 	border-color: var(--muted);
 }
-.iconbtn {
+.btn-sm {
+	height: 26px;
+	padding-inline: 9px;
+	font-size: 12px;
+}
+.btn-lg {
+	height: 44px;
+	padding-inline: 18px;
+	font-size: 15px;
+}
+.btn-icon {
 	width: 32px;
 	height: 32px;
-	border-radius: 6px;
-	display: grid;
-	place-items: center;
+	padding: 0;
 	color: var(--muted);
-	border: 1px solid transparent;
-	flex: none;
 }
-.iconbtn:hover {
+.btn-icon:hover:not(:disabled) {
 	color: var(--ink);
-	border-color: var(--line-strong);
+	filter: none;
 }
-.iconbtn svg {
+.btn-icon svg {
 	width: 16px;
 	height: 16px;
 }
-.btn {
-	height: 32px;
-	padding: 0 12px;
-	border-radius: 6px;
-	border: 1px solid var(--line-strong);
-	font-size: 13px;
-	color: var(--ink);
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	text-decoration: none;
-	white-space: nowrap;
-	background: transparent;
-}
-.btn:hover:not(:disabled) {
-	border-color: var(--muted);
-}
-.btn.pri {
-	background: var(--ink);
-	color: var(--bg);
-	border-color: var(--ink);
-	font-weight: 500;
-}
-.btn.pri:hover:not(:disabled) {
-	opacity: 0.92;
-}
-.btn.teal {
-	background: var(--teal);
-	color: var(--teal-ink);
-	border-color: var(--teal);
-	font-weight: 500;
-}
-.btn:disabled {
-	opacity: 0.5;
-}
-.btn.sm {
-	height: 26px;
-	padding: 0 9px;
-	font-size: 12px;
+.badge,
+.chip {
+	font: 500 11.5px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
+	height: 22px;
+	padding-inline: 8px;
+	gap: 6px;
 }
 .lnk {
 	font: 400 12px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	color: var(--muted);
 	text-decoration: none;
 	border-bottom: 1px solid var(--line-strong);
@@ -290,78 +291,91 @@ kbd {
 	color: var(--ink);
 	border-color: var(--muted);
 }
-
-/* ---------- segmented toggles ---------- */
-.seg {
-	display: inline-flex;
-	border: 1px solid var(--line-strong);
-	border-radius: 6px;
-	overflow: hidden;
-	flex: none;
-}
-.seg button,
-.seg a {
-	height: 28px;
-	padding: 0 10px;
-	color: var(--ink-2);
-	border-right: 1px solid var(--line-strong);
-	font: 500 12px/28px var(--mono);
-	text-decoration: none;
-	white-space: nowrap;
-}
-.seg > :last-child {
-	border-right: 0;
-}
-.seg .on,
-.seg [aria-pressed='true'],
-.seg [aria-current='page'] {
-	background: var(--teal-wash);
-	color: var(--teal);
-}
-
-/* ---------- forms ---------- */
-.field {
+.label {
 	display: grid;
 	gap: 6px;
 }
-.field > span {
+.label > span:first-child,
+.label-text {
 	font: 400 12px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	color: var(--muted);
 }
 .input,
 .select,
 .textarea {
-	height: 36px;
-	padding: 0 11px;
-	border-radius: 6px;
-	border: 1px solid var(--line-strong);
+	min-height: 36px;
+	padding-inline: 11px;
 	background: var(--sunk);
 	color: var(--ink);
 	font-size: 14px;
 	min-width: 0;
-	width: 100%;
+	--tw-ring-color: var(--line-strong);
 }
 .textarea {
-	height: auto;
-	padding: 10px 11px;
+	padding-block: 10px;
 	line-height: 1.55;
 	resize: vertical;
 }
 .input:focus,
 .select:focus,
 .textarea:focus {
+	--tw-ring-color: var(--teal);
 	outline: 2px solid var(--teal);
 	outline-offset: -1px;
-	border-color: transparent;
 }
 .ferr {
 	font: 400 12px/1.4 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	color: var(--red);
 }
+.table {
+	font-size: 13px;
+	border-collapse: collapse;
+}
+.table th {
+	font: 400 11.5px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
+	color: var(--faint);
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--line);
+	white-space: nowrap;
+	position: sticky;
+	top: 0;
+	background: var(--pane);
+	z-index: 1;
+}
+.table td {
+	padding: 11px 14px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink-2);
+	vertical-align: top;
+}
+.table tr.sel td {
+	background: var(--sel);
+}
+.table tbody tr:hover td {
+	background: color-mix(in srgb, var(--raised) 70%, transparent);
+}
+.table tr.sel:hover td {
+	background: var(--sel);
+}
+.table td.m {
+	font: 400 12px/1.4 var(--mono);
+	font-variation-settings: 'MONO' 1;
+	color: var(--faint);
+	white-space: nowrap;
+}
+.table .rowbtn {
+	text-align: left;
+	color: var(--ink);
+	font-weight: 500;
+}
 
-/* ---------- status glyph chips ---------- */
+/* ---------- status glyphs (never colour alone) ---------- */
 .sev {
 	font: 500 12px/1 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	display: inline-flex;
 	gap: 6px;
 	align-items: center;
@@ -381,93 +395,8 @@ kbd {
 .sev.info .bars {
 	color: var(--muted);
 }
-.chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	height: 22px;
-	padding: 0 8px;
-	border-radius: 4px;
-	font: 500 11.5px/1 var(--mono);
-	white-space: nowrap;
-	border: 1px solid var(--line-strong);
-	color: var(--ink-2);
-}
-.chip.await {
-	color: var(--lav);
-	border-color: color-mix(in srgb, var(--lav) 45%, transparent);
-	background: var(--lav-wash);
-}
-.chip.ok {
-	color: var(--teal);
-	border-color: var(--teal-line);
-	background: var(--teal-wash);
-}
-.chip.soon {
-	color: var(--amber);
-	border-color: color-mix(in srgb, var(--amber) 45%, transparent);
-}
-.chip.bad {
-	color: var(--red);
-	border-color: color-mix(in srgb, var(--red) 45%, transparent);
-}
-.tag {
-	padding: 4px 6px;
-	border-radius: 3px;
-	background: var(--raised);
-	color: var(--ink-2);
-	font: 400 11.5px/1 var(--mono);
-	white-space: nowrap;
-}
 
-/* ---------- panes ---------- */
-.pane {
-	background: var(--pane);
-	min-width: 0;
-	min-height: 0;
-	display: flex;
-	flex-direction: column;
-	position: relative;
-}
-.pane > .ph {
-	height: 34px;
-	flex: none;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 0 14px;
-	border-bottom: 1px solid var(--line);
-	font: 400 12px/1 var(--mono);
-	color: var(--muted);
-	white-space: nowrap;
-	min-width: 0;
-}
-.pane > .ph b,
-.pane > .ph .ttl {
-	font-weight: 500;
-	color: var(--ink-2);
-}
-.pane > .ph .sp {
-	margin-left: auto;
-	display: flex;
-	gap: 12px;
-	align-items: center;
-	min-width: 0;
-}
-.pane.focus::before {
-	content: '';
-	position: absolute;
-	left: 0;
-	right: 0;
-	top: 0;
-	height: 2px;
-	background: var(--teal);
-	z-index: 2;
-}
-.pane.focus > .ph b,
-.pane.focus > .ph .ttl {
-	color: var(--ink);
-}
+/* ---------- scroll areas ---------- */
 .scroll {
 	overflow: auto;
 	min-height: 0;
@@ -476,58 +405,15 @@ kbd {
 	scrollbar-color: var(--line-strong) transparent;
 }
 
-/* ---------- ledgers (tables) ---------- */
-.ledger {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 13px;
-}
-.ledger th {
-	text-align: left;
-	font: 400 11.5px/1 var(--mono);
-	color: var(--faint);
-	padding: 10px 14px;
-	border-bottom: 1px solid var(--line);
-	white-space: nowrap;
-	position: sticky;
-	top: 0;
-	background: var(--pane);
-	z-index: 1;
-}
-.ledger td {
-	padding: 11px 14px;
-	border-bottom: 1px solid var(--line);
-	color: var(--ink-2);
-	vertical-align: top;
-}
-.ledger tr.sel td {
-	background: var(--sel);
-}
-.ledger tbody tr:hover td {
-	background: color-mix(in srgb, var(--raised) 70%, transparent);
-}
-.ledger tr.sel:hover td {
-	background: var(--sel);
-}
-.ledger td.m {
-	font: 400 12px/1.4 var(--mono);
-	color: var(--faint);
-	white-space: nowrap;
-}
-.ledger .rowbtn {
-	text-align: left;
-	color: var(--ink);
-	font-weight: 500;
-}
-
 /* ---------- untrusted text (contract §1.1) ---------- */
 .untrusted {
 	display: block;
 	font: 400 12px/1.5 var(--mono);
+	font-variation-settings: 'MONO' 1;
 	color: var(--ink-2);
 	background: var(--sunk);
 	border: 1px dashed var(--line-strong);
-	border-radius: 4px;
+	border-radius: 3px;
 	padding: 6px 9px;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
@@ -567,6 +453,28 @@ kbd {
 		opacity: 1;
 	}
 }
+/* Resolve: a raw log line (MONO 1) eases into plain words (MONO 0) when it joins an incident. */
+.resolve {
+	animation: nj-resolve 600ms var(--ease-step) both;
+}
+@keyframes nj-resolve {
+	from {
+		font-variation-settings: 'MONO' 1;
+	}
+	to {
+		font-variation-settings: 'MONO' 0;
+	}
+}
+/* Bands settle in, 6 px apart, once per route */
+.band-in {
+	animation: nj-band 260ms var(--ease-step) both;
+}
+@keyframes nj-band {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
 
 /* Dawn: watch → brief page transition (View Transitions), DESIGN.md §11 */
 ::view-transition-old(root),
@@ -596,6 +504,10 @@ kbd {
 	}
 	.pulse {
 		animation: none;
+	}
+	.resolve {
+		animation: none;
+		font-variation-settings: 'MONO' 0;
 	}
 	:root.dawn::view-transition-new(root) {
 		animation: nj-fade 150ms ease both;

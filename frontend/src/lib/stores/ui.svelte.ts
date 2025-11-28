@@ -1,26 +1,50 @@
-// UI state shared by the shell, the tiles and ⌘K: theme, palette, tile layout, personal preferences.
+// UI state shared by the shell, the bands and ⌘K: theme, palette, the turnover sections per role, preferences,
+// and the Skeleton toaster every confirmation goes through.
+import { createToaster } from '@skeletonlabs/skeleton-svelte';
 import type { Role } from '$lib/api/types';
 
 export type Theme = 'dark' | 'light';
-export type TileKind = 'events' | 'incident' | 'awaiting' | 'hunt' | 'activity' | 'evidence' | 'behaviour';
-export const TILE_LABEL: Record<TileKind, string> = {
-	events: 'events',
-	incident: 'incident',
-	awaiting: 'awaiting you',
-	hunt: 'hunt',
-	activity: 'activity',
-	evidence: 'evidence',
-	behaviour: 'unusual behaviour'
+/** The numbered sections of the turnover (the watch's handover band). */
+export type SectionKind = 'awaiting' | 'clocks' | 'intake' | 'log' | 'hunt' | 'activity' | 'evidence';
+export const SECTION_LABEL: Record<SectionKind, string> = {
+	awaiting: 'waiting on you',
+	clocks: 'clocks to watch',
+	intake: 'intake, live',
+	log: 'since you last looked',
+	hunt: 'worth a hunt',
+	activity: 'the activity chain',
+	evidence: 'evidence'
 };
-export const LAYOUTS: Record<Exclude<Role, 'executive' | 'admin'> | 'admin', TileKind[]> = {
-	analyst: ['events', 'incident', 'hunt'],
-	responder: ['events', 'incident', 'awaiting'],
-	auditor: ['activity', 'incident', 'evidence'],
-	admin: ['events', 'incident', 'awaiting']
+/** What each role needs from the handover first (DESIGN.md §0.3). Responders and admins decide; analysts hunt;
+ *  auditors check the chain. Every role sees the clocks. */
+export const SECTIONS: Record<Exclude<Role, 'executive'>, SectionKind[]> = {
+	responder: ['awaiting', 'clocks', 'intake', 'log'],
+	admin: ['awaiting', 'clocks', 'intake', 'log'],
+	analyst: ['hunt', 'clocks', 'intake', 'log'],
+	auditor: ['activity', 'clocks', 'evidence', 'log']
 };
-export function presetFor(role: Role | null): TileKind[] {
-	if (!role || role === 'executive') return [...LAYOUTS.responder];
-	return [...LAYOUTS[role]];
+export function sectionsFor(role: Role | null): SectionKind[] {
+	if (!role || role === 'executive') return [...SECTIONS.responder];
+	return [...SECTIONS[role]];
+}
+
+/** The numbered windows of the watch bar (Alt+1 … Alt+8), tmux style. */
+export const WINDOWS = [
+	{ n: 1, href: '/watch', label: 'watch', perm: null },
+	{ n: 2, href: '/hunt', label: 'hunt', perm: 'hunting:read' },
+	{ n: 3, href: '/behaviour', label: 'behaviour', perm: 'ueba:read' },
+	{ n: 4, href: '/rules', label: 'rules', perm: 'rules:read' },
+	{ n: 5, href: '/assets', label: 'assets', perm: null },
+	{ n: 6, href: '/identities', label: 'people', perm: null },
+	{ n: 7, href: '/activity', label: 'log', perm: 'audit:read' },
+	{ n: 8, href: '/brief', label: 'brief', perm: null }
+] as const;
+/** The window a path belongs to (an incident and its notice live under the watch). */
+export function windowFor(path: string): number {
+	if (path.startsWith('/incidents') || path.startsWith('/watch')) return 1;
+	if (path.startsWith('/settings')) return 0;
+	const hit = WINDOWS.find((w) => w.n > 1 && path.startsWith(w.href));
+	return hit?.n ?? 0;
 }
 
 function read(key: string): string | null {
@@ -38,30 +62,22 @@ function write(key: string, v: string) {
 	}
 }
 
-export interface Toast {
-	id: number;
-	text: string;
-	tone: 'ok' | 'info' | 'bad';
-}
+export type ToastTone = 'ok' | 'info' | 'bad';
+export const toaster = createToaster({ placement: 'bottom-start', overlap: false, gap: 8, max: 4 });
 
 class Ui {
 	theme = $state<Theme>('dark');
 	briefTheme = $state<Theme>('light');
 	paletteOpen = $state(false);
-	paletteMode = $state<'all' | 'tile' | 'ask'>('all');
+	paletteMode = $state<'all' | 'ask'>('all');
 	paletteQuery = $state('');
 	/** The incident ⌘K is scoped to (its reference chip). */
 	scope = $state<{ id: string; reference: string } | null>(null);
-	tiles = $state<TileKind[]>(['events', 'incident', 'awaiting']);
-	focus = $state(1);
-	zoomed = $state(false);
-	mobileTile = $state(1);
+	sections = $state<SectionKind[]>(sectionsFor(null));
 	holdByTyping = $state(false);
 	announcement = $state('');
-	/** A short "since you last looked" line for the status line. */
+	/** A short "since you last looked" line for the watch bar. */
 	statusNote = $state('');
-	toasts = $state<Toast[]>([]);
-	#tid = 0;
 
 	init() {
 		const t = read('nj_theme');
@@ -87,7 +103,7 @@ class Ui {
 		this.holdByTyping = v;
 		write('nj_hold_typing', v ? '1' : '0');
 	}
-	openPalette(mode: 'all' | 'tile' | 'ask' = 'all', query = '') {
+	openPalette(mode: 'all' | 'ask' = 'all', query = '') {
 		this.paletteMode = mode;
 		this.paletteQuery = query;
 		this.paletteOpen = true;
@@ -95,62 +111,21 @@ class Ui {
 	closePalette() {
 		this.paletteOpen = false;
 	}
-	// ---------- tiles ----------
-	loadLayout(userId: string, role: Role | null) {
-		const saved = read(`nj_layout_${userId}`);
-		const preset = presetFor(role);
-		this.tiles = saved ? (saved.split(',').filter(Boolean) as TileKind[]) : preset;
-		if (!this.tiles.length) this.tiles = preset;
-		this.focus = Math.min(this.tiles.indexOf('incident') >= 0 ? this.tiles.indexOf('incident') : 0, this.tiles.length - 1);
-		this.mobileTile = this.focus;
-	}
-	saveLayout(userId: string) {
-		write(`nj_layout_${userId}`, this.tiles.join(','));
-	}
-	split(kind?: TileKind) {
-		if (this.tiles.length >= 4) return false;
-		const order: TileKind[] = ['events', 'incident', 'awaiting', 'hunt', 'activity', 'behaviour', 'evidence'];
-		const next = kind ?? order.find((k) => !this.tiles.includes(k)) ?? 'hunt';
-		this.tiles.splice(this.focus + 1, 0, next);
-		this.focus = this.focus + 1;
-		this.zoomed = false;
-		return true;
-	}
-	close() {
-		if (this.tiles.length <= 1) return false;
-		this.tiles.splice(this.focus, 1);
-		this.focus = Math.max(0, Math.min(this.focus, this.tiles.length - 1));
-		this.zoomed = false;
-		return true;
-	}
-	move(delta: number) {
-		const n = this.tiles.length;
-		this.focus = (this.focus + delta + n) % n;
-		this.mobileTile = this.focus;
-	}
-	swap(kind: TileKind) {
-		const existing = this.tiles.indexOf(kind);
-		if (existing >= 0 && existing !== this.focus) {
-			this.focus = existing;
-			return;
-		}
-		this.tiles[this.focus] = kind;
+	// ---------- the turnover ----------
+	loadSections(role: Role | null) {
+		this.sections = sectionsFor(role);
 	}
 	setPreset(role: Role) {
-		this.tiles = presetFor(role);
-		this.focus = 1;
-		this.zoomed = false;
+		this.sections = sectionsFor(role);
 	}
 	// ---------- feedback ----------
 	announce(text: string) {
 		this.announcement = '';
 		queueMicrotask(() => (this.announcement = text));
 	}
-	toast(text: string, tone: Toast['tone'] = 'ok') {
-		const id = ++this.#tid;
-		this.toasts.push({ id, text, tone });
+	toast(text: string, tone: ToastTone = 'ok') {
+		toaster.create({ description: text, type: tone === 'ok' ? 'success' : tone === 'bad' ? 'error' : 'info', duration: 4200 });
 		this.announce(text);
-		setTimeout(() => (this.toasts = this.toasts.filter((t) => t.id !== id)), 4200);
 	}
 }
 

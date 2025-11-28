@@ -19,8 +19,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fontsource-variable/geist": "5.3.0",
-    "@fontsource-variable/geist-mono": "5.3.0"
+    "@fontsource-variable/recursive": "5.2.8",
+    "@skeletonlabs/skeleton": "3.2.2",
+    "@skeletonlabs/skeleton-svelte": "1.5.3"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
