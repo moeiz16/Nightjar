@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "nightjar-soc"
 version = "0.1.0"
 description = "Nightjar SOC: AI security operations for mid-size companies, with regulatory incident clocks (NIS2, SEC Form 8-K Item 1.05, SOCI)."
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.13,<3.14"
 license = { text = "MIT" }
 authors = [{ name = "Moeiz Shahzad" }]
