@@ -1,7 +1,5 @@
 <script lang="ts">
 	// The step drawer (DESIGN.md §6.4): the evidence a step cited, its reasons in plain words, and Disagree.
-	import { slide } from 'svelte/transition';
-	import { prefersReducedMotion } from 'svelte/motion';
 	import { api, problemMessage } from '$lib/api';
 	import type { IncidentSummary, Verdict } from '$lib/api/types';
 	import type { BatonRow } from '$lib/util/baton';
@@ -41,7 +39,7 @@
 	}
 </script>
 
-<section class="drawer" transition:slide={{ duration: prefersReducedMotion.current ? 0 : 200 }} aria-label="Step detail">
+<section class="drawer" aria-label="Step detail">
 	<header>
 		<span class="mono faint">{row.who} · {timeOf(row.at, undefined, true)}{row.step ? ` · step ${row.step.seq}` : ''}</span>
 		<button class="lnk" type="button" onclick={onclose}>close <kbd>esc</kbd></button>
@@ -67,7 +65,7 @@
 		</div>
 	{/if}
 	{#if evidence.length}
-		<div class="blk">
+		<div class="blk evb">
 			<h4>evidence cited</h4>
 			<ul class="ev">
 				{#each evidence as e, i (i)}
@@ -82,14 +80,14 @@
 
 	{#if session.can('incidents:write') && row.step}
 		{#if !disagreeing}
-			<div class="row"><button class="btn sm" type="button" onclick={() => (disagreeing = true)}>Disagree</button><span class="mono faint">records a person’s verdict</span></div>
+			<div class="row"><button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => (disagreeing = true)}>Disagree</button><span class="mono faint">records a person’s verdict</span></div>
 		{:else}
 			<form class="dis" onsubmit={disagree}>
-				<label class="field"><span>your verdict</span>
+				<label class="label"><span>your verdict</span>
 					<select class="select" bind:value={verdict}><option value="false_positive">A false alarm</option><option value="benign">Expected activity</option><option value="true_positive">A real attack</option><option value="needs_review">Needs more evidence</option></select>
 				</label>
-				<label class="field"><span>why (optional)</span><input class="input" bind:value={note} /></label>
-				<div class="row"><button class="btn pri sm" type="submit" disabled={busy}>Record verdict</button><button class="lnk" type="button" onclick={() => (disagreeing = false)}>cancel</button></div>
+				<label class="label"><span>why (optional)</span><input class="input" bind:value={note} /></label>
+				<div class="row"><button class="btn preset-filled-surface-950-50 btn-sm" type="submit" disabled={busy}>Record verdict</button><button class="lnk" type="button" onclick={() => (disagreeing = false)}>cancel</button></div>
 			</form>
 		{/if}
 	{/if}
@@ -98,15 +96,26 @@
 <style>
 	.drawer {
 		position: relative;
-		z-index: 3;
-		margin: 4px 14px 10px var(--tcol, 64px);
-		padding: 14px 18px 16px;
-		border-radius: 10px;
-		border: 1px solid var(--line-strong);
-		background: var(--raised);
-		box-shadow: var(--shadow);
+		padding: 18px 28px 22px;
 		display: grid;
 		gap: 12px;
+		align-content: start;
+	}
+	/* wide sheets: the step and the verdict on the left, the evidence it cited on the right */
+	@media (min-width: 1000px) {
+		.drawer {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+			column-gap: 32px;
+		}
+		.drawer > :global(*) {
+			grid-column: 1;
+		}
+		.drawer > .evb {
+			grid-column: 2;
+			grid-row: 1 / span 12;
+			max-height: calc(min(82vh, 820px) - 60px);
+			overflow: auto;
+		}
 	}
 	header {
 		display: flex;
@@ -117,10 +126,12 @@
 	h3 {
 		margin: 0;
 		font: 600 15px/1.3 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	h4 {
 		margin: 0 0 7px;
 		font: 400 11px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	.why {
@@ -153,6 +164,7 @@
 	.looked {
 		margin: 0;
 		font: 400 12px/1.5 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--ink-2);
 	}
 	.ev li {
@@ -173,7 +185,7 @@
 	}
 	@media (max-width: 760px) {
 		.drawer {
-			margin: 4px 8px 10px;
+			padding: 16px 16px 20px;
 		}
 		.reasons li {
 			grid-template-columns: 1fr;

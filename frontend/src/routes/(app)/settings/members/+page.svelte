@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Settings › members (DESIGN.md §6.14): who can authorise what, invitations, and the two-person rule.
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
 	import SettingsNav from '$lib/components/shell/SettingsNav.svelte';
 	import { api, problemMessage, ApiError } from '$lib/api';
 	import type { Invitation, Member, Role } from '$lib/api/types';
@@ -75,20 +75,20 @@
 
 <svelte:head><title>Members · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Pane title="settings" sub="members" focus>
-		{#snippet actions()}{#if canManage}<button class="btn sm pri" type="button" onclick={() => (inviting = !inviting)}>Invite someone</button>{/if}{/snippet}
+	<Band title="settings" sub="members" fill>
+		{#snippet actions()}{#if canManage}<button class="btn preset-filled-surface-950-50 btn-sm" type="button" onclick={() => (inviting = !inviting)}>Invite someone</button>{/if}{/snippet}
 		<SettingsNav />
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		{#if inviting}
 			<form class="inv" onsubmit={invite}>
-				<label class="field"><span>work email</span><input class="input" type="email" bind:value={email} required aria-invalid={!!fe.email} />{#if fe.email}<small class="ferr">{fe.email}</small>{/if}</label>
-				<label class="field"><span>role</span><select class="select" bind:value={role}>{#each ROLES as [r, l] (r)}<option value={r}>{l}</option>{/each}</select></label>
-				<button class="btn teal" type="submit">Send invitation</button>
+				<label class="label"><span>work email</span><input class="input" type="email" bind:value={email} required aria-invalid={!!fe.email} />{#if fe.email}<small class="ferr">{fe.email}</small>{/if}</label>
+				<label class="label"><span>role</span><select class="select" bind:value={role}>{#each ROLES as [r, l] (r)}<option value={r}>{l}</option>{/each}</select></label>
+				<button class="btn preset-filled-primary-700-300" type="submit">Send invitation</button>
 			</form>
 			{#if link}<p class="link mono">Copy this link now (shown once): <a href={link}>{location.origin}{link}</a></p>{/if}
 		{/if}
-		<div class="tblwrap">
-			<table class="ledger">
+		<div class="table-wrap">
+			<table class="table">
 				<thead><tr><th>name</th><th>role</th><th>can authorise</th><th>joined</th></tr></thead>
 				<tbody>
 					{#each members as m (m.id)}
@@ -124,15 +124,15 @@
 				<small>your personal setting · for people who cannot hold a key</small>
 			</div>
 		</section>
-	</Pane>
+	</Band>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
-		display: grid;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		background: var(--line);
 	}
 	.pad {
 		padding: 22px;
@@ -152,7 +152,7 @@
 		border-bottom: 1px solid var(--line);
 		overflow-wrap: anywhere;
 	}
-	.tblwrap {
+	.table-wrap {
 		overflow-x: auto;
 	}
 	.nm {

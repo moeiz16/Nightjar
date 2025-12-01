@@ -1,7 +1,8 @@
 <script lang="ts">
 	// One rule as a readable sentence, with the Sigma source a keystroke away (press S).
 	import { page } from '$app/state';
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
+	import Choice from '$lib/components/ui/Choice.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { RuleException, RuleInfo } from '$lib/api/types';
 	import { session } from '$lib/stores/session.svelte';
@@ -94,16 +95,13 @@
 <svelte:window onkeydown={key} />
 <svelte:head><title>{rule?.title ?? 'Rule'} · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Pane title="rule" sub={rule?.attack.map((a) => a.techniqueId).join(' · ') ?? ''} focus>
+	<Band title="rule" sub={rule?.attack.map((a) => a.techniqueId).join(' · ') ?? ''} fill>
 		{#snippet actions()}<a class="lnk" href="/rules">all rules</a>{/snippet}
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		{#if rule && s}
 			<div class="body">
 				<h1>{rule.title}</h1>
-				<div class="seg" role="group" aria-label="View">
-					<button type="button" aria-pressed={view === 'readable'} onclick={() => (view = 'readable')}>Readable</button>
-					<button type="button" aria-pressed={view === 'source'} onclick={() => (view = 'source')}>Source (Sigma)</button>
-				</div>
+				<Choice label="View" size="md" bind:value={view} options={[{ value: 'readable', label: 'Readable' }, { value: 'source', label: 'Source (Sigma)' }]} />
 				<span class="mono faint kb">press <kbd>S</kbd> to switch</span>
 				{#if view === 'readable'}
 					<dl class="sentence">
@@ -118,7 +116,7 @@
 				{/if}
 
 				<div class="test">
-					<button class="btn sm" type="button" onclick={test}>Test on last 7 days ▶</button>
+					<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={test}>Test on last 7 days ▶</button>
 					{#if tested}<span class="mono" role="status">→ {tested.matches} matches · {tested.confirmed} confirmed · {tested.noise} noise</span>{/if}
 				</div>
 				<p class="meta mono">{rule.hits7d.toLocaleString('en-GB')} {rule.hits7d === 1 ? 'alert' : 'alerts'} in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
@@ -134,49 +132,49 @@
 					</ul>
 				{/if}
 				<div class="acts">
-					<button class="btn" type="button" onclick={() => (lowering = !lowering)} disabled={!canManage}>Lower the noise…</button>
+					<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => (lowering = !lowering)} disabled={!canManage}>Lower the noise…</button>
 					{#if rule.enabled}
-						<button class="btn" type="button" onclick={() => (turningOff = !turningOff)} disabled={!canManage}>Turn off (with reason)</button>
+						<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => (turningOff = !turningOff)} disabled={!canManage}>Turn off (with reason)</button>
 					{:else}
-						<button class="btn" type="button" onclick={() => setEnabled(true)} disabled={!canManage}>Turn on</button>
+						<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => setEnabled(true)} disabled={!canManage}>Turn on</button>
 					{/if}
 					{#if !canManage}<span class="mono faint">Analysts manage rules.</span>{/if}
 				</div>
 				{#if lowering}
 					<form class="inline" onsubmit={lower}>
-						<label class="field"><span>stop alerting for this</span>
+						<label class="label"><span>stop alerting for this</span>
 							<select class="select" bind:value={exField}>
 								<option value="user">person or service account</option>
 								<option value="host">device</option>
 								<option value="ip">address</option>
 							</select>
 						</label>
-						<label class="field"><span>{FIELD_WORDS[exField]}</span><input class="input" bind:value={exValue} required placeholder={exField === 'user' ? 'e.g. svc-backup' : exField === 'host' ? 'e.g. ant-backup-01' : 'e.g. 192.0.2.10'} /></label>
-						<label class="field wide"><span>why (kept with the exception)</span><input class="input" bind:value={exReason} required minlength="10" placeholder="e.g. nightly backup agent rollout" /></label>
-						<label class="field"><span>for</span>
+						<label class="label"><span>{FIELD_WORDS[exField]}</span><input class="input" bind:value={exValue} required placeholder={exField === 'user' ? 'e.g. svc-backup' : exField === 'host' ? 'e.g. ant-backup-01' : 'e.g. 192.0.2.10'} /></label>
+						<label class="label wide"><span>why (kept with the exception)</span><input class="input" bind:value={exReason} required minlength="10" placeholder="e.g. nightly backup agent rollout" /></label>
+						<label class="label"><span>for</span>
 							<select class="select" bind:value={exDays}><option value="30">30 days</option><option value="90">90 days</option><option value="">until removed</option></select>
 						</label>
-						<button class="btn pri sm" type="submit" disabled={exBusy}>Add exception</button>
+						<button class="btn preset-filled-surface-950-50 btn-sm" type="submit" disabled={exBusy}>Add exception</button>
 						{#if filters.length}<span class="mono faint">the rule already ignores: {filters.join(', ')}</span>{/if}
 					</form>
 				{/if}
 				{#if turningOff}
 					<form class="inline" onsubmit={(e) => (e.preventDefault(), setEnabled(false, offReason))}>
-						<label class="field"><span>why turn it off?</span><input class="input" bind:value={offReason} required placeholder="e.g. replaced by a better rule" /></label>
-						<button class="btn pri sm" type="submit">Turn off</button>
+						<label class="label"><span>why turn it off?</span><input class="input" bind:value={offReason} required placeholder="e.g. replaced by a better rule" /></label>
+						<button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Turn off</button>
 					</form>
 				{/if}
 			</div>
 		{/if}
-	</Pane>
+	</Band>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
-		display: grid;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		background: var(--line);
 	}
 	.pad {
 		padding: 22px;
@@ -191,6 +189,7 @@
 	h1 {
 		margin: 0;
 		font: 600 23px/1.2 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.015em;
 	}
 	.kb {
@@ -235,6 +234,7 @@
 	}
 	dt {
 		font: 400 12px/1.6 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	dd {
@@ -251,6 +251,7 @@
 		margin: 0 0.45em;
 		color: var(--teal);
 		font-family: var(--mono);
+		font-variation-settings: 'MONO' 1;
 		font-size: 13px;
 	}
 	.src {

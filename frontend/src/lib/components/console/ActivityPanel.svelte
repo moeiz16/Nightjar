@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Choice from '$lib/components/ui/Choice.svelte';
+	import { Pagination } from '@skeletonlabs/skeleton-svelte';
 	// The activity log (DESIGN.md §6.15): every sensitive action, newest first, each with a short seal.
 	import { api, problemMessage } from '$lib/api';
 	import type { AuditEntry, AuditVerify } from '$lib/api/types';
@@ -14,6 +16,9 @@
 	let verifiedAt = $state<Date | null>(null);
 	let busy = $state(false);
 	let err = $state('');
+	const PAGE = 20;
+	let pageNo = $state(1);
+	const paged = $derived(compact ? rows.slice(0, 12) : rows.slice((pageNo - 1) * PAGE, pageNo * PAGE));
 
 	async function load() {
 		try {
@@ -72,33 +77,26 @@
 <div class="act" class:compact>
 	<div class="top">
 		<span class="mono">{total.toLocaleString('en-GB')} recent entries</span>
-		<button class="btn sm" type="button" onclick={doVerify} disabled={busy}>{busy ? 'Checking…' : 'Verify the log'}</button>
+		<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={doVerify} disabled={busy}>{busy ? 'Checking…' : 'Verify the log'}</button>
 		{#if verify}
 			<span class="mono res" class:bad={!verify.valid} role="status">
 				{verify.valid ? `✓ Chain intact · checked ${verify.checked.toLocaleString('en-GB')} entries · ${verifiedAt ? timeOf(verifiedAt) : ''}` : `● Chain broken at entry ${verify.brokenAt}`}
 			</span>
 		{/if}
-		{#if !compact}<button class="btn sm right" type="button" onclick={exportPack}>Export evidence pack</button>{/if}
+		{#if !compact}<button class="btn preset-outlined-surface-300-700 btn-sm right" type="button" onclick={exportPack}>Export evidence pack</button>{/if}
 	</div>
 	<div class="filters mono" role="group" aria-label="Filters">
-		<span class="seg">
-			<button type="button" aria-pressed={who === ''} onclick={() => (who = '')}>all</button>
-			<button type="button" aria-pressed={who === 'user'} onclick={() => (who = 'user')}>people</button>
-			<button type="button" aria-pressed={who === 'agent'} onclick={() => (who = 'agent')}>teammates</button>
-			<button type="button" aria-pressed={who === 'system'} onclick={() => (who = 'system')}>system</button>
-		</span>
+		<Choice label="Who" value={who || 'all'} options={[{ value: 'all', label: 'all' }, { value: 'user', label: 'people' }, { value: 'agent', label: 'teammates' }, { value: 'system', label: 'system' }]} onchange={(v) => ((who = v === 'all' ? '' : (v as typeof who)), (pageNo = 1))} />
 		{#if !compact}
-			<span class="seg">
-				{#each AREAS as [k, l] (k)}<button type="button" aria-pressed={area === k} onclick={() => (area = k)}>{l}</button>{/each}
-			</span>
+			<Choice label="Area" value={area || 'all'} options={AREAS.map(([k, l]) => ({ value: k || 'all', label: l }))} onchange={(v) => ((area = v === 'all' ? '' : v), (pageNo = 1))} />
 		{/if}
 	</div>
 	{#if err}<p class="ferr">{err}</p>{/if}
-	<div class="tblwrap">
-		<table class="ledger">
+	<div class="table-wrap">
+		<table class="table">
 			<thead><tr><th>time</th><th>who</th><th>did</th>{#if !compact}<th>about</th>{/if}<th>seal</th></tr></thead>
 			<tbody>
-				{#each rows as r (r.id)}
+				{#each paged as r (r.id)}
 					<tr>
 						<td class="m">{whenShort(r.createdAt)}<span class="sr"> {timeOf(r.createdAt, undefined, true)}</span></td>
 						<td class="who" class:tm={r.actorType === 'agent'}>{actor(r)}</td>
@@ -110,6 +108,12 @@
 			</tbody>
 		</table>
 	</div>
+	{#if !compact && rows.length > PAGE}
+		<div class="pager">
+			<span class="mono faint">{(pageNo - 1) * PAGE + 1}–{Math.min(rows.length, pageNo * PAGE)} of the latest {rows.length}</span>
+			<Pagination data={rows} count={rows.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="preset-filled-primary-700-300" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -132,13 +136,28 @@
 	.right {
 		margin-left: auto;
 	}
+	.pager {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 12px 16px 16px;
+		flex-wrap: wrap;
+		font-size: 11.5px;
+	}
+	.pager :global(.pg button) {
+		height: 28px;
+		min-width: 28px;
+		font-size: 12px;
+		border-radius: 3px;
+	}
 	.filters {
 		display: flex;
 		gap: 10px;
 		padding: 0 16px 10px;
 		flex-wrap: wrap;
 	}
-	.tblwrap {
+	.table-wrap {
 		overflow-x: auto;
 	}
 	.who {

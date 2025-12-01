@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Detection rules (DESIGN.md §6.10): a ledger with a 7-day spark, the calibrated "likely real", and state.
 	// Noisy is ◐ + the word, never colour alone.
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { RuleInfo } from '$lib/api/types';
 	import { goto } from '$app/navigation';
@@ -25,13 +25,13 @@
 
 <svelte:head><title>Rules · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Pane title="rules" sub="{on} on · {noisyCount} noisy this week" focus>
+	<Band title="rules" sub="{on} on · {noisyCount} noisy this week" fill>
 		{#snippet actions()}
 			<label class="sr" for="rq">Filter rules</label><input id="rq" class="input f" bind:value={q} placeholder="filter…" />
 		{/snippet}
 		{#if err}<p class="ferr">{err}</p>{/if}
-		<div class="tblwrap">
-			<table class="ledger">
+		<div class="table-wrap">
+			<table class="table">
 				<thead><tr><th>rule</th><th>ATT&amp;CK</th><th>last 7 days</th><th>likely real</th><th>state</th></tr></thead>
 				<tbody>
 					{#each shown as r (r.id)}
@@ -48,22 +48,22 @@
 				</tbody>
 			</table>
 		</div>
-	</Pane>
+	</Band>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
-		display: grid;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		background: var(--line);
 	}
 	.f {
 		height: 26px;
 		width: 200px;
 		font-size: 12px;
 	}
-	.tblwrap {
+	.table-wrap {
 		overflow-x: auto;
 	}
 	tr.click {

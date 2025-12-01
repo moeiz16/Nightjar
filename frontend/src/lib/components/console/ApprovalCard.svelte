@@ -89,13 +89,13 @@
 <article class="ask" aria-labelledby="ap-{p.id}">
 	<div class="top">
 		{#if p.status === 'rejected'}
-			<span class="chip">✕ Declined · {p.rejection?.reason}</span>
+			<span class="badge preset-outlined-surface-300-700">✕ Declined · {p.rejection?.reason}</span>
 		{:else if p.status === 'approved' || p.status === 'executed'}
-			<span class="chip ok">✓ {p.status === 'executed' ? 'Done' : 'Authorised'}</span>
+			<span class="badge preset-tonal-success">✓ {p.status === 'executed' ? 'Done' : 'Authorised'}</span>
 		{:else if p.approvals.length && p.requiredRoles.length > 1}
-			<span class="chip await">‖ {p.approvals.length} of {p.requiredRoles.length} held · waiting for a second person</span>
+			<span class="badge preset-tonal-secondary">‖ {p.approvals.length} of {p.requiredRoles.length} held · waiting for a second person</span>
 		{:else}
-			<span class="chip await">‖ Awaiting {gate.canHold ? 'your' : 'a person’s'} approval</span>
+			<span class="badge preset-tonal-secondary">‖ Awaiting {gate.canHold ? 'your' : 'a person’s'} approval</span>
 		{/if}
 		{#if total > 1}<span class="mono faint n">{index} of {total}</span>{/if}
 	</div>
@@ -140,7 +140,7 @@
 				{#if reason === 'Other'}<input class="input" bind:value={other} placeholder="Say why in a few words" aria-label="Other reason" />{/if}
 			</fieldset>
 			{#if err}<p class="ferr" role="alert">{err}</p>{/if}
-			<div class="row"><button class="btn" type="submit" disabled={busy || !gate.canDecide}>Decline</button><button class="lnk" type="button" onclick={() => (declining = false)}>Keep it waiting</button></div>
+			<div class="row"><button class="btn preset-outlined-surface-300-700" type="submit" disabled={busy || !gate.canDecide}>Decline</button><button class="lnk" type="button" onclick={() => (declining = false)}>Keep it waiting</button></div>
 		</form>
 	{/if}
 </article>
@@ -163,10 +163,12 @@
 	h2 {
 		margin: 0 0 4px;
 		font: 600 19px/1.25 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.01em;
 	}
 	.by {
 		font: 400 11.5px/1.5 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 		overflow-wrap: anywhere;
 	}
@@ -185,6 +187,7 @@
 	}
 	dt {
 		font: 400 11.5px/1.65 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	dd {

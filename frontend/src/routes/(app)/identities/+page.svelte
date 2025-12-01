@@ -2,7 +2,8 @@
 	const MFA_WORDS: Record<string, string> = { push: 'phone approval', totp: 'authenticator code', fido2: 'security key', sms: 'text message code', none: 'password only' };
 	// People and service accounts (DESIGN.md §6.13): a ledger of who signs in where, and what is unusual.
 	import { page } from '$app/state';
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
+	import Choice from '$lib/components/ui/Choice.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { AnomalyDoc, IdentityDoc } from '$lib/api/types';
 	import { session } from '$lib/stores/session.svelte';
@@ -27,19 +28,16 @@
 </script>
 
 <svelte:head><title>People · Nightjar SOC</title></svelte:head>
+<h1 class="sr">People and service accounts</h1>
 <div class="tiles">
-	<Pane title="identities" sub="{persons} people · {people.length - persons} service accounts" focus>
+	<Band title="identities" sub="{persons} people · {people.length - persons} service accounts" fill>
 		{#snippet actions()}
-			<span class="seg" role="group" aria-label="Kind">
-				<button type="button" aria-pressed={kind === 'person'} onclick={() => (kind = 'person')}>people</button>
-				<button type="button" aria-pressed={kind === 'service'} onclick={() => (kind = 'service')}>service accounts</button>
-				<button type="button" aria-pressed={kind === 'all'} onclick={() => (kind = 'all')}>all</button>
-			</span>
+			<Choice label="Kind" bind:value={kind} options={[{ value: 'person', label: 'people' }, { value: 'service', label: 'service accounts' }, { value: 'all', label: 'all' }]} />
 			<label class="sr" for="iq">Filter people</label><input id="iq" class="input f" bind:value={q} placeholder="filter…" />
 		{/snippet}
 		{#if err}<p class="ferr">{err}</p>{/if}
-		<div class="tblwrap">
-			<table class="ledger">
+		<div class="table-wrap">
+			<table class="table">
 				<thead><tr><th>person</th><th>team / site</th><th>sign-in normal</th><th>unusual (14 d)</th><th>access</th></tr></thead>
 				<tbody>
 					{#each shown as p (p.id)}
@@ -55,22 +53,22 @@
 				</tbody>
 			</table>
 		</div>
-	</Pane>
+	</Band>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
-		display: grid;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		background: var(--line);
 	}
 	.f {
 		height: 26px;
 		width: 160px;
 		font-size: 12px;
 	}
-	.tblwrap {
+	.table-wrap {
 		overflow-x: auto;
 	}
 	.nm {

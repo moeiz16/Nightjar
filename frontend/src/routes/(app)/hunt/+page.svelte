@@ -1,43 +1,56 @@
 <script lang="ts">
+	// Hunt: one task at a time. When ⌘K was scoped to an incident, a scope band says so above the hunt.
 	import { page } from '$app/state';
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
 	import HuntPanel from '$lib/components/console/HuntPanel.svelte';
-	import IncidentView from '$lib/components/console/IncidentView.svelte';
+	import { live } from '$lib/stores/live.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	const ask = $derived(page.url.searchParams.get('ask') ?? '');
 	const saved = $derived(page.url.searchParams.get('saved') ?? '');
 	const scope = $derived(ui.scope);
+	const inc = $derived(scope ? live.incidents.find((i) => i.id === scope.id) : null);
 </script>
 
 <svelte:head><title>Hunt · Nightjar SOC</title></svelte:head>
-<div class="tiles" class:two={!!scope}>
-	{#if scope}
-		<Pane title="incident" sub={scope.reference} label="Incident"><IncidentView param={scope.reference} compact /></Pane>
-	{/if}
-	<Pane title="hunt" sub={saved ? 'saved search' : ask ? 'asked the watch' : ''} focus label="Hunt">
-		{#snippet actions()}<a class="lnk" href="/hunt/saved">saved searches</a>{/snippet}
-		{#key ask + saved}<HuntPanel initial={ask} savedId={saved} />{/key}
-	</Pane>
-</div>
+<h1 class="sr">Hunt</h1>
+{#if scope}
+	<div class="scope band-in">
+		<span class="mono faint">hunting around</span>
+		<a class="mono ref" href="/incidents/{scope.reference}">{scope.reference}</a>
+		{#if inc}<span class="tt">{inc.title}</span>{/if}
+		<button class="lnk" type="button" onclick={() => (ui.scope = null)}>clear</button>
+	</div>
+{/if}
+<Band title="hunt" sub={saved ? 'saved search' : ask ? 'asked the watch' : 'ask in plain words'} fill>
+	{#snippet actions()}<a class="lnk" href="/hunt/saved">saved searches</a>{/snippet}
+	{#key ask + saved}<HuntPanel initial={ask} savedId={saved} />{/key}
+</Band>
 
 <style>
-	.tiles {
-		flex: 1;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: 1px;
-		background: var(--line);
-		min-height: 0;
+	.scope {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		padding: 10px 16px;
+		background: var(--teal-wash);
+		border-bottom: 1px solid var(--teal-line);
+		font-size: 13px;
+		min-width: 0;
 	}
-	.tiles.two {
-		grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
+	.scope .mono {
+		font-size: 11.5px;
 	}
-	@media (max-width: 1000px) {
-		.tiles.two {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.tiles.two > :global(.pane:first-child) {
-			display: none;
-		}
+	.ref {
+		color: var(--teal);
+		font-weight: 600;
+	}
+	.tt {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.scope .lnk {
+		margin-left: auto;
 	}
 </style>

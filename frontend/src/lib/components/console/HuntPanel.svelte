@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Choice from '$lib/components/ui/Choice.svelte';
 	// Hunting (DESIGN.md §6.7): plain words or filters, suggestions, List | Timeline over one search, Save as…
 	import { untrack } from 'svelte';
 	import { api, problemMessage } from '$lib/api';
@@ -166,20 +167,17 @@
 		<input id="huntq" class="q" bind:value={text} placeholder="devices that uploaded to upload.files-sync.example in the last 7 days" autocomplete="off" />
 		<span class="kb mono" aria-hidden="true">⏎</span>
 		<div class="acts">
-			<span class="seg" role="group" aria-label="View">
-				<button type="button" aria-pressed={view === 'list'} onclick={() => (view = 'list')}>List</button>
-				<button type="button" aria-pressed={view === 'timeline'} onclick={() => (view = 'timeline')}>Timeline</button>
-			</span>
-			{#if session.can('hunting:write')}<button class="btn sm" type="button" onclick={() => ((saving = !saving), (saveName ||= text.slice(0, 60)))} disabled={!text.trim()}>Save as…</button>{/if}
-			<button class="btn sm teal" type="submit" disabled={busy}>▶ Run</button>
+			<Choice label="View" bind:value={view} options={[{ value: 'list', label: 'List' }, { value: 'timeline', label: 'Timeline' }]} />
+			{#if session.can('hunting:write')}<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => ((saving = !saving), (saveName ||= text.slice(0, 60)))} disabled={!text.trim()}>Save as…</button>{/if}
+			<button class="btn preset-filled-primary-700-300 btn-sm" type="submit" disabled={busy}>▶ Run</button>
 		</div>
 	</form>
 
 	{#if saving}
 		<form class="save" onsubmit={save}>
-			<label class="field"><span>name</span><input class="input" bind:value={saveName} required /></label>
-			<label class="field"><span>why we watch this (a short note)</span><input class="input" bind:value={saveNote} /></label>
-			<div class="row"><button class="btn pri sm" type="submit">Save search</button><button class="lnk" type="button" onclick={() => (saving = false)}>cancel</button></div>
+			<label class="label"><span>name</span><input class="input" bind:value={saveName} required /></label>
+			<label class="label"><span>why we watch this (a short note)</span><input class="input" bind:value={saveNote} /></label>
+			<div class="row"><button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Save search</button><button class="lnk" type="button" onclick={() => (saving = false)}>cancel</button></div>
 		</form>
 	{/if}
 
@@ -209,8 +207,8 @@
 			<span class="faint">{#if result.searched}searched {(result.searched / 1e6).toFixed(1)} m events · {/if}answered in {Math.max(1, Math.round(result.elapsedMs))} ms</span>
 		</div>
 		{#if grouped}
-			<div class="tblwrap">
-				<table class="ledger">
+			<div class="table-wrap">
+				<table class="table">
 					<thead><tr>{#each result.columns as c (c)}<th class:m={c === 'count' || c.startsWith('distinct ')}>{colWord(c)}</th>{/each}</tr></thead>
 					<tbody>
 						{#each result.rows as r, k (k)}
@@ -220,8 +218,8 @@
 				</table>
 			</div>
 		{:else if view === 'list'}
-			<div class="tblwrap">
-				<table class="ledger">
+			<div class="table-wrap">
+				<table class="table">
 					<thead><tr><th>time</th><th>who</th><th>device</th><th>what</th><th>incident</th></tr></thead>
 					<tbody>
 						{#each rows as r (r.eventId + r.at)}
@@ -363,7 +361,7 @@
 	.sum b {
 		color: var(--ink);
 	}
-	.tblwrap {
+	.table-wrap {
 		overflow-x: auto;
 	}
 	.what {

@@ -31,6 +31,7 @@
 	}
 	figcaption {
 		font: 400 11px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	blockquote {
@@ -42,6 +43,7 @@
 	.flag {
 		margin: 0;
 		font: 400 11.5px/1.45 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--amber);
 		display: flex;
 		gap: 6px;
@@ -55,6 +57,7 @@
 	}
 	.inl {
 		font: 400 12px/1.5 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--ink-2);
 		overflow-wrap: anywhere;
 	}

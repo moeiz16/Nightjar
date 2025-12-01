@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Record a regulatory determination (DESIGN.md §6.11): for the SEC, Material / Not material, with reasons /
 	// Not yet: decide by… Each outcome is recorded with a timestamp; Material starts the 8-K clock, which drops
-	// into the bar. The decision belongs to a person with reporting:assess, never to the watch.
+	// onto the shift axis. The decision belongs to a person with reporting:assess, never to the watch.
 	import { api, problemMessage } from '$lib/api';
 	import type { RegimeAssessment } from '$lib/api/types';
 	import { session } from '$lib/stores/session.svelte';
@@ -87,16 +87,16 @@
 		<label class="opt" class:on={outcome === 'no'}><input type="radio" bind:group={outcome} value="no" /><span><b>{words.no}</b><small>{words.noNote}</small></span></label>
 		<label class="opt" class:on={outcome === 'later'}><input type="radio" bind:group={outcome} value="later" /><span><b>{words.later}</b><small>{words.laterNote}</small></span></label>
 		{#if outcome === 'later'}
-			<label class="field"><span>decide by</span><input class="input" type="date" bind:value={decideBy} /></label>
+			<label class="label"><span>decide by</span><input class="input" type="date" bind:value={decideBy} /></label>
 		{/if}
 		{#if a.regime === 'soci' && outcome === 'yes'}
-			<label class="field"><span>impact on the critical asset</span><select class="select" bind:value={impact}><option value="significant">significant (12 h)</option><option value="relevant">relevant (72 h)</option></select></label>
+			<label class="label"><span>impact on the critical asset</span><select class="select" bind:value={impact}><option value="significant">significant (12 h)</option><option value="relevant">relevant (72 h)</option></select></label>
 		{/if}
-		<label class="field"><span>{outcome === 'later' ? 'note (optional)' : 'reasons (kept with the decision)'}</span><textarea class="textarea" rows="3" bind:value={rationale} placeholder={sec ? 'e.g. One mailbox, no money moved, no customer data reached, contained in two minutes.' : ''}></textarea></label>
+		<label class="label"><span>{outcome === 'later' ? 'note (optional)' : 'reasons (kept with the decision)'}</span><textarea class="textarea" rows="3" bind:value={rationale} placeholder={sec ? 'e.g. One mailbox, no money moved, no customer data reached, contained in two minutes.' : ''}></textarea></label>
 	</fieldset>
 	{#if err}<p class="ferr" role="alert">{err}</p>{/if}
 	<div class="row">
-		<button class="btn pri" type="submit" disabled={!can || busy}>{busy ? 'Recording…' : 'Record the decision'}</button>
+		<button class="btn preset-filled-surface-950-50" type="submit" disabled={!can || busy}>{busy ? 'Recording…' : 'Record the decision'}</button>
 		{#if oncancel}<button class="lnk" type="button" onclick={oncancel}>not now</button>{/if}
 	</div>
 </form>
@@ -150,6 +150,7 @@
 	}
 	.opt small {
 		font: 400 11.5px/1.4 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 	}
 	.row {

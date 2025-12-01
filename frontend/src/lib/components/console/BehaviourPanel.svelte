@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Choice from '$lib/components/ui/Choice.svelte';
 	// Unusual behaviour (DESIGN.md §6.9): each person or device is a rhythm strip, 24 h × 14 days, toned by how far
 	// from their own normal. ◇ marks the outlier; reasons in plain words. No map, no score without reasons.
 	import { api, problemMessage } from '$lib/api';
@@ -79,10 +80,7 @@
 <div class="beh" class:compact>
 	<div class="top">
 		<span class="mono faint">last 14 days ·</span>
-		<span class="seg" role="group" aria-label="Show">
-			<button type="button" aria-pressed={kind === 'user'} onclick={() => (kind = 'user')}>people</button>
-			<button type="button" aria-pressed={kind === 'host'} onclick={() => (kind = 'host')}>devices</button>
-		</span>
+		<Choice label="Show" bind:value={kind} options={[{ value: 'user', label: 'people' }, { value: 'host', label: 'devices' }]} />
 		<span class="mono faint sort">sorted by: most unusual</span>
 	</div>
 	{#if err}<p class="ferr">{err}</p>{/if}
@@ -91,7 +89,7 @@
 		<article class="who" aria-labelledby="b-{a.id}">
 			<header>
 				<h3 id="b-{a.id}">{a.label ?? a.entityId}</h3>
-				<p class="head"><span class="g" aria-hidden="true">◇</span><span class="sr">unusual behaviour:</span> {a.headline}{#if expected[a.id]} <span class="chip">expected · {expected[a.id]}</span>{/if}</p>
+				<p class="head"><span class="g" aria-hidden="true">◇</span><span class="sr">unusual behaviour:</span> {a.headline}{#if expected[a.id]} <span class="badge preset-outlined-surface-300-700">expected · {expected[a.id]}</span>{/if}</p>
 			</header>
 			{#if a.rhythm}
 				<div class="strip" role="img" aria-label="Activity by hour for 14 days; the outlier is {a.headline}">
@@ -110,24 +108,24 @@
 				{#each a.reasons as r, i (i)}<li class:lower={r.contribution < 0}>{r.text}{i < a.reasons.length - 1 ? ' ·' : ''}</li>{/each}
 			</ul>
 			<div class="acts">
-				{#if ref}<a class="btn sm" href="/incidents/{ref}">Open {ref}</a>{:else}<button class="btn sm" type="button" onclick={() => ui.toast('Opening an incident by hand needs a person with incident rights; ask the watch lead.', 'info')} disabled={!session.can('incidents:write')}>Open as incident</button>{/if}
-				<button class="btn sm" type="button" onclick={() => openDraft(a)}>Ask the manager (draft)</button>
-				<button class="btn sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Mark as expected</button>
+				{#if ref}<a class="btn preset-outlined-surface-300-700 btn-sm" href="/incidents/{ref}">Open {ref}</a>{:else}<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => ui.toast('Opening an incident by hand needs a person with incident rights; ask the watch lead.', 'info')} disabled={!session.can('incidents:write')}>Open as incident</button>{/if}
+				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => openDraft(a)}>Ask the manager (draft)</button>
+				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Mark as expected</button>
 				<span class="mono faint win">{timeOf(a.windowStart)}–{timeOf(a.windowEnd)}</span>
 			</div>
 			{#if expecting === a.id}
 				<form class="inline" onsubmit={(e) => (e.preventDefault(), markExpected(a))}>
-					<label class="field"><span>expected for how long?</span>
+					<label class="label"><span>expected for how long?</span>
 						<select class="select" bind:value={howLong}><option>for today</option><option>for this week</option><option>until the end of the month</option><option>from now on</option></select>
 					</label>
-					<label class="field wide"><span>why (kept with the exception)</span><input class="input" bind:value={expectWhy} required minlength="10" placeholder="e.g. quarter-end reporting, agreed with the manager" /></label>
-					<button class="btn pri sm" type="submit">Mark as expected</button>
+					<label class="label wide"><span>why (kept with the exception)</span><input class="input" bind:value={expectWhy} required minlength="10" placeholder="e.g. quarter-end reporting, agreed with the manager" /></label>
+					<button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Mark as expected</button>
 				</form>
 			{/if}
 			{#if drafting === a.id}
 				<form class="inline col" onsubmit={(e) => (e.preventDefault(), send(a))}>
-					<label class="field"><span>draft message to the manager</span><textarea class="textarea" rows="3" bind:value={draft}></textarea></label>
-					<div class="row"><button class="btn pri sm" type="submit">Record and send</button><button class="lnk" type="button" onclick={() => (drafting = null)}>cancel</button></div>
+					<label class="label"><span>draft message to the manager</span><textarea class="textarea" rows="3" bind:value={draft}></textarea></label>
+					<div class="row"><button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Record and send</button><button class="lnk" type="button" onclick={() => (drafting = null)}>cancel</button></div>
 				</form>
 			{/if}
 		</article>
@@ -157,6 +155,7 @@
 	h3 {
 		margin: 0;
 		font: 600 14.5px/1.3 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	.head {
 		margin: 4px 0 0;
@@ -166,6 +165,7 @@
 	.head .g {
 		color: var(--amber);
 		font-family: var(--mono);
+		font-variation-settings: 'MONO' 1;
 		margin-right: 4px;
 	}
 	.strip {
@@ -215,6 +215,7 @@
 		color: var(--amber);
 		font-size: 10px;
 		font-family: var(--mono);
+		font-variation-settings: 'MONO' 1;
 	}
 	.reasons {
 		list-style: none;

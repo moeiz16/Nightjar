@@ -1,7 +1,9 @@
 <script lang="ts">
-	// Assets (DESIGN.md §6.13): a ledger led by the business role, with a detail tile — not a card grid.
+	// Assets (DESIGN.md §6.13): a ledger led by the business role; an asset's detail rises as a bottom sheet.
 	import { page } from '$app/state';
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
+	import Choice from '$lib/components/ui/Choice.svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { AssetDoc } from '$lib/api/types';
 	import { live } from '$lib/stores/live.svelte';
@@ -29,18 +31,17 @@
 </script>
 
 <svelte:head><title>Assets · Nightjar SOC</title></svelte:head>
-<div class="tiles" class:two={!!sel}>
-	<Pane title="assets" sub={String(assets.length)} focus>
+<h1 class="sr">Assets</h1>
+<div class="tiles">
+	<Band title="assets" sub={String(assets.length)} fill>
 		{#snippet actions()}
-			<span class="seg" role="group" aria-label="Kind">
-				{#each [['workstation', 'laptops'], ['server', 'servers'], ['cloud', 'cloud'], ['all', 'all']] as [k, l] (k)}<button type="button" aria-pressed={kind === k} onclick={() => (kind = k as typeof kind)}>{l}</button>{/each}
-			</span>
+			<Choice label="Kind" bind:value={kind} options={[{ value: 'workstation', label: 'laptops' }, { value: 'server', label: 'servers' }, { value: 'cloud', label: 'cloud' }, { value: 'all', label: 'all' }]} />
 			<label class="sr" for="site">Site</label>
 			<select id="site" class="select f" bind:value={site}><option value="">every site</option>{#each sites as s (s)}<option>{s}</option>{/each}</select>
 		{/snippet}
 		{#if err}<p class="ferr">{err}</p>{/if}
-		<div class="tblwrap">
-			<table class="ledger">
+		<div class="table-wrap">
+			<table class="table">
 				<thead><tr><th>name</th><th>what it does</th><th>where</th><th>owner</th><th>known weakness</th><th>state</th></tr></thead>
 				<tbody>
 					{#each shown as a (a.id)}
@@ -56,10 +57,10 @@
 				</tbody>
 			</table>
 		</div>
-	</Pane>
-	{#if sel}
-		<Pane title="asset" sub={sel.name}>
-			{#snippet actions()}<button class="lnk" type="button" onclick={() => (selected = null)}>close</button>{/snippet}
+	</Band>
+	<Sheet kind="sheet" label={sel ? `Asset ${sel.name}` : 'Asset'} open={!!sel} onclose={() => (selected = null)}>
+		{#if sel}
+			<header class="sh mono"><span>── asset · {sel.name}</span><button class="lnk" type="button" onclick={() => (selected = null)}>close <kbd>esc</kbd></button></header>
 			<div class="det">
 				<h2>{role(sel)}</h2>
 				<p class="mono faint">{sel.name} · {sel.kind.replace('_', ' ')} · {sel.site} · {sel.jurisdiction}</p>
@@ -76,30 +77,34 @@
 				{/if}
 				<h3 class="mono">incidents ({incidentsFor(sel.name).length})</h3>
 				{#each incidentsFor(sel.name) as i (i.id)}<a class="inc" href="/incidents/{i.reference}"><span class="mono">{i.reference}</span> {i.title}</a>{:else}<p class="mono faint">None open.</p>{/each}
-				<a class="btn sm" href="/hunt?ask={encodeURIComponent(`events on ${sel.name} today`)}">Hunt on this device</a>
+				<a class="btn preset-outlined-surface-300-700 btn-sm" href="/hunt?ask={encodeURIComponent(`events on ${sel.name} today`)}">Hunt on this device</a>
 			</div>
-		</Pane>
-	{/if}
+		{/if}
+	</Sheet>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: 1px;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		background: var(--line);
 	}
-	.tiles.two {
-		grid-template-columns: minmax(0, 1fr) 380px;
+	.sh {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 12px 24px;
+		border-bottom: 1px solid var(--line);
+		font-size: 12px;
+		color: var(--muted);
 	}
 	.f {
 		height: 28px;
 		width: auto;
 		font-size: 12px;
 	}
-	.tblwrap {
+	.table-wrap {
 		overflow-x: auto;
 	}
 	.cj {
@@ -108,7 +113,8 @@
 		white-space: nowrap;
 	}
 	.det {
-		padding: 18px;
+		padding: 18px 24px 24px;
+		max-width: 760px;
 		display: grid;
 		gap: 10px;
 		justify-items: start;
@@ -116,6 +122,7 @@
 	h2 {
 		margin: 0;
 		font: 600 19px/1.25 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	.det > p {
 		margin: 0;
@@ -135,6 +142,7 @@
 	}
 	dt {
 		font: 400 11.5px/1.6 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	dd {
@@ -158,13 +166,8 @@
 	.inc:hover {
 		color: var(--teal);
 	}
-	@media (max-width: 1000px) {
-		.tiles.two {
-			grid-template-columns: minmax(0, 1fr);
-		}
-	}
 	@media (max-width: 760px) {
-		.tiles :global(.ph .seg) {
+		.tiles :global(.rule .choice) {
 			display: none;
 		}
 	}

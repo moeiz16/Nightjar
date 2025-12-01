@@ -5,6 +5,7 @@
 	import { onDestroy } from 'svelte';
 	import { createHold, HOLD_MS, typedMatches } from '$lib/util/hold';
 	import { ui } from '$lib/stores/ui.svelte';
+	import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
 
 	interface Result {
 		label: string;
@@ -113,10 +114,10 @@
 
 {#if ui.holdByTyping && confirmName && !finished}
 	<form class="typed" onsubmit={confirmTyped}>
-		<label class="field"><span>Type <b class="mono">{confirmName}</b> to confirm</span>
+		<label class="label"><span>Type <b class="mono">{confirmName}</b> to confirm</span>
 			<input class="input mono" bind:value={typed} {disabled} autocomplete="off" spellcheck="false" aria-describedby={hintId} />
 		</label>
-		<button class="btn teal" type="submit" disabled={disabled || busy}>{busy ? 'Working…' : label.replace('Hold to', 'Confirm and')}</button>
+		<button class="btn preset-filled-primary-700-300" type="submit" disabled={disabled || busy}>{busy ? 'Working…' : label.replace('Hold to', 'Confirm and')}</button>
 		<span id={hintId} class="sr">Typed confirmation replaces holding. Change it in ⌘K.</span>
 	</form>
 {:else}
@@ -140,7 +141,16 @@
 		oncontextmenu={(e) => e.preventDefault()}
 	>
 		<span class="dial" aria-hidden="true">
-			<svg viewBox="0 0 38 38"><circle class="trk" cx="19" cy="19" r="15.9" pathLength="100" /><circle class="arc" cx="19" cy="19" r="15.9" pathLength="100" style="stroke-dashoffset:{100 - (finished ? 100 : prefersReducedMotion.current ? pct : shown.current * 100)}" /></svg>
+			<ProgressRing
+				value={finished ? 100 : prefersReducedMotion.current ? pct : Math.round(shown.current * 100)}
+				max={100}
+				size="size-[38px]"
+				strokeWidth="9px"
+				trackStroke={finished ? 'stroke-[color-mix(in_srgb,var(--teal-ink)_30%,transparent)]' : 'stroke-surface-300-700'}
+				meterStroke={finished ? 'stroke-[var(--teal-ink)]' : 'stroke-primary-700-300'}
+				meterTransition=""
+				meterDuration=""
+			/>
 			<span class="glyph">{finished ? '✓' : glyph}</span>
 		</span>
 		<span class="txt">
@@ -162,7 +172,7 @@
 		width: 100%;
 		height: 56px;
 		padding: 0 16px 0 10px;
-		border-radius: 8px;
+		border-radius: 3px;
 		border: 1px solid var(--teal-line);
 		background: var(--teal-wash);
 		color: var(--ink);
@@ -191,29 +201,14 @@
 		height: 38px;
 		flex: none;
 	}
-	.dial svg {
-		width: 38px;
-		height: 38px;
-		transform: rotate(-90deg);
-	}
-	.dial circle {
-		fill: none;
-		stroke-width: 3;
-	}
-	.trk {
-		stroke: var(--line-strong);
-	}
-	.arc {
-		stroke: var(--teal);
-		stroke-linecap: round;
-		stroke-dasharray: 100;
-	}
 	.glyph {
 		position: absolute;
+		z-index: 2;
 		inset: 0;
 		display: grid;
 		place-items: center;
 		font: 500 13px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--teal);
 	}
 	.txt {
@@ -232,12 +227,14 @@
 	}
 	.txt small {
 		font: 400 11.5px/1.2 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 	}
 	.pct {
 		position: relative;
 		margin-left: auto;
 		font: 500 13px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--teal);
 		min-width: 3ch;
 		text-align: right;
@@ -255,12 +252,6 @@
 	.hold.done .pct,
 	.hold.done .glyph {
 		color: var(--teal-ink);
-	}
-	.hold.done .trk {
-		stroke: color-mix(in srgb, var(--teal-ink) 30%, transparent);
-	}
-	.hold.done .arc {
-		stroke: var(--teal-ink);
 	}
 	.typed {
 		display: grid;

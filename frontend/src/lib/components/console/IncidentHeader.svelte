@@ -37,7 +37,7 @@
 		<div class="attck" aria-label="ATT&CK chain">
 			<span>ATT&amp;CK</span>
 			{#each incident.attack.slice(0, compact ? 3 : 6) as t, i (t.techniqueId)}
-				{#if i > 0}<span aria-hidden="true">→</span>{/if}<span class="tag" title={t.tactics.join(', ')}>{t.techniqueId} {t.name}</span>
+				{#if i > 0}<span aria-hidden="true">→</span>{/if}<span class="badge preset-tonal-surface" title={t.tactics.join(', ')}>{t.techniqueId} {t.name}</span>
 			{/each}
 		</div>
 	{/if}
@@ -66,12 +66,14 @@
 		align-items: center;
 		gap: 10px;
 		font: 400 12px/1.3 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 		flex-wrap: wrap;
 	}
 	h1 {
 		margin: 10px 0 8px;
 		font: 600 23px/1.2 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.015em;
 		text-wrap: balance;
 	}
@@ -96,6 +98,7 @@
 		margin-top: 10px;
 		align-items: center;
 		font: 400 11.5px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	.stages {
@@ -105,6 +108,7 @@
 		padding: 0;
 		list-style: none;
 		font: 400 12px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 	}
 	.stg {
 		display: flex;
@@ -162,5 +166,13 @@
 			margin: 0 6px;
 			min-width: 8px;
 		}
+	}
+	.attck :global(.badge) {
+		white-space: normal;
+		height: auto;
+		min-height: 22px;
+		padding-block: 4px;
+		text-align: left;
+		justify-content: flex-start;
 	}
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The auditor's evidence tile: what each detection cited, quoted as received.
+	// The auditor's evidence section: what each detection cited, quoted as received.
 	import { api } from '$lib/api';
 	import type { DetectionDoc } from '$lib/api/types';
 	import { session } from '$lib/stores/session.svelte';

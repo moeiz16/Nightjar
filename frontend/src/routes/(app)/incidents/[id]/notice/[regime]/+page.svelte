@@ -3,7 +3,8 @@
 	// required field still missing (◐) and links each one to its field; only then can a person hold to submit.
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
+	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import HoldButton from '$lib/components/console/HoldButton.svelte';
 	import Untrusted from '$lib/components/console/Untrusted.svelte';
 	import { api, problemMessage } from '$lib/api';
@@ -82,6 +83,7 @@
 	const unfilled = (b: string | undefined) => !(b ?? '').trim() || (b ?? '').includes('[to be confirmed]');
 	const missing = $derived(notice ? notice.sections.filter((s) => s.required && unfilled(bodies[s.key])) : []);
 	const required = $derived(notice?.sections.filter((s) => s.required && s.key !== 'narrative') ?? []);
+	const filledCount = $derived(required.filter((r) => !missing.some((m) => m.key === r.key)).length);
 	const optional = $derived(notice?.sections.filter((s) => !s.required || s.key === 'narrative') ?? []);
 	const st = $derived(deadline ? clockState(deadline, live.now) : 'on_track');
 	const canSubmit = $derived(session.can('notices:submit'));
@@ -130,8 +132,20 @@
 
 <svelte:head><title>{notice?.typeLabel ?? 'Notice'} · {page.params.id} · Nightjar SOC</title></svelte:head>
 
+<h1 class="sr">{notice?.typeLabel ?? 'Notice'}</h1>
 <div class="tiles">
-	<Pane title="notice" sub={deadline ? `${clockLongLabel(deadline)} · ${deadline.incidentReference}` : ''} focus label="Notice draft">
+	{#if notice}
+		<section class="ready band-in" aria-label="Readiness">
+			<div class="rd">
+				<span class="mono">{filledCount} of {required.length} required fields filled</span>
+				<Progress value={filledCount} max={Math.max(1, required.length)} height="h-1.5" meterBg={missing.length ? 'bg-[var(--amber)]' : 'bg-[var(--teal)]'} trackBg="bg-[var(--line-strong)]" rounded="rounded-[1px]" />
+			</div>
+			<div class="miss">
+				{#each missing as m (m.key)}<button type="button" class="chip preset-tonal-warning" onclick={() => goField(m.key)}>◐ {m.title}</button>{:else}<span class="badge preset-tonal-success">✓ ready to review</span>{/each}
+			</div>
+		</section>
+	{/if}
+	<Band title="notice" sub={deadline ? `${clockLongLabel(deadline)} · ${deadline.incidentReference}` : ''} label="Notice draft">
 		{#snippet actions()}
 			{#if deadline?.dueAt}<span class="mono due st-{st}">due {dueBoth(deadline.dueAt, live.now, REGIME_TZ[deadline.regime])} · {hm(secondsLeft(deadline.dueAt, live.now))} <span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</span>{/if}
 		{/snippet}
@@ -178,14 +192,14 @@
 						{#if finalDue}<li>○ final report · within one month of this notification</li>{/if}
 					</ul>
 				{/if}
-				{#if canEdit}<div class="row"><button class="btn" type="submit" disabled={!dirty || saving}>{saving ? 'Saving…' : dirty ? 'Save draft' : 'Saved'}</button></div>{/if}
+				{#if canEdit}<div class="row"><button class="btn preset-outlined-surface-300-700" type="submit" disabled={!dirty || saving}>{saving ? 'Saving…' : dirty ? 'Save draft' : 'Saved'}</button></div>{/if}
 			</form>
 
 			<div class="submit">
 				{#if notice.status === 'submitted' && notice.submission}
 					<p class="done mono">✓ Recorded as submitted (demo) {whenShort(notice.submission.submittedAt)} by {notice.submission.submittedBy.fullName} · reference {notice.submission.receipt} · the clock stopped</p>
 				{:else if !reviewing}
-					<button class="btn pri" type="button" onclick={() => (reviewing = true)}>Review and submit</button>
+					<button class="btn preset-filled-surface-950-50" type="button" onclick={() => (reviewing = true)}>Review and submit</button>
 					<span class="mono faint">{missing.length ? `◐ ${missing.length} required ${missing.length === 1 ? 'field' : 'fields'} missing` : '✓ every required field is filled'}</span>
 				{:else}
 					<div class="review" role="region" aria-label="Review before submitting">
@@ -205,8 +219,8 @@
 				{/if}
 			</div>
 		{/if}
-	</Pane>
-	<Pane title="evidence" sub={String(evidence.length)} label="Evidence">
+	</Band>
+	<Band title="evidence the draft cites" sub={String(evidence.length)} label="Evidence">
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<ol class="ev" id="evidence" tabindex="0" aria-label="Evidence cited by the draft">
 			{#each evidence as e, i (e.eventId + i)}
@@ -220,17 +234,35 @@
 			{/each}
 		</ol>
 		<p class="foot mono faint">{regimeShort(regime)} facts are designed to support the notice, not legal advice.</p>
-	</Pane>
+	</Band>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+	.ready {
+		display: flex;
+		align-items: center;
+		gap: 24px;
+		flex-wrap: wrap;
+		padding: 12px 22px;
+		background: var(--bg);
+		border-bottom: 1px solid var(--line);
+	}
+	.rd {
 		display: grid;
-		grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.9fr);
-		gap: 1px;
-		background: var(--line);
-		min-height: 0;
+		gap: 7px;
+		width: min(320px, 100%);
+		font-size: 12px;
+		color: var(--ink-2);
+	}
+	.ready .miss {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
 	}
 	.pad {
 		padding: 22px;
@@ -265,6 +297,7 @@
 		padding: 14px 22px 8px;
 		display: grid;
 		gap: 2px;
+		max-width: 1120px;
 	}
 	h3 {
 		margin: 6px 0 8px;
@@ -373,9 +406,10 @@
 	.ev {
 		list-style: none;
 		margin: 0;
-		padding: 14px 16px;
+		padding: 14px 22px;
 		display: grid;
-		gap: 14px;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
+		gap: 14px 28px;
 		outline: none;
 	}
 	.ev li {
@@ -383,7 +417,7 @@
 		gap: 5px;
 		padding: 6px;
 		margin: -6px;
-		border-radius: 6px;
+		border-radius: 3px;
 		transition: background 300ms;
 	}
 	.ev li.lit {
@@ -402,13 +436,6 @@
 		font-size: 11px;
 	}
 	@media (max-width: 1000px) {
-		.tiles {
-			grid-template-columns: minmax(0, 1fr);
-			overflow: auto;
-		}
-		.tiles > :global(.pane .scroll) {
-			overflow: visible;
-		}
 		.req {
 			grid-template-columns: 18px minmax(0, 1fr);
 		}

@@ -8,6 +8,9 @@
 	import { handoffPath, nextStep, rowSub, stepInterval } from '$lib/util/baton';
 	import { timeOf } from '$lib/time/clock';
 	import StepDrawer from './StepDrawer.svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import Choice from '$lib/components/ui/Choice.svelte';
+	import { Switch } from '@skeletonlabs/skeleton-svelte';
 	import type { IncidentSummary } from '$lib/api/types';
 
 	let {
@@ -112,22 +115,19 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="baton" class:compact onkeydown={key}>
 	<div class="replay">
-		<span class="seg">
-			<button type="button" aria-label="Previous step" onclick={() => ((playing = false), goTo(cur - 1, false))}>⏮</button>
-			<button type="button" class:on={playing} onclick={play} aria-pressed={playing}>{playing ? '❚❚ Pause' : '▶ Replay'}</button>
-			<button type="button" aria-label="Next step" onclick={() => ((playing = false), goTo(cur + 1))}>⏭</button>
+		<span class="transport" role="group" aria-label="Replay">
+			<button class="btn btn-sm preset-outlined-surface-300-700" type="button" aria-label="Previous step" onclick={() => ((playing = false), goTo(cur - 1, false))}>⏮</button>
+			<button class="btn btn-sm {playing ? 'preset-filled-primary-700-300' : 'preset-outlined-surface-300-700'}" type="button" onclick={play} aria-pressed={playing}>{playing ? '❚❚ Pause' : '▶ Replay'}</button>
+			<button class="btn btn-sm preset-outlined-surface-300-700" type="button" aria-label="Next step" onclick={() => ((playing = false), goTo(cur + 1))}>⏭</button>
 		</span>
-		<span class="seg" role="group" aria-label="Replay speed">
-			<button type="button" aria-pressed={speed === 1} onclick={() => (speed = 1)}>1×</button>
-			<button type="button" aria-pressed={speed === 4} onclick={() => (speed = 4)}>4×</button>
-		</span>
+		<Choice label="Replay speed" value={speed === 1 ? '1' : '4'} options={[{ value: '1', label: '1×' }, { value: '4', label: '4×' }]} onchange={(v) => (speed = v === '4' ? 4 : 1)} />
 		<span class="steps" aria-hidden="true">
 			{#each rows as r, i (r.key)}<i class:on={i <= cur} class:now={r.state === 'wait' && i <= cur}></i>{/each}
 		</span>
 		<span class="sp">
 			<span class="mono stepl" aria-live="polite">step {cur + 1} of {rows.length}{rows[cur] ? ` · ${timeOf(rows[cur]!.at, undefined, true)}` : ''}</span>
 			{#if !compact}
-				<label class="tog"><input type="checkbox" bind:checked={all} /> all activity</label>
+				<Switch name="all-activity" checked={all} onCheckedChange={(e) => (all = e.checked)} classes="tog" controlActive="bg-[var(--teal)]" controlInactive="bg-[var(--line-strong)]" compact={false}>all activity</Switch>
 				<button class="lnk" type="button" onclick={exportReplay}>export replay</button>
 			{/if}
 		</span>
@@ -151,9 +151,6 @@
 					<small><span class="whos">{r.who}</span> · {#if r.step?.kind === 'verdict' && r.why}<em>why</em> {r.why}{:else}{rowSub(r)}{/if}</small>
 				</button>
 			</div>
-			{#if selectedKey === r.key && selected}
-				<StepDrawer row={selected} {incident} onclose={() => (selectedKey = null)} />
-			{/if}
 		{/each}
 		<svg class="links" width="100%" height={H} aria-hidden="true">
 			{#each laneX as x, l (l)}<line class="guide" x1={x} y1="0" x2={x} y2={H} />{/each}
@@ -178,6 +175,10 @@
 	</div>
 </div>
 
+<Sheet kind="sheet" label={selected ? `Step: ${selected.title}` : 'Step'} open={!!selected} onclose={() => (selectedKey = null)}>
+	{#if selected}<StepDrawer row={selected} {incident} onclose={() => (selectedKey = null)} />{/if}
+</Sheet>
+
 <style>
 	.baton {
 		--tcol: 64px;
@@ -194,6 +195,7 @@
 		padding: 10px 22px;
 		border-bottom: 1px solid var(--line);
 		font: 400 12px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 		flex-wrap: nowrap;
 		white-space: nowrap;
@@ -224,15 +226,16 @@
 		gap: 14px;
 		align-items: center;
 	}
-	.tog {
+	.transport {
 		display: inline-flex;
-		gap: 6px;
+		gap: 2px;
+	}
+	.replay :global(.tog) {
+		display: inline-flex;
+		gap: 8px;
 		align-items: center;
 		cursor: pointer;
 		white-space: nowrap;
-	}
-	.tog input {
-		accent-color: var(--teal);
 	}
 	.lanes,
 	.brow {
@@ -250,6 +253,7 @@
 		justify-items: center;
 		gap: 4px;
 		font: 400 10.5px/1 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		color: var(--muted);
 	}
 	.who {
@@ -259,6 +263,7 @@
 		display: grid;
 		place-items: center;
 		font: 600 10px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		border: 1px solid var(--teal-line);
 		color: var(--teal);
 		background: var(--pane);
@@ -270,6 +275,7 @@
 	.hd {
 		padding-left: 18px;
 		font: 400 11.5px/1 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	.rows {
@@ -317,6 +323,7 @@
 		display: block;
 		margin-top: 3px;
 		font: 400 11.5px/15px var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--muted);
 		overflow-wrap: anywhere;
 	}
@@ -331,6 +338,7 @@
 		margin-right: 6px;
 		color: var(--teal);
 		font-family: var(--mono);
+		font-variation-settings: 'MONO' 1;
 	}
 	.brow.minor .card b {
 		font-weight: 400;

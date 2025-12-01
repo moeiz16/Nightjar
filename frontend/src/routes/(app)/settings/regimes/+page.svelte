@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Settings › regime contacts (DESIGN.md §6.14): which rules apply to Halden, who is the contact, who submits.
-	import Pane from '$lib/components/shell/Pane.svelte';
+	import Band from '$lib/components/ui/Band.svelte';
 	import SettingsNav from '$lib/components/shell/SettingsNav.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { Member, OrgProfile, Regime, RegimeContacts } from '$lib/api/types';
@@ -54,8 +54,8 @@
 
 <svelte:head><title>Regime contacts · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Pane title="settings" sub="regime contacts" focus>
-		{#snippet actions()}{#if can}<button class="btn sm pri" type="button" onclick={save} disabled={!dirty || busy}>{busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button>{:else}<span>read only</span>{/if}{/snippet}
+	<Band title="settings" sub="regime contacts" fill>
+		{#snippet actions()}{#if can}<button class="btn preset-filled-surface-950-50 btn-sm" type="button" onclick={save} disabled={!dirty || busy}>{busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button>{:else}<span>read only</span>{/if}{/snippet}
 		<SettingsNav />
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		<div class="body">
@@ -71,14 +71,14 @@
 							<span class="mono faint auth">authority: {c.authorityName}</span>
 						</div>
 						<div class="grid">
-							<label class="field"><span>owner (submits)</span>
+							<label class="label"><span>owner (submits)</span>
 								<select class="select" disabled={!can} value={c.internalOwner.userId} onchange={(e) => { const m = members.find((x) => x.user.id === (e.currentTarget as HTMLSelectElement).value); if (m) { c.internalOwner = { userId: m.user.id, name: m.user.fullName }; dirty = true; } }}>
 									{#each members as m (m.id)}<option value={m.user.id}>{m.user.fullName} · {m.roleLabel}</option>{/each}
 								</select>
 							</label>
 							{#each c.contacts as ct, i (i)}
-								<label class="field"><span>{ct.role.toLowerCase()}</span><input class="input" bind:value={ct.name} oninput={() => (dirty = true)} disabled={!can} /></label>
-								<label class="field"><span>phone</span><input class="input mono" bind:value={ct.phone} oninput={() => (dirty = true)} disabled={!can} /></label>
+								<label class="label"><span>{ct.role.toLowerCase()}</span><input class="input" bind:value={ct.name} oninput={() => (dirty = true)} disabled={!can} /></label>
+								<label class="label"><span>phone</span><input class="input mono" bind:value={ct.phone} oninput={() => (dirty = true)} disabled={!can} /></label>
 							{/each}
 						</div>
 						<p class="mono ok">✓ verified · {c.contacts.length} {c.contacts.length === 1 ? 'contact' : 'contacts'}</p>
@@ -87,15 +87,15 @@
 			{/each}
 			<p class="add mono faint">○ Add a regime · ask your administrator to extend the company profile</p>
 		</div>
-	</Pane>
+	</Band>
 </div>
 
 <style>
 	.tiles {
 		flex: 1;
-		display: grid;
+		display: flex;
+		flex-direction: column;
 		min-height: 0;
-		background: var(--line);
 	}
 	.pad {
 		padding: 22px;
@@ -107,6 +107,7 @@
 	h1 {
 		margin: 0;
 		font: 600 21px/1.25 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.01em;
 	}
 	.sub {
@@ -127,6 +128,7 @@
 	h2 {
 		margin: 0;
 		font: 600 15px/1.3 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	.why {
 		font-size: 13px;
