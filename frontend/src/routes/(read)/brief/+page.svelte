@@ -1,10 +1,13 @@
 <script lang="ts">
-	// The CISO morning brief (DESIGN.md §6.11): one column, editorial, finishable in two minutes. Everything is
-	// composed from the API at runtime; the only box is "Your decision".
+	// The CISO morning brief (DESIGN.md §0.2, §6.11): dawn bands, full width, finishable in two minutes. The headline,
+	// then the one decision, then the same night the watch saw (the shift chart, read only), then a ruled band of
+	// clocks · approved overnight · on watch now. Everything is composed from the API at runtime.
 	import { api } from '$lib/api';
 	import type { IdentityDoc, IncidentSummary, Member, MorningBrief, Posture, ProposalDoc, RegimeAssessment } from '$lib/api/types';
 	import DecisionSheet from '$lib/components/console/DecisionSheet.svelte';
 	import SevenNights from '$lib/components/brief/SevenNights.svelte';
+	import ShiftChart from '$lib/components/console/ShiftChart.svelte';
+	import { shift } from '$lib/stores/shift.svelte';
 	import { live } from '$lib/stores/live.svelte';
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
@@ -86,17 +89,19 @@
 <svelte:head><title>Morning brief · Nightjar SOC</title></svelte:head>
 
 <main class="wrap">
-	<article>
+	<section class="bb head" aria-labelledby="bh">
 		<p class="dateline mono"><b>{longDate(at)}</b> · prepared {prepared} for {session.name}, {session.role === 'executive' ? 'CISO' : session.roleLabel.toLowerCase()} · a 2-minute read</p>
-		<h1>{head.lead}{head.tail}{#if head.em}<em>{head.em}</em>{/if}{head.end}</h1>
+		<h1 id="bh">{head.lead}{head.tail}{#if head.em}<em>{head.em}</em>{/if}{head.end}</h1>
 		<p class="lede">
 			{lede()}
 			{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise. <b>No one was woken.</b>{/if}
 			{#if clocks[0]} The nearest regulator deadline is the {clockLongLabel(clocks[0]).split(' · ')[0]}, due {dueLabel(clocks[0].dueAt!, at, REGIME_TZ[clocks[0].regime])}.{/if}
 		</p>
+	</section>
 
-		{#if decision}
-			<section class="decision" aria-labelledby="dq">
+	{#if decision}
+		<section class="bb decide" aria-labelledby="dq">
+			<div class="decision">
 				<div class="lbl mono">◆ Needs your decision · {decision.a.regime === 'sec_8k' ? 'SEC Form 8-K, Item 1.05' : decision.a.regimeLabel}</div>
 				<h2 id="dq">{decisionQuestion(decision.a, decision.i)}</h2>
 				{#if decision.a.regime === 'sec_8k'}
@@ -119,9 +124,16 @@
 				{#if others.length}
 					<p class="also">Also yours: {#each others as o, k (o.i.id + o.a.regime)}{k ? ' · ' : ''}<a href="/incidents/{o.i.reference}?decide={o.a.regime}">{decisionQuestion(o.a, o.i).replace(/\?$/, '')}</a>{/each}.</p>
 				{/if}
-			</section>
-		{/if}
+			</div>
+		</section>
+	{/if}
 
+	<section class="bb nightband" aria-labelledby="nb">
+		<h3 id="nb" class="rl mono">── the night the watch saw <span>· response stages down, hours across · the same chart the watch works from</span></h3>
+		<ShiftChart win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} compact dawn />
+	</section>
+
+	<section class="bb three" aria-label="The handover">
 		<section class="part" aria-labelledby="ck">
 			<h3 id="ck" class="mono">Clocks running <span>{clocks.length} · {clocks.length ? (allOnTrack ? 'all on track' : 'one needs attention') : 'none'}</span></h3>
 			{#each clocks as c (c.id)}
@@ -135,7 +147,30 @@
 				</div>
 			{/each}
 		</section>
+		<section class="part side" aria-label="Approved overnight">
+			<h3 class="mono">Approved overnight · by a person</h3>
+			<ul>
+				{#each approvedOvernight.slice(0, 4) as p (p.id)}<li><span class="ok mono">✓</span> {actionTitle(p, people)}<small class="mono">{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}</small></li>{/each}
+				{#if approvedOvernight.length > 4}<li class="more mono">+ {approvedOvernight.length - 4} more, all logged</li>{/if}
+				{#each pendingNow as p (p.id)}<li><span class="wait mono">‖</span> {actionTitle(p, people)}<small class="mono">waiting for {p.requiredRoles.includes('executive') ? 'you and a responder' : responder}</small></li>{/each}
+				{#if !approvedOvernight.length && !pendingNow.length}<li class="faint">Nothing needed a person overnight.</li>{/if}
+			</ul>
+		</section>
+		<section class="part side" aria-label="On watch now and posture">
+			<h3 class="mono">On watch now</h3>
+			<p class="onw">{responder}, responder, with Triage, Enrichment and Response. Next brief tomorrow at 08:00.</p>
+			{#if posture}
+				<h3 class="mono pt">Posture</h3>
+				<div class="posture">{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'} <small class="mono">— {posture.meanTimeToTriage.trend === 'better' ? 'better than last week' : 'same as last week'}</small></div>
+				{#if posturePts}
+					<svg class="spark" viewBox="0 0 300 46" width="300" height="46" role="img" aria-label="Posture over the last 8 weeks: {posture.scoreBand}"><polyline fill="none" stroke="var(--teal)" stroke-width="1.6" points={posturePts} /><circle cx={lastPt[0]} cy={lastPt[1]} r="3" fill="var(--teal)" /><line x1="0" y1="45" x2="300" y2="45" stroke="var(--rule-2)" /></svg>
+				{/if}
+				<p class="onw">{posture.highlights[0] ?? posture.components[0]?.note}</p>
+			{/if}
+		</section>
+	</section>
 
+	<section class="bb two" aria-label="Overnight and the week">
 		<section class="part" aria-labelledby="ov">
 			<h3 id="ov" class="mono">Overnight, in plain words</h3>
 			<ol class="night">
@@ -153,44 +188,85 @@
 				<p class="facts">This week the watch looked closely at <b>{posture.alerts.last7d.toLocaleString('en-GB')}</b> alerts and opened <b>{week.length}</b> incidents, <b>{week.filter((i) => i.reportable === 'yes').length}</b> of them reportable. It closed <b>{posture.alerts.suppressedAsNoise.toLocaleString('en-GB')}</b> alerts as noise. Median time to a triage verdict was <b>{posture.meanTimeToTriage.last7dSeconds} s</b>; median time to contain after a person approved was <b>{Math.round(posture.meanTimeToContain.last7dSeconds / 60)} min</b>. Every one of the <b>{weekActions.length}</b> response actions was authorised by a person.</p>
 			{/if}
 		</section>
-	</article>
-
-	<aside class="side" aria-label="In the margin">
-		{#if posture}
-			<div class="blk">
-				<h4 class="mono">posture</h4>
-				<div class="posture">{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'} <small class="mono">— {posture.meanTimeToTriage.trend === 'better' ? 'better than last week' : 'same as last week'}</small></div>
-				{#if posturePts}
-					<svg class="spark" viewBox="0 0 300 46" width="300" height="46" role="img" aria-label="Posture over the last 8 weeks: {posture.scoreBand}"><polyline fill="none" stroke="var(--teal)" stroke-width="1.6" points={posturePts} /><circle cx={lastPt[0]} cy={lastPt[1]} r="3" fill="var(--teal)" /><line x1="0" y1="45" x2="300" y2="45" stroke="var(--rule-2)" /></svg>
-				{/if}
-				<p>{posture.highlights[0] ?? posture.components[0]?.note}</p>
-			</div>
-		{/if}
-		<div class="blk">
-			<h4 class="mono">approved overnight · by a person</h4>
-			<ul>
-				{#each approvedOvernight.slice(0, 4) as p (p.id)}<li><span class="ok mono">✓</span> {actionTitle(p, people)}<small class="mono">{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}</small></li>{/each}
-				{#if approvedOvernight.length > 4}<li class="more mono">+ {approvedOvernight.length - 4} more, all logged</li>{/if}
-				{#each pendingNow as p (p.id)}<li><span class="wait mono">‖</span> {actionTitle(p, people)}<small class="mono">waiting for {p.requiredRoles.includes('executive') ? 'you and a responder' : responder}</small></li>{/each}
-				{#if !approvedOvernight.length && !pendingNow.length}<li class="faint">Nothing needed a person overnight.</li>{/if}
-			</ul>
-		</div>
-		<div class="blk">
-			<h4 class="mono">on watch now</h4>
-			<p>{responder}, responder, with Triage, Enrichment and Response. Next brief tomorrow at 08:00.</p>
-		</div>
-	</aside>
+	</section>
 </main>
 
 <style>
 	.wrap {
 		position: relative;
-		max-width: 1160px;
-		margin: 0 auto;
-		padding: 56px 20px 100px;
+		padding: 0 0 80px;
+	}
+	/* dawn bands: full width, hard-edged, content starts on the shift grid's lane-label line */
+	.bb {
+		position: relative;
+		padding: 34px 28px 36px calc(var(--gut) + 6px);
+		border-bottom: 1px solid var(--rule);
+	}
+	.bb.head {
+		padding-top: 48px;
+	}
+	.bb.head h1,
+	.bb.head .lede {
+		max-width: 920px;
+	}
+	.bb.decide {
+		background: color-mix(in srgb, var(--lav) 7%, transparent);
+		border-top: 1px solid color-mix(in srgb, var(--lav) 30%, transparent);
+	}
+	.bb.decide .decision {
+		max-width: 920px;
+	}
+	.bb.nightband {
+		padding: 18px 0 8px;
+		background: color-mix(in srgb, var(--page) 70%, transparent);
+	}
+	.rl {
+		margin: 0 0 6px calc(var(--gut) + 6px);
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.rl span {
+		font-weight: 400;
+		color: var(--muted);
+	}
+	.bb.three,
+	.bb.two {
 		display: grid;
-		grid-template-columns: minmax(0, 720px) 300px;
-		gap: 0 110px;
+		gap: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+	}
+	.bb.three {
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+	}
+	@media (min-width: 761px) {
+		.bb.three .clk {
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			gap: 22px;
+		}
+	}
+	.bb.two {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+	.bb.three > .part,
+	.bb.two > .part {
+		margin: 0;
+		padding: 28px 28px 30px 0;
+	}
+	.bb.three > .part + .part,
+	.bb.two > .part + .part {
+		padding-left: 28px;
+		border-left: 1px solid var(--rule);
+	}
+	.onw {
+		margin: 0 0 12px;
+		font-size: 15px;
+		line-height: 1.55;
+		color: var(--ink-2);
+	}
+	.pt {
+		margin-top: 18px !important;
 	}
 	.dateline {
 		margin: 0;
@@ -205,6 +281,7 @@
 	h1 {
 		margin: 18px 0 22px;
 		font: 500 46px/1.12 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.03em;
 		text-wrap: balance;
 	}
@@ -224,11 +301,7 @@
 		font-weight: 600;
 	}
 	.decision {
-		margin: 40px 0 0;
-		padding: 26px 28px 26px 30px;
-		border-radius: 4px;
-		background: var(--box);
-		border: 1px solid var(--rule);
+		padding: 0 0 0 22px;
 		border-left: 3px solid var(--lav);
 	}
 	.decision .lbl {
@@ -239,6 +312,7 @@
 	.decision h2 {
 		margin: 12px 0 10px;
 		font: 600 23px/1.3 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.015em;
 	}
 	.decision p {
@@ -302,7 +376,7 @@
 		color: var(--page);
 		border-color: var(--ink);
 	}
-	.decision :global(.btn.pri) {
+	.decision :global(.btn.preset-filled-surface-950-50) {
 		background: var(--ink);
 		color: var(--page);
 		border-color: var(--ink);
@@ -440,6 +514,7 @@
 	}
 	.facts b {
 		font-family: var(--mono);
+		font-variation-settings: 'MONO' 1;
 		font-weight: 500;
 		color: var(--ink);
 		font-size: 15px;
@@ -447,19 +522,9 @@
 	.side {
 		padding-top: 6px;
 	}
-	.blk {
-		padding: 0 0 22px;
-		margin-bottom: 22px;
-		border-bottom: 1px solid var(--rule);
-	}
-	h4 {
-		margin: 0 0 12px;
-		font-size: 12px;
-		font-weight: 500;
-		color: var(--muted);
-	}
 	.posture {
 		font: 500 28px/1 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.02em;
 		display: flex;
 		align-items: baseline;
@@ -512,14 +577,45 @@
 		color: var(--lav);
 	}
 	@media (max-width: 1100px) {
-		.wrap {
-			grid-template-columns: minmax(0, 1fr);
-			gap: 40px;
+		.bb.three {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+		.bb.three > .part:first-child {
+			grid-column: 1 / -1;
+			border-bottom: 1px solid var(--rule);
+		}
+		.bb.three > .part:nth-child(2) {
+			padding-left: 0;
+			border-left: 0;
 		}
 	}
 	@media (max-width: 760px) {
-		.wrap {
-			padding: 28px 16px 70px;
+		.bb {
+			padding: 26px 16px 28px;
+		}
+		.bb.nightband {
+			padding: 14px 0 6px;
+		}
+		.rl {
+			margin-left: 16px;
+		}
+		.bb.three,
+		.bb.two {
+			grid-template-columns: minmax(0, 1fr);
+			padding: 0 16px;
+		}
+		.bb.three > .part,
+		.bb.two > .part,
+		.bb.three > .part + .part,
+		.bb.two > .part + .part,
+		.bb.three > .part:nth-child(2) {
+			padding: 22px 0;
+			border-left: 0;
+			border-top: 1px solid var(--rule);
+		}
+		.bb.three > .part:first-child,
+		.bb.two > .part:first-child {
+			border-top: 0;
 		}
 		h1 {
 			font-size: 31px;

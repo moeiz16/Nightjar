@@ -1,14 +1,16 @@
 <script lang="ts">
-	// The brief is its own reading experience: dawn (light) by default, a night edition for late readers. No tiles,
-	// no river, no KPI cards. ⌘K still works everywhere.
+	// The brief is its own reading mode, dawn (light) by default with a night edition, inside the same grammar as the
+	// console: the shift axis on top, dawn bands, the watch bar at the bottom. No KPI cards. ⌘K works everywhere.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, onDestroy } from 'svelte';
-	import Logo from '$lib/components/shell/Logo.svelte';
+	import ShiftAxis from '$lib/components/shell/ShiftAxis.svelte';
+	import WatchBar from '$lib/components/shell/WatchBar.svelte';
 	import CommandPalette from '$lib/components/shell/CommandPalette.svelte';
 	import { onSessionEnded } from '$lib/api';
 	import { session } from '$lib/stores/session.svelte';
 	import { live } from '$lib/stores/live.svelte';
+	import { shift } from '$lib/stores/shift.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { useShellKeys } from '$lib/util/keys.svelte';
 
@@ -28,8 +30,10 @@
 		}
 		ready = true;
 		live.start();
+		shift.start(me.activeOrg?.timezone);
 	});
 	onDestroy(() => {
+		shift.stop();
 		if (typeof document !== 'undefined') document.documentElement.dataset.theme = ui.theme;
 	});
 	useShellKeys();
@@ -41,17 +45,17 @@
 
 <div class="briefroot">
 	<div class="wash" aria-hidden="true"></div>
-	<header class="bar">
-		<a class="brand" href={session.home()} aria-label="Nightjar SOC"><Logo /><b>nightjar</b><i>soc</i></a>
-		<span class="where mono">{week ? 'weekly report' : 'morning brief'} · {session.org?.name ?? 'Halden Logistics'}</span>
-		<span class="sp">
-			{#if week}<a class="lk" href="/brief">Morning brief</a>{:else}<a class="lk" href="/brief/week">Weekly report</a>{/if}
-			{#if session.role !== 'executive'}<a class="lk" href="/watch">Open the watch</a>{:else}<a class="lk hide-s" href="/watch">Open the watch</a>{/if}
-			<button class="lk icon" type="button" onclick={toggle} aria-label={ui.briefTheme === 'light' ? 'Read the night edition (dark)' : 'Read the dawn edition (light)'} title="Edition">{ui.briefTheme === 'light' ? '☾' : '☼'}</button>
-			<button class="kbtn" type="button" onclick={() => ui.openPalette()}>Go to anything <kbd>⌘</kbd><kbd>K</kbd></button>
-		</span>
+	<div class="axisw"><ShiftAxis /></div>
+	<header class="bar mono">
+		<span class="dash" aria-hidden="true">──</span>
+		<b>{week ? 'weekly report' : 'morning brief'}</b><span class="where">· {session.org?.name ?? 'Halden Logistics'}</span>
+		<span class="run" aria-hidden="true"></span>
+		{#if week}<a class="lk" href="/brief">morning brief</a>{:else}<a class="lk" href="/brief/week">weekly report</a>{/if}
+		{#if session.role !== 'executive'}<a class="lk hide-s" href="/watch">open the watch</a>{/if}
+		<button class="lk" type="button" onclick={toggle} aria-label={ui.briefTheme === 'light' ? 'Read the night edition (dark)' : 'Read the dawn edition (light)'} title="Edition">{ui.briefTheme === 'light' ? '☾ night edition' : '☼ dawn edition'}</button>
 	</header>
 	{#if ready}{@render children()}{/if}
+	<div class="wbar"><WatchBar /></div>
 </div>
 <CommandPalette />
 
@@ -66,11 +70,11 @@
 		--faint: #5e6d74;
 		--rule: #dce4e2;
 		--rule-2: #c9d4d1;
-		--teal: #0a7f6d;
+		--teal: #087565;
 		--lav: #5b45c9;
 		--lav-wash: rgba(91, 69, 201, 0.06);
 		--amber: #8a5d00;
-		--sun: rgba(10, 127, 109, 0.16);
+		--sun: rgba(8, 117, 101, 0.16);
 		--box: color-mix(in srgb, #f7f9f8 70%, #fff);
 	}
 	:global(:root[data-theme='dark']) .briefroot {
@@ -123,79 +127,73 @@
 			0 0 0 46px color-mix(in srgb, var(--sun) 18%, transparent),
 			0 0 0 92px color-mix(in srgb, var(--sun) 8%, transparent);
 	}
+	.axisw {
+		position: relative;
+		z-index: 4;
+	}
+	.axisw :global(.axis) {
+		background: color-mix(in srgb, var(--page) 55%, transparent);
+	}
 	.bar {
 		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 22px;
-		height: 64px;
-		max-width: 1160px;
-		margin: 0 auto;
-		padding: 0 20px;
-	}
-	.bar :global(.brand svg) {
-		color: var(--teal);
-	}
-	.where {
-		font-size: 13px;
+		gap: 10px;
+		height: 38px;
+		padding: 0 16px;
+		font-size: 12px;
 		color: var(--muted);
-		padding-left: 18px;
-		border-left: 1px solid var(--rule-2);
+		border-bottom: 1px solid var(--rule-2);
 		white-space: nowrap;
 	}
-	.sp {
-		margin-left: auto;
-		display: flex;
-		gap: 6px;
-		align-items: center;
+	.bar b {
+		color: var(--ink);
+		font-weight: 600;
+	}
+	.dash {
+		color: var(--rule-2);
+	}
+	.run {
+		flex: 1;
+		min-width: 12px;
+		height: 1px;
+		background: repeating-linear-gradient(90deg, var(--rule-2) 0 6px, transparent 6px 9px);
 	}
 	.lk {
-		font-size: 14px;
+		font-size: 12px;
 		color: var(--ink-2);
 		text-decoration: none;
-		padding: 8px 10px;
-		border-radius: 6px;
+		padding: 6px 8px;
+		border-radius: 3px;
 		white-space: nowrap;
 	}
 	.lk:hover {
 		background: color-mix(in srgb, var(--ink) 6%, transparent);
 	}
-	.icon {
-		font-family: var(--mono);
-	}
-	.bar .kbtn {
-		border-color: var(--rule-2);
-		color: var(--ink-2);
-	}
-	.bar :global(kbd) {
-		background: transparent;
-		border-color: var(--rule-2);
-		color: var(--ink-2);
+	.wbar {
+		position: sticky;
+		bottom: 0;
+		z-index: 6;
 	}
 	@media (max-width: 760px) {
 		.bar {
-			gap: 10px;
-			padding: 0 12px;
+			gap: 6px;
+			padding: 0 10px;
 		}
 		.where,
-		.bar .kbtn,
 		.hide-s {
 			display: none;
 		}
-		.bar :global(.brand b),
-		.bar :global(.brand i) {
-			display: none;
-		}
 		.lk {
-			padding: 8px 6px;
-			font-size: 13px;
+			padding: 6px 4px;
 		}
 		.wash::after {
 			right: -60%;
 		}
 	}
 	@media print {
-		.bar .sp,
+		.axisw,
+		.wbar,
 		.wash {
 			display: none;
 		}

@@ -119,9 +119,9 @@
 <style>
 	.doc {
 		position: relative;
-		max-width: 820px;
-		margin: 0 auto;
-		padding: 56px 20px 100px;
+		max-width: calc(var(--gut) + 900px);
+		margin: 0;
+		padding: 44px 28px 100px calc(var(--gut) + 6px);
 	}
 	.dateline {
 		font-size: 13px;
@@ -131,6 +131,7 @@
 	h1 {
 		margin: 16px 0 14px;
 		font: 500 30px/1.25 var(--sans);
+		font-variation-settings: 'MONO' 0;
 		letter-spacing: -0.02em;
 		text-wrap: balance;
 	}
@@ -170,6 +171,7 @@
 	.story h3 {
 		margin: 0 0 4px;
 		font: 600 17px/1.35 var(--sans);
+		font-variation-settings: 'MONO' 0;
 	}
 	.meta {
 		margin: 0 0 12px;
@@ -188,6 +190,7 @@
 	}
 	dt {
 		font: 400 12.5px/1.7 var(--mono);
+		font-variation-settings: 'MONO' 1;
 		color: var(--faint);
 	}
 	dd {
