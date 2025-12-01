@@ -5,8 +5,103 @@
 Nightjar SOC is a managed security-operations platform for mid-size companies. It takes in security events around the clock and groups threats into incidents (Sigma rules, MITRE ATT&CK). It spots unusual behaviour, and three cooperating AI teammates (**Triage**, **Enrichment**, **Response**) investigate. When an incident is reportable, it starts the regulator's clock (EU NIS2, US SEC Form 8-K Item 1.05, Australia SOCI) and drafts the notice. **A person approves every response action.** Executives get a plain-language morning brief.
 
 - **Demo company:** **Halden Logistics**, with an EU distribution centre in Antwerp (NIS2, GDPR), a US-listed parent headquartered in Memphis (SEC Form 8-K), and a critical freight network run from Melbourne (SOCI).
-- **Stack:** SvelteKit + TypeScript + Tailwind 4.1 (the tokens below go into `@theme`). Motion uses Svelte built-ins only: `svelte/transition`, `svelte/animate` (`flip`), `crossfade`, and the `Spring`/`Tween` classes from `svelte/motion` with `prefersReducedMotion`. There is no animation library.
+- **Stack:** SvelteKit + TypeScript + Tailwind 4.1 with the **Skeleton** design system (`@skeletonlabs/skeleton` 3.2.2 + `@skeletonlabs/skeleton-svelte` 1.5.3, Zag.js underneath) on a custom `nightjar` theme built from the tokens below. Motion uses Svelte built-ins only: `svelte/transition`, `svelte/animate` (`flip`), `crossfade`, and the `Spring`/`Tween` classes from `svelte/motion` with `prefersReducedMotion`. There is no animation library.
 - **Copy date:** copy is written as of **late November 2025**. Anything time-sensitive is computed at runtime (§13).
+
+---
+
+## 0. The shift chart: how the console is laid out
+
+**§0 is the current layout and component system.** Where §3, §5, §6, §7, §10 or §16 describe the earlier tiled console (a clock bar on top, 1–4 tiles, a mono status line, Geist type), §0 wins; those sections still hold the metaphor, the palette, the status language, the clock rules, the baton, Hold to authorise and the copy voice.
+
+### 0.1 Why the night is the x-axis
+
+A night-shift analyst works one sequence: **intake → triage → investigation → containment approval → handover**, and every decision in it is anchored in time (when it started, how long it sat, which regulator clock it started, what the next shift inherits). The established tools show the same structure: queue-first homes (Splunk ES Mission Control's analyst queue, the Defender XDR incident queue, the Google SecOps case queue, Panther's alert list), phased response (Splunk ES response plans, SOAR workbooks, Google SecOps stages, the kill-chain view in Defender's incident summary), time drawn as lanes (Splunk's Asset & Identity Investigator swim lanes, Sentinel's parallel timeline), the incident as a log of time + responder + action (Google SecOps' Case Wall, Defender's Activities, the Google SRE incident document), and handover as a structured turnover (the SRE book's explicit hand-off; community SOC SOPs: active incidents, pending investigations, system health, notable events, compliance deadlines). NIST SP 800-61r3 keeps high-impact response actions with people.
+
+So the console is built on three ideas:
+
+1. **One shift axis across the top of every signed-in screen**: a time ruler from the 18:00 before the last night (or 12 hours back) to now. Night hours are shaded, the 08:00 and 20:00 shift changes are ruled, incidents (▲), approvals (‖) and notices (✉) sit where they happened, and a now line advances each minute. Past now, the axis folds into a **deadline gutter**: one flag per running regulator clock, with rolling digits. A new clock **drops onto the axis**.
+2. **Response stages as lanes** (Intake · Triage · Investigate · Contain · Report), read left to right in time. **Each incident is one line that steps down the lanes** at the times its log records, like a train on a railway dispatcher's timetable graph (Charles Ibry's chart, popularised by Marey for Paris–Lyon: time across, stations down, one line per train). A regulator clock marks the line (✉) without moving it, because a clock can start while containment is still waiting. Lines only ever step down.
+3. **The home is the turnover**: the handover sheet written live, in numbered sections, so the next shift never works from "I assumed you did it".
+
+### 0.2 The layout system: axis · bands · watch bar
+
+```
+┌───────────────┬────────────────────────────────────────────────────┬──────────────────────────────┐
+│ ◉ nightjar soc│ 18 · 20 ░░░ night ░░░ 00 · 02 · 04 · 06 ░│08 handover · 10 ┃now│▸ NIS2 16:48:35 ▸ SOCI 42:26 │ SHIFT AXIS 64
+├───────────────┴────────────────────────────────────────────────────┴──────────────────────────────┤
+│ ── the shift · 18:00 to now · 4 open incidents ───────────────────────────────── legend ─────────│
+│ intake        ▁▂▂▃▂▁▁▁▂▅█▃▂▁▁▂▂▁▁▂▂▃▂                               │ 1,240 events this hour      │ BAND 1
+│ triage            ●──┐        ●──┐                                  │                             │ the shift
+│ investigate          └──●        └─●──┐                             │ △ NJ-1039                   │ chart
+│ contain                 └────‖────────┼──────────────────────────── │ ‖ NJ-1038  ▲ NJ-1037        │
+│ report                                └──────────────────────────── │ ▲ NJ-1036                   │
+│ ── turnover · what the next person needs ────────────────────────────────────────────────────────│
+│ 1 waiting on you   │ 2 clocks to watch   │ 3 intake, live        │ 4 since you last looked       │ BAND 2
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1 watch │2 hunt│3 behaviour│4 rules│5 assets│6 people│7 log│8 brief│ ● normal │ ⌘K │ (MB) you   │ WATCH BAR 44
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Columns are shared.** The axis and every chart use one grid: lane labels (`--gut`, 132 px) · the night · the deadline gutter (`--dl`), so an incident's tick on the axis sits directly above its line.
+- **Bands.** Every page is a stack of full-width, hard-edged bands. Each opens with a terminal-style rule `── n · title · context ────── actions ─` in lowercase mono. Bands never sit side by side as cards; parallel sections (the turnover) are ruled columns inside one band, and they stack on narrow screens.
+- **Watch bar.** Docked full width at the bottom, tmux style: numbered windows `1 watch · 2 hunt · 3 behaviour · 4 rules · 5 assets · 6 people · 7 log · 8 brief` (Alt+1 … Alt+8), the intake health in plain words, ⌘K, and you (avatar → role, day watch, confirm-by-typing, settings, sign out). There is no sidebar and no top navigation; ⌘K stays the fastest way anywhere.
+- **Detail never opens as a side column.** A step's evidence, an asset, a decision or ⌘K open as Skeleton modals: a **bottom sheet** that rises over the bands, or a **dialog** that drops from the axis.
+
+| Screen | Layout |
+|---|---|
+| Watch `/watch` | Band 1: the shift chart (intake bars by hour; each incident's stepped line; open incidents as chips in the now column). Band 2: the turnover. Responders and admins: 1 waiting on you (approvals with Hold to authorise, the draft notice) · 2 clocks to watch · 3 intake, live (the event river) · 4 since you last looked. Analysts get *worth a hunt* first, auditors *the activity chain* and *evidence*. Phones: the lanes and the turnover as accordions |
+| Incident `/incidents/[id]` | Header band (severity, title, people and machines, ATT&CK chain, the stage rail with times) → **waiting on you** band directly under it (approval columns, each with Hold; open regulator assessments) → tabs: *what happened, and why* (the baton replay) · *clocks and notices* · *actions decided* · *service desk* · *evidence*. A step opens as a bottom sheet; the materiality decision as a dialog |
+| Notice | Readiness band (a progress meter, "4 of 5 required fields filled", missing fields as chips that jump to the field) → the draft band → the evidence band it cites (`[E-xx]` scrolls to and lights the item) |
+| Hunt, saved searches, rules, behaviour, assets, people, activity, settings | One band each. Registers are Skeleton tables; filters are segmented controls; an asset's detail is a bottom sheet; the activity log is paginated; settings switch between members and regulator contacts; deleting a saved search asks in a dialog |
+| Landing `/` | The product's own grammar replaying the night: the axis fills toward 03:13, intake bars rise, Joy's line steps down the lanes, the NIS2 flag drops into the gutter; under it the night log types left-aligned beneath a rolling clock and ends on "Someone is always on watch.", with the Hold box ("Turn off Joy's account?") in the gutter column. Then the shift log as one four-column ruled band (22:00 · 01:30 · 03:12 · 08:00 at dawn) and the clocks it keeps as a table |
+| Sign-in | The idle axis, then a left-aligned **sign-on** band: "You take the watch at 10:24 · Thursday 20 November", the demo roles as a segmented control, then your own account |
+| Brief `/brief` | The axis and the watch bar in dawn tones; dawn bands: the headline → the decision → **the night the watch saw** (the same shift chart, compact and read only) → one ruled band of clocks · approved overnight · on watch now and posture → overnight in plain words · seven nights |
+
+### 0.3 Component system: Skeleton
+
+Skeleton v3 (`@skeletonlabs/skeleton` 3.2.2 for the Tailwind 4 theme, presets and utilities; `@skeletonlabs/skeleton-svelte` 1.5.3 for the Svelte 5 components on Zag.js), with a custom **`nightjar`** theme (`src/lib/theme/nightjar.css`) generated from the palette in §8:
+
+| Skeleton scale | From | Use |
+|---|---|---|
+| `surface` 50–950 | the day and night neutrals (`#F6F8F9` … `#070B10`) | surfaces, rules (`surface-200-800` hairline, `300-700` strong) |
+| `primary` | mint teal: 300 = night `#3CE6C8`, 700 = day `#087565` (refined from `#0A7F6D`, which measured 4.2 : 1 on the day background) | live, focus, the teammates, on track (`preset-filled-primary-700-300`) |
+| `secondary` | lavender `#B6A8FF` / `#5B45C9` | waiting for a person, ◆ decisions |
+| `warning` · `error` · `success` | amber · red · teal-green | due soon · overdue, critical · contained, sent |
+| `tertiary` | steel | routine lines |
+
+Tailwind's `dark` variant follows `<html data-theme>`, so the light/dark pairings pick the day or night value. Radius: 3 px on controls, 0 on bands and sheets.
+
+| Was | Now |
+|---|---|
+| hand-rolled `.btn` / `.chip` / `.input` / `.ledger` | Skeleton `btn` + presets, `badge` / `chip`, `input` / `select` / `textarea` / `label`, `table` (with a thin Nightjar skin) |
+| segmented toggles | **Segment** (`Choice.svelte`) |
+| tiles (`Pane`) | `Band.svelte` |
+| clock bar, status line | the shift axis (**Tooltip** on marks, **Popover** of clocks on phones) and the watch bar (**Navigation** bar, **Avatar**, **Popover**, **Switch**) |
+| palette overlay, step drawer, decision sheet, asset pane, `window.confirm` | **Modal** (`Sheet.svelte`: bottom sheet or dialog) |
+| toast stack | **Toaster** + `createToaster` |
+| incident side column | **Tabs** |
+| phone tile swiping | **Accordion** |
+| hold ring SVG | **ProgressRing** driven by the hold state machine |
+| notice "missing fields" list | **Progress** + badges |
+| activity "more" | **Pagination** |
+
+### 0.4 Type: Recursive on its MONO axis
+
+One variable family, **Recursive** (Arrow Type; OFL), self-hosted from `@fontsource-variable/recursive` (the `mono` file: weight 300–1000 + the MONO axis, 72 KB for Latin). Recursive is "a variable font family for code & UI"; its Sans "borrows glyphs from its parent mono but adjusts the widths of many key glyphs for comfortable readability".
+
+- **Sans Linear** (MONO 0) for what a person reads or decides: titles, sentences, buttons.
+- **Mono Linear** (MONO 1) for what a machine wrote or a clock counts: log lines, IOCs, timestamps, clocks, lane and band labels. Fixed width keeps columns of times and addresses aligned; `0/O` and `1/l/I` stay distinct in an indicator.
+- No casual (CASL) styles anywhere. Labels stay lowercase mono, never tracked caps.
+
+### 0.5 Motion additions
+
+- **Drop** lands a deadline flag on the axis gutter (620 ms, back-out).
+- **Step:** incident lines grow rightward from where they opened (a clip, 900 ms) and step down a lane when the log records the next stage.
+- **Resolve:** a raw log line (MONO 1) eases into plain words (MONO 0) when it joins an incident, 600 ms.
+- **Now line:** advances each minute with a 2.4 s pulse.
+- **Bands** settle 6 px on arrival; sheets rise 24 px, dialogs drop 12 px from the axis, toasts slide 8 px.
+- `prefers-reduced-motion`: digits swap, lines appear whole, no Resolve, the hold ring shows a percentage, and modals and toasts appear without travel.
 
 ---
 
@@ -40,6 +135,13 @@ Every reference was re-checked in this design round. Vendor marketing pages were
 | 22 | Hyperping status page refresh: https://hyperping.com/blog/product-update-status-page-calendar-and-new-design | A **calm grey scale in both themes** so the one accent and the incidents stand out. → Teal is rationed to live, focus, the teammates and "on track". |
 | 23 | Gallery pieces with console, ops or night themes: Awwwards "Darknode" (SOTD, stealth/mission minimalism) https://www.awwwards.com/sites/darknode · Awwwards mission-control inspiration https://www.awwwards.com/inspiration/desktop-mission-control-1 · Order's interactive-console launch page (One Page Love) https://onepagelove.com/?p=49097 · "Orbital Reach" flight-director terminal landing (Kombai gallery) https://kombai.com/gallery/inspirations/orbital/ | A landing that **is** a working console rather than a picture of one, with minimal chrome and a single live element carrying the story. → The landing is the console replaying a night, and the headline arrives as the last log entry. **Avoided:** neon on black, glowing world maps (the Dribbble "security dashboard" cliché), scanlines and fake-hacker green. *Note: godly.website now redirects to recent.design; this was checked, and no Godly entry matched better than the pieces above.* |
 | 24 | Svelte motion API: https://svelte.dev/docs/svelte/svelte-motion | The `Spring`/`Tween` classes (`Tween.of`, `preserveMomentum`) and `prefersReducedMotion`. These drive Tick, Drop and Hold, plus `crossfade` + `flip` for Coalesce. |
+| 25 | Splunk ES 8 Mission Control and response plans: https://help.splunk.com/en/splunk-enterprise-security-8/user-guide/8.4/mission-control/respond-to-investigations-with-response-plans-in-splunk-enterprise-security | A **queue-first home** with a timeline toggle, and response as **phases of tasks**. → The turnover is home; the stage lanes are the phases. |
+| 26 | Splunk Asset & Identity Investigator: https://help-preview.splunk.com/en/splunk-enterprise-security-8/user-guide/8.0/analytics/asset-and-identity-investigator-dashboards | **Swim lanes over time**, one per event category. → Response stages as lanes on the shift axis. |
+| 27 | Google SRE, managing incidents and the incident document: https://sre.google/sre-book/managing-incidents/ · https://sre.google/sre-book/incident-document/ | An **explicit, acknowledged hand-off** and a living document whose timeline is time + responder + action. → The turnover band and the shift log. |
+| 28 | SecOps shift handoffs: https://cloud.google.com/blog/products/identity-security/how-to-nail-smooth-shift-handoffs-in-secops | Shifts fail through **incomplete details, wrong assumptions and dropped tasks**; use a standard handoff template. → The turnover's fixed, numbered sections. |
+| 29 | NIST SP 800-61r3: https://csrc.nist.gov/pubs/sp/800/61/r3/final | Leadership may hold authority over **high-impact response actions**; handlers should be able to choose containment manually. → Waiting on you sits directly under every incident header. |
+| 30 | Charles Ibry's timetable chart: https://en.wikipedia.org/wiki/Charles_Ibry | **One line per train, time across, stations down.** → One line per incident, the night across, the response stages down. |
+| 31 | Skeleton v3: https://v3.skeleton.dev/docs/get-started/installation/sveltekit · Recursive: https://github.com/arrowtype/recursive | The component system and its theme presets; one type family whose MONO axis separates what a person reads from what a machine wrote. |
 
 ---
 
@@ -524,7 +626,9 @@ Teammates appear as "Response (teammate)", never by internal names. A teammate's
 
 ## 7. Type
 
-**Geist** for UI and reading, **Geist Mono** for time, IDs, labels and keycaps. There is **no serif** anywhere. Labels are **lowercase mono** ("events", "awaiting you", "notice · draft 2"), never uppercase-tracked mono.
+> Superseded by §0.4: the console is set in **Recursive** (Sans Linear for reading, Mono Linear for time, IDs, labels and keycaps). The roles and sizes below still apply with Recursive in place of Geist / Geist Mono.
+
+**Recursive Sans** for UI and reading, **Recursive Mono** for time, IDs, labels and keycaps. There is **no serif** anywhere. Labels are **lowercase mono** ("events", "awaiting you", "notice · draft 2"), never uppercase-tracked mono.
 
 | Token | Face / weight | Size / line | Use |
 |---|---|---|---|
@@ -538,7 +642,7 @@ Teammates appear as "Response (teammate)", never by internal names. A teammate's
 | `body` | Geist 400 | 13–14 / 1.45 (console), 16–19 / 1.6 (brief) | text |
 | `meta` | Geist Mono 400 | 11–12.5 / 1.3 | timestamps, "looked at", pane titles, keycaps |
 
-Numbers in mono always use `tnum`. Geist Mono's slashed zero is kept: it is part of the console's identity and avoids O/0 confusion in IDs.
+Numbers in mono always use `tnum` and the slashed zero (`zero`): it is part of the console's identity and avoids O/0 confusion in IDs.
 
 ---
 
@@ -573,7 +677,7 @@ Mint teal (hue ≈170°) is the only accent. It is used for **light and line** (
 | `bg` / `pane` / `raised` | `#E9EEF0` / `#FFFFFF` / `#F3F6F7` |
 | `line` / `line-strong` | `#DCE3E7` / `#C4CED4` |
 | `ink` / `ink-2` / `muted` / `faint` | `#0B141B` / `#2B3943` / `#53626E` / `#5F6E78` (faint is 4.85 : 1 on white) |
-| `teal` | `#0A7F6D` (4.9 : 1 on white) |
+| `teal` | `#087565` (5.6 : 1 on white, 4.8 : 1 on the day background; was `#0A7F6D`, 4.2 : 1 on the background) |
 | `amber` / `red` / `lav` | `#8A5D00` / `#B42318` / `#5B45C9` |
 
 ### Brief: dawn (light, default) and night edition (dark)
@@ -585,7 +689,7 @@ Mint teal (hue ≈170°) is the only accent. It is used for **light and line** (
 | `ink` / `ink-2` | `#0D1A20` / `#33444C` | `#E6EDF1` / `#BAC7CE` |
 | `muted` / `faint` | `#4C5B63` (5.3 : 1 on the wash) / `#5E6D74` | `#8F9EA8` / `#8392A0` |
 | `rule` / `rule-2` | `#DCE4E2` / `#C9D4D1` | `#1B2731` / `#283643` |
-| `teal` / `lav` | `#0A7F6D` / `#5B45C9` | `#3CE6C8` / `#B6A8FF` |
+| `teal` / `lav` | `#087565` / `#5B45C9` | `#3CE6C8` / `#B6A8FF` |
 | sun rings | `rgba(10,127,109,.16)` | `rgba(60,230,200,.14)` |
 
 Landing dawn transition (08:00 section): `#070B10 → #0F2830 (30%) → #CFE7E1 (75%) → #EEF5F2`.
@@ -724,11 +828,12 @@ Nightjar SOC is dark-first, time-first, and its landing is a live console. One c
 ## 16. Build notes
 
 **Svelte components (as built):**
-- shell: `ClockBar`, `ClockCell` (Tick + Drop + elapsed rule), `Tick` / `Digit`, `StatusLine`, `CommandPalette`, `Pane`, `Toasts`, `Logo`;
-- console: `EventRiver` (minute groups + fold), `IncidentHeader`, `IncidentView`, `BatonTimeline` (lane tracks, SVG links, bead, Replay controller), `StepDrawer`, `ApprovalCard`, `HoldButton`, `DecisionSheet`, `AwaitingTile`, `EvidenceTile`, `HuntPanel`, `BehaviourPanel` (rhythm strips), `ActivityPanel`, `Untrusted`;
+- ui (on Skeleton): `Band`, `Choice` (Segment), `Sheet` (Modal: bottom sheet or dialog);
+- shell: `ShiftAxis` (time ruler, marks with Tooltips, deadline gutter with Tick + Drop), `WatchBar` (Navigation bar, Avatar, Popover, Switch), `Tick` / `Digit`, `CommandPalette` (in a Modal), `SettingsNav`, `Logo`;
+- console: `ShiftChart` (lanes, stepped incident lines, intake bars, now column; Accordion on phones), `Turnover`, `ClockList`, `EventRiver` (minute groups + fold + Resolve), `IncidentHeader`, `BatonTimeline` (lane tracks, SVG links, bead, Replay controller), `StepDrawer`, `ApprovalCard`, `HoldButton` (ProgressRing), `DecisionSheet`, `AwaitingTile`, `EvidenceTile`, `HuntPanel`, `BehaviourPanel` (rhythm strips), `ActivityPanel` (Pagination), `Untrusted`;
 - brief: the `(read)/brief` routes and `SevenNights`.
 
-Clock maths lives in one `src/lib/time/clock.ts` (regime windows, business days with a US federal holiday list, timezone per regime). The UI never computes deadlines inline. Geist and Geist Mono are bundled (`@fontsource-variable/*`), so the app has no external runtime dependency.
+The shift chart's layout (the window, the scale, each incident's path, the intake bars and the axis marks) is pure TypeScript in `src/lib/util/shift.ts`, fed by one store (`src/lib/stores/shift.svelte.ts`) that reads the shift log since the window opened. Clock maths lives in one `src/lib/time/clock.ts` (regime windows, business days with a US federal holiday list, timezone per regime). The UI never computes deadlines inline. Recursive is bundled (`@fontsource-variable/recursive`), so the app has no external runtime dependency.
 
 **Regulatory facts used (designed to support, not legal advice):**
 - **NIS2 Art. 23:** early warning within 24 h of becoming aware, incident notification within 72 h, final report within one month of the notification.
