@@ -1,6 +1,7 @@
-// The shift chart (DESIGN.md §0): the night is the x-axis of the product, and response stages are lanes. Each
-// incident is one line that steps down through Triage → Investigate → Contain → Report at the times its log
-// records, like a train on a dispatcher's timetable graph. Pure functions, so the layout is testable.
+// The shift (DESIGN.md §8): the window of time the watch dial draws, and each incident's path through the response
+// stages. An incident steps from Triage → Investigate → Contain → Report at the times its log records, like a train
+// on a dispatcher's timetable graph; the dial draws the same path in polar form (time round the face, stages as
+// rings). Pure functions, so the layout is testable.
 import type { IncidentSummary, ShiftLogEntry, Stage } from '$lib/api/types';
 import { zonedParts, zonedTimeToUtc } from '$lib/time/clock';
 
@@ -192,23 +193,88 @@ export function intakeBars(rows: { at: Date; count: number }[], w: Pick<ShiftWin
 	return inWin.map((r) => ({ at: r.at, x: xOf(r.at, w), h: r.count / max, count: r.count }));
 }
 
-/** Marks for the shift axis: incidents opened, approvals, notices and clocks, in time order. */
-export interface AxisMark {
-	at: Date;
-	kind: 'incident' | 'approval' | 'notice';
-	glyph: string;
-	text: string;
-	refId: string | null;
+// ---------- the watch dial (DESIGN.md §8): the same layout in polar form ----------
+// A 24-hour face, midnight at the top, read clockwise. The shift is the lit sector, the hand is now, and each
+// incident runs clockwise along its stage ring and steps inward when its log records the next stage.
+
+/** The six watches of a ship's day, by local hour. */
+export const WATCHES = [
+	{ key: 'middle', label: 'middle', from: 0, to: 4 },
+	{ key: 'morning', label: 'morning', from: 4, to: 8 },
+	{ key: 'forenoon', label: 'forenoon', from: 8, to: 12 },
+	{ key: 'afternoon', label: 'afternoon', from: 12, to: 16 },
+	{ key: 'dog', label: 'dog', from: 16, to: 20 },
+	{ key: 'first', label: 'first', from: 20, to: 24 }
+] as const;
+/** The watch a moment falls in, in the org's time: "forenoon". */
+export function watchOf(d: Date, tz: string): (typeof WATCHES)[number] {
+	const h = zonedParts(d, tz).hour;
+	return WATCHES.find((w) => h >= w.from && h < w.to) ?? WATCHES[0];
 }
-export function axisMarks(log: ShiftLogEntry[], incidents: IncidentSummary[], w: Pick<ShiftWindow, 'start' | 'end'>): AxisMark[] {
-	const marks: AxisMark[] = [];
-	for (const i of incidents) {
-		if (+new Date(i.firstSeen) >= +w.start) marks.push({ at: new Date(i.firstSeen), kind: 'incident', glyph: '▲', text: `${i.reference} opened: ${i.title}`, refId: i.id });
-	}
-	for (const e of log) {
-		if (+new Date(e.at) < +w.start) continue;
-		if (e.kind === 'approval') marks.push({ at: new Date(e.at), kind: 'approval', glyph: '‖', text: e.text, refId: e.refId });
-		else if (e.kind === 'notice' || e.kind === 'clock') marks.push({ at: new Date(e.at), kind: 'notice', glyph: '✉', text: e.text, refId: e.refId });
-	}
-	return marks.sort((a, b) => +a.at - +b.at);
+/** Degrees on the 24-hour face (0 = midnight at the top, clockwise) of a local time, in [0, 360). */
+export function dialAngle(t: Date | string, tz: string): number {
+	const p = zonedParts(new Date(t), tz);
+	return ((p.hour * 3600 + p.minute * 60 + p.second) / 86400) * 360;
 }
+/** Unwrapped degrees from the window's start, so a line or the hand never runs backwards across midnight. The
+ *  window is at most a day; anything before it sits at its start. */
+export function dialAngleOn(t: Date | string, w: Pick<ShiftWindow, 'start' | 'end'>, tz: string): number {
+	const a0 = dialAngle(w.start, tz);
+	const span = Math.min(+w.end - +w.start, 23.75 * H);
+	const dt = Math.max(0, Math.min(span, +new Date(t) - +w.start));
+	return a0 + (dt / (24 * H)) * 360;
+}
+/** A point at `deg` degrees and radius r around (cx, cy). */
+export function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
+	const a = (deg * Math.PI) / 180;
+	return [cx + r * Math.sin(a), cy - r * Math.cos(a)];
+}
+/** An arc command from the current point at radius r, clockwise from a1 to a2 (degrees, a2 ≥ a1). */
+function arcTo(cx: number, cy: number, r: number, a1: number, a2: number): string {
+	if (a2 - a1 < 0.01) return '';
+	const parts: string[] = [];
+	let from = a1;
+	while (a2 - from > 179.9) {
+		const mid = from + 179.9;
+		const [x, y] = polar(cx, cy, r, mid);
+		parts.push(`A${r1(r)} ${r1(r)} 0 0 1 ${r1(x)} ${r1(y)}`);
+		from = mid;
+	}
+	const [x, y] = polar(cx, cy, r, a2);
+	parts.push(`A${r1(r)} ${r1(r)} 0 0 1 ${r1(x)} ${r1(y)}`);
+	return parts.join(' ');
+}
+/** The SVG path of one incident on the dial: arcs along each stage ring, radial steps inward between rings. */
+export function dialPath(p: IncidentPath, angle: (t: Date) => number, radius: (lane: number, track: number) => number, cx: number, cy: number): string {
+	const pts: string[] = [];
+	let a = angle(p.steps[0]!.at);
+	let r = radius(p.steps[0]!.lane, p.track);
+	const [x0, y0] = polar(cx, cy, r, a);
+	pts.push(`M${r1(x0)} ${r1(y0)}`);
+	for (const s of p.steps.slice(1)) {
+		const a2 = Math.max(a, angle(s.at));
+		const arc = arcTo(cx, cy, r, a, a2);
+		if (arc) pts.push(arc);
+		a = a2;
+		r = radius(s.lane, p.track);
+		const [x, y] = polar(cx, cy, r, a);
+		pts.push(`L${r1(x)} ${r1(y)}`);
+	}
+	const end = Math.max(a, angle(p.until));
+	const arc = arcTo(cx, cy, r, a, end);
+	if (arc) pts.push(arc);
+	return pts.join(' ');
+}
+/** An annular sector (a ring segment) from a1 to a2 between radii r0 < r1, for intake bars and the lit shift. */
+export function sectorPath(cx: number, cy: number, rIn: number, rOut: number, a1: number, a2: number): string {
+	if (a2 - a1 >= 359.9) {
+		const [ox, oy] = polar(cx, cy, rOut, 0);
+		const [ix, iy] = polar(cx, cy, rIn, 0);
+		return `M${r1(ox)} ${r1(oy)} ${arcTo(cx, cy, rOut, 0, 359.95)} Z M${r1(ix)} ${r1(iy)} ${arcTo(cx, cy, rIn, 0, 359.95)} Z`;
+	}
+	const [x1, y1] = polar(cx, cy, rOut, a1);
+	const [x2, y2] = polar(cx, cy, rIn, a2);
+	const large = a2 - a1 > 180 ? 1 : 0;
+	return `M${r1(x1)} ${r1(y1)} ${arcTo(cx, cy, rOut, a1, a2)} L${r1(x2)} ${r1(y2)} A${r1(rIn)} ${r1(rIn)} 0 ${large} 0 ${r1(polar(cx, cy, rIn, a1)[0])} ${r1(polar(cx, cy, rIn, a1)[1])} Z`;
+}
+const r1 = (n: number) => Math.round(n * 10) / 10;

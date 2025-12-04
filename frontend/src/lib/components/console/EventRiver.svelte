@@ -46,7 +46,7 @@
 					<span class="g mono" aria-hidden="true">{l.anomaly ? '◇' : l.incidentId ? '▸' : '·'}</span>
 					<p class:raw={!l.incidentId && !l.anomaly} class:resolve={!!l.incidentId}>
 						{#if l.incidentId && !landing}<a href="/incidents/{refs[l.incidentId] ?? l.incidentId}">{l.text}</a>{:else}{l.text}{/if}
-						<small class="mono">{timeOf(l.at, undefined, true)} · {l.anomaly ? 'unusual behaviour' : l.incidentId ? `${refs[l.incidentId] ?? 'incident'} · awaiting you` : (DS[l.dataset] ?? l.dataset)}</small>
+						<small>{timeOf(l.at, undefined, true)} · {l.anomaly ? 'unusual behaviour' : l.incidentId ? `${refs[l.incidentId] ?? 'incident'} · awaiting you` : (DS[l.dataset] ?? l.dataset)}</small>
 					</p>
 					{#if l.anomaly}<span class="sr">unusual behaviour</span>{/if}
 				</div>
@@ -58,15 +58,15 @@
 			{/if}
 		</section>
 	{:else}
-		<p class="emptyr mono faint">Waiting for the first events…</p>
+		<p class="emptyr faint">Waiting for the first events…</p>
 	{/each}
 </div>
 
 <style>
 	/* routine lines read as the log they are; a line that joins an incident resolves into plain words */
 	.ev p.raw {
-		font-variation-settings: 'MONO' 1;
-		font-size: 12.5px;
+		font: 400 12.5px/18px var(--code);
+		color: var(--dim);
 	}
 	.river {
 		position: relative;
@@ -77,17 +77,17 @@
 		gap: 8px;
 		margin: 0;
 		padding: 12px 14px 6px;
-		font-size: 11.5px;
+		font-size: 12px;
 		font-weight: 500;
 		line-height: 1;
-		color: var(--ink-2);
+		color: var(--ink);
 		white-space: nowrap;
 	}
 	.minute::after {
 		content: '';
 		flex: 1;
 		height: 1px;
-		background: var(--line);
+		background: var(--rule);
 	}
 	.minute span {
 		color: var(--faint);
@@ -108,8 +108,8 @@
 	}
 	.ev p {
 		margin: 0;
-		font-size: 13px;
-		line-height: 18px;
+		font-size: 14px;
+		line-height: 19px;
 		color: var(--ink-2);
 		overflow-wrap: anywhere;
 	}
@@ -121,34 +121,39 @@
 	}
 	.ev small {
 		display: block;
-		font-size: 11px;
+		font-family: var(--code);
+		font-size: 11.5px;
 		line-height: 16px;
 		color: var(--faint);
 	}
 	.ev.odd {
-		border-left-color: var(--amber);
-		background: color-mix(in srgb, var(--amber) 5%, transparent);
+		border-left-color: var(--soon);
+		background: color-mix(in srgb, var(--soon) 5%, transparent);
 	}
 	.ev.odd .g {
-		color: var(--amber);
+		color: var(--soon);
 	}
 	.ev.odd p {
 		color: var(--ink);
 	}
 	.ev.inc {
-		border-left-color: var(--teal);
+		border-left-color: var(--acc);
 	}
 	.ev.inc .g {
-		color: var(--teal);
+		color: var(--acc-hi);
+	}
+	.ev.inc p {
+		color: var(--ink);
+		font-weight: 600;
 	}
 	.fold {
 		display: block;
 		width: calc(100% - 40px);
 		margin: 2px 14px 2px 26px;
 		padding: 6px 10px;
-		border: 1px dashed var(--line-strong);
-		border-radius: 4px;
-		font-size: 11.5px;
+		border: 1px dashed var(--rule-2);
+		border-radius: 2px;
+		font-size: 12px;
 		line-height: 1.3;
 		color: var(--faint);
 		text-align: left;
@@ -163,10 +168,10 @@
 		display: block;
 		margin: 6px auto;
 		padding: 5px 10px;
-		border-radius: 4px;
+		border-radius: 2px;
 		background: var(--raised);
-		border: 1px solid var(--teal-line);
-		color: var(--teal);
+		border: 1px solid var(--acc-line);
+		color: var(--acc-hi);
 		font-size: 11.5px;
 	}
 	.emptyr {

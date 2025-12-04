@@ -1,10 +1,9 @@
 <script lang="ts">
-	// The watch (DESIGN.md §0.2): band 1 is the shift chart (every incident's path through the response, on the
-	// shift axis), band 2 the turnover (the handover sheet, written live, in the role's sections).
+	// The watch (DESIGN.md §4): a scope with four readouts. The watch dial in the centre (every incident's path
+	// through the response, on a 24-hour face), the turnover's four numbered readouts at its corners.
 	import { page } from '$app/state';
 	import { onDestroy } from 'svelte';
-	import Band from '$lib/components/ui/Band.svelte';
-	import ShiftChart from '$lib/components/console/ShiftChart.svelte';
+	import WatchDial from '$lib/components/console/WatchDial.svelte';
 	import Turnover from '$lib/components/console/Turnover.svelte';
 	import { api } from '$lib/api';
 	import type { ProposalDoc } from '$lib/api/types';
@@ -48,44 +47,54 @@
 	const holdId = $derived(page.url.searchParams.get('hold') ? 'focus-hold' : undefined);
 	const open = $derived(live.incidents.length);
 	const waiting = $derived(live.incidents.filter((i) => i.pendingApprovals > 0).length);
+	$effect(() => {
+		ui.setStation(page.url.pathname, 'The watch', `${plural(open, 'open incident')}${waiting ? ` · ${waiting} waiting for a person` : ''} · the shift since ${timeOf(shift.win.start, shift.tz)}`);
+	});
 </script>
 
 <svelte:head><title>The watch · Nightjar SOC</title></svelte:head>
 
-<h1 class="sr">The watch</h1>
-<Band title="the shift" sub="{timeOf(shift.win.start, shift.tz)} to now · {plural(open, 'open incident')}{waiting ? ` · ${waiting} waiting for a person` : ''}" flush>
-	{#snippet actions()}
-		<span class="legend mono hide-s" aria-hidden="true"><i class="r">━</i> high <i class="a">━</i> medium <i class="l">━</i> waiting for a person <i class="h">┃</i> handover</span>
-	{/snippet}
-	<ShiftChart win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} />
-</Band>
-<Band title="turnover" sub="what the next person needs" flush>
-	{#snippet actions()}<a class="lnk hide-s" href="/brief">the morning brief</a>{/snippet}
-	<Turnover {pending} focusIncidentId={focus?.id ?? null} {holdId} />
-</Band>
+<div class="watch rack">
+	<Turnover {pending} focusIncidentId={focus?.id ?? null} {holdId}>
+		{#snippet centre()}
+			<WatchDial win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} clocks={live.clocks} max={560} />
+			<p class="legend" aria-hidden="true"><span><i class="hi">━</i> high</span><span><i class="mid">━</i> medium</span><span><i class="pe">━</i> waiting for a person</span><span><i class="ho">┅</i> handover</span><span><i class="hi">▼</i> deadline</span><a class="lnk" href="/brief">The morning brief</a></p>
+		{/snippet}
+	</Turnover>
+</div>
 
 <style>
+	.watch {
+		padding-top: 22px;
+	}
 	.legend {
-		font-size: 11px;
+		margin: 10px 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 6px 16px;
+		font: 600 12.5px/1 var(--ui);
 		color: var(--faint);
-		display: inline-flex;
-		gap: 6px;
-		align-items: center;
 	}
 	.legend i {
 		font-style: normal;
-		margin-left: 6px;
+		margin-right: 5px;
 	}
-	.legend .r {
-		color: var(--red);
+	.legend .hi {
+		color: var(--acc);
 	}
-	.legend .a {
-		color: var(--amber);
+	.legend .mid {
+		color: var(--soon);
 	}
-	.legend .l {
-		color: var(--lav);
+	.legend .pe {
+		color: var(--person);
 	}
-	.legend .h {
-		color: var(--amber);
+	.legend .ho {
+		color: var(--soon);
+	}
+	@media (max-width: 760px) {
+		.legend {
+			display: none;
+		}
 	}
 </style>

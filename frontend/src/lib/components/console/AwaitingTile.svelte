@@ -54,13 +54,13 @@
 {:else}
 	<div class="quiet">
 		<p>Nothing is waiting for {firstName || 'you'}.</p>
-		<p class="mono faint">New approvals land here and as ‖ on the shift axis.</p>
+		<p class="faint">New approvals land here, light the Watch lamp and show as ‖ on the dial.</p>
 	</div>
 {/each}
 
 {#if notice && urgent}
 	<section class="notice" aria-label="Draft notice">
-		<div class="hd mono"><span>notice · draft {notice.version}</span><span>due {dueLabel(urgent.dueAt!, live.now, REGIME_TZ[urgent.regime])}</span></div>
+		<div class="hd"><span class="eng">Notice · draft {notice.version}</span><span>due {dueLabel(urgent.dueAt!, live.now, REGIME_TZ[urgent.regime])}</span></div>
 		<h3>{clockLongLabel(urgent)}</h3>
 		<div class="to">To {notice.recipient.name} · {urgent.incidentReference}</div>
 		<ul>
@@ -69,13 +69,13 @@
 			{/each}
 		</ul>
 		<div class="btns"><a class="btn preset-filled-surface-950-50" href={noticeHref(urgent)}>Open the draft</a><a class="btn preset-outlined-surface-300-700" href="{noticeHref(urgent)}&compare=1">Compare with evidence</a></div>
-		{#if missing.length}<p class="mono miss">◐ {missing.length} required {missing.length === 1 ? 'field' : 'fields'} still missing · {clockState(urgent, live.now) === 'on_track' ? 'on track' : 'due soon'}</p>{/if}
+		{#if missing.length}<p class="miss">◐ {missing.length} required {missing.length === 1 ? 'field' : 'fields'} still missing · {clockState(urgent, live.now) === 'on_track' ? 'on track' : 'due soon'}</p>{/if}
 	</section>
 {/if}
 
 {#if doneHere.length}
 	<section class="others" aria-label="Already decided in this incident">
-		<h4 class="mono faint">already decided · {bundle?.incident.reference}</h4>
+		<h4 class="eng faint">Already decided · {bundle?.incident.reference}</h4>
 		{#each doneHere as p (p.id)}
 			<div class="r">
 				<span>{actionTitle(p, people)}</span>
@@ -88,36 +88,42 @@
 <style>
 	.quiet {
 		padding: 22px 18px;
-		border-bottom: 1px solid var(--line);
-		font-size: 13.5px;
+		border-bottom: 1px solid var(--rule);
+		font-size: 14.5px;
 		color: var(--ink-2);
 	}
 	.quiet p {
 		margin: 0 0 6px;
 	}
-	.quiet .mono {
-		font-size: 11.5px;
+	.quiet .faint {
+		font-size: 13px;
 	}
 	.notice {
 		padding: 16px 18px;
-		border-bottom: 1px solid var(--line);
+		border-bottom: 1px solid var(--rule);
+		border-left: 3px solid var(--soon);
 	}
 	.hd {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-		font-size: 11.5px;
+		font: 500 12.5px/1 var(--code);
 		color: var(--faint);
 		gap: 8px;
 	}
+	.hd .eng {
+		font-size: 12.5px;
+		color: var(--dim);
+	}
 	h3 {
-		margin: 10px 0 2px;
-		font: 600 15px/1.3 var(--sans);
-		font-variation-settings: 'MONO' 0;
+		margin: 10px 0 4px;
+		font: 800 21px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 	.to {
-		font-size: 12.5px;
-		color: var(--muted);
+		font-size: 13.5px;
+		color: var(--dim);
 	}
 	ul {
 		list-style: none;
@@ -128,18 +134,19 @@
 	}
 	li {
 		display: grid;
-		grid-template-columns: 18px 1fr;
-		font-size: 12.5px;
+		grid-template-columns: 20px 1fr;
+		font-size: 13.5px;
 		color: var(--ink-2);
 	}
 	li .k {
-		color: var(--teal);
+		color: var(--ok);
 	}
 	li.todo .k {
-		color: var(--amber);
+		color: var(--soon);
 	}
 	li.todo {
 		color: var(--ink);
+		font-weight: 600;
 	}
 	.btns {
 		display: flex;
@@ -148,16 +155,16 @@
 	}
 	.miss {
 		margin: 12px 0 0;
-		font-size: 11.5px;
-		color: var(--amber);
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--soon);
 	}
 	.others {
 		padding: 12px 18px 16px;
 	}
 	h4 {
 		margin: 0 0 4px;
-		font-size: 11px;
-		font-weight: 400;
+		font-size: 12.5px;
 	}
 	.r {
 		display: flex;
@@ -165,12 +172,12 @@
 		align-items: center;
 		gap: 10px;
 		padding: 9px 0;
-		border-top: 1px solid var(--line);
-		font-size: 12.5px;
+		border-top: 1px solid var(--rule);
+		font-size: 13.5px;
 		color: var(--ink-2);
 	}
 	.r .mono {
-		font-size: 11.5px;
+		font-size: 12px;
 		color: var(--faint);
 		white-space: nowrap;
 	}
