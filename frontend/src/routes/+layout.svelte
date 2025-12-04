@@ -33,9 +33,9 @@
 	base="nj-toast flex items-baseline gap-3"
 	width="w-[min(480px,calc(100vw-32px))]"
 	padding="py-3 px-4"
-	rounded="rounded-[3px]"
+	rounded="rounded-[0px]"
 	titleBase="sr"
-	descriptionBase="text-[13.5px]"
+	descriptionBase="text-[14.5px] font-semibold"
 	btnDismissBase="btn-icon btn-sm ml-auto"
 	stateInfo="nj-toast-info"
 	stateSuccess="nj-toast-ok"
@@ -46,19 +46,19 @@
 
 <style>
 	:global(.nj-toast) {
-		background: var(--raised);
+		background: var(--plate);
 		color: var(--ink);
-		border: 1px solid var(--line-strong);
-		border-left: 2px solid var(--teal);
+		border: 1px solid var(--rule-2);
+		border-left: 5px solid var(--ok);
 		box-shadow: var(--shadow);
 	}
 	:global(.nj-toast-bad) {
-		border-left-color: var(--red);
+		border-left-color: var(--acc);
 	}
 	:global(.nj-toast-info) {
-		border-left-color: var(--muted);
+		border-left-color: var(--person);
 	}
 	:global([data-scope='toast'][data-part='group']) {
-		bottom: 60px !important;
+		bottom: 18px !important;
 	}
 </style>

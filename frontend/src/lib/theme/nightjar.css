@@ -1,24 +1,24 @@
-/* Nightjar: a Skeleton v3 theme generated from the night-watch palette (frontend/DESIGN.md §0, §8).
-   One set of scales serves both modes; Skeleton's light/dark pairings (primary-700-300 …) pick the day or the
-   night value from `color-scheme`, which follows <html data-theme>. */
+/* Nightjar SOC v3: a Skeleton v3 theme generated from the red-light palette (frontend/DESIGN.md §6–§7).
+   One set of scales serves both presentations; Skeleton's light/dark pairings (primary-700-300 …) pick the day or
+   the night value from `color-scheme`, which follows <html data-theme>. */
 
 :root {
 	--spacing: 0.25rem;
 	--text-scaling: 1;
 	--base-font-color: var(--color-surface-950);
 	--base-font-color-dark: var(--color-surface-50);
-	--base-font-family: 'Recursive Variable', ui-sans-serif, system-ui, sans-serif;
-	--base-font-size: 14px;
-	--base-line-height: 1.45;
+	--base-font-family: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+	--base-font-size: 15px;
+	--base-line-height: 1.5;
 	--base-font-weight: 400;
 	--base-font-style: normal;
 	--base-letter-spacing: 0em;
 	--heading-font-color: inherit;
 	--heading-font-color-dark: inherit;
-	--heading-font-family: inherit;
-	--heading-font-weight: 600;
+	--heading-font-family: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif;
+	--heading-font-weight: 800;
 	--heading-font-style: normal;
-	--heading-letter-spacing: -0.01em;
+	--heading-letter-spacing: 0.04em;
 	--anchor-font-color: var(--color-primary-700);
 	--anchor-font-color-dark: var(--color-primary-300);
 	--anchor-font-family: inherit;
@@ -33,25 +33,26 @@
 	--anchor-text-decoration-focus: none;
 	--body-background-color: var(--color-surface-100);
 	--body-background-color-dark: var(--color-surface-950);
-	/* controls are 3 px; bands and sheets are hard-edged */
-	--radius-base: 3px;
+	/* controls are 2 px; plates, strips and sheets are hard-edged */
+	--radius-base: 2px;
 	--radius-container: 0px;
 	--default-border-width: 1px;
 	--default-divide-width: 1px;
 	--default-ring-width: 1px;
 
-	/* surface: day sunk #F6F8F9 … night bg #070B10. 200-800 = hairline, 300-700 = strong rule */
-	--color-surface-50: #f6f8f9;
-	--color-surface-100: #e9eef0;
-	--color-surface-200: #dce3e7;
-	--color-surface-300: #c4ced4;
-	--color-surface-400: #8191a0;
-	--color-surface-500: #5f6e78;
-	--color-surface-600: #3a4855;
-	--color-surface-700: #283646;
-	--color-surface-800: #1a2430;
-	--color-surface-900: #0c1219;
-	--color-surface-950: #070b10;
+
+	/* surface: bone #FBF8F4 (day plate) … #120A08 (the room at night). 200-800 = hairline, 300-700 = strong rule */
+	--color-surface-50: #fbf8f4;
+	--color-surface-100: #f3eee8;
+	--color-surface-200: #e0d6cd;
+	--color-surface-300: #c2b2a6;
+	--color-surface-400: #9a857c;
+	--color-surface-500: #705b53;
+	--color-surface-600: #553630;
+	--color-surface-700: #33201b;
+	--color-surface-800: #231512;
+	--color-surface-900: #1a100d;
+	--color-surface-950: #120a08;
 	--color-surface-contrast-dark: var(--color-surface-950);
 	--color-surface-contrast-light: var(--color-surface-50);
 	--color-surface-contrast-50: var(--color-surface-contrast-dark);
@@ -66,18 +67,18 @@
 	--color-surface-contrast-900: var(--color-surface-contrast-light);
 	--color-surface-contrast-950: var(--color-surface-contrast-light);
 
-	/* primary: mint teal. 300 is the night accent #3CE6C8, 700 the day accent #087565 */
-	--color-primary-50: #e7fbf7;
-	--color-primary-100: #c4f6ec;
-	--color-primary-200: #8eeedb;
-	--color-primary-300: #3ce6c8;
-	--color-primary-400: #22c9ad;
-	--color-primary-500: #14a68f;
-	--color-primary-600: #0d917c;
-	--color-primary-700: #087565;
-	--color-primary-800: #0a5f53;
-	--color-primary-900: #08423a;
-	--color-primary-950: #062a24;
+	/* primary: night-vision red, hue ≈ 5°. 300 the night text red #FF8270, 500 the lamp #FF5340, 700 the day red #B3241A */
+	--color-primary-50: #fff0ed;
+	--color-primary-100: #ffd9d2;
+	--color-primary-200: #ffb3a6;
+	--color-primary-300: #ff8270;
+	--color-primary-400: #ff6a55;
+	--color-primary-500: #ff5340;
+	--color-primary-600: #e03a28;
+	--color-primary-700: #b3241a;
+	--color-primary-800: #8a1a12;
+	--color-primary-900: #5c110b;
+	--color-primary-950: #350905;
 	--color-primary-contrast-dark: var(--color-primary-950);
 	--color-primary-contrast-light: #ffffff;
 	--color-primary-contrast-50: var(--color-primary-contrast-dark);
@@ -92,70 +93,70 @@
 	--color-primary-contrast-900: var(--color-primary-contrast-light);
 	--color-primary-contrast-950: var(--color-primary-contrast-light);
 
-	/* secondary: lavender, "waiting for a person" and ◆ decisions. 300 night #B6A8FF, 700 day #5B45C9 */
-	--color-secondary-50: #f3f0ff;
-	--color-secondary-100: #e4ddff;
-	--color-secondary-200: #cfc4ff;
-	--color-secondary-300: #b6a8ff;
-	--color-secondary-400: #9a87f5;
-	--color-secondary-500: #7d68e6;
-	--color-secondary-600: #6a54d6;
-	--color-secondary-700: #5b45c9;
-	--color-secondary-800: #47349f;
-	--color-secondary-900: #32246f;
-	--color-secondary-950: #1f1645;
+	/* secondary: lamp white, "waiting for a person" and ◆ decisions (the brightest lamp at night, ink by day) */
+	--color-secondary-50: #fff6f2;
+	--color-secondary-100: #ffece4;
+	--color-secondary-200: #ffe4da;
+	--color-secondary-300: #f4d2c6;
+	--color-secondary-400: #d9b6a9;
+	--color-secondary-500: #b3958a;
+	--color-secondary-600: #8a6f66;
+	--color-secondary-700: #5e4943;
+	--color-secondary-800: #3d2d29;
+	--color-secondary-900: #261b18;
+	--color-secondary-950: #160f0d;
 	--color-secondary-contrast-dark: var(--color-secondary-950);
-	--color-secondary-contrast-light: #ffffff;
+	--color-secondary-contrast-light: var(--color-secondary-50);
 	--color-secondary-contrast-50: var(--color-secondary-contrast-dark);
 	--color-secondary-contrast-100: var(--color-secondary-contrast-dark);
 	--color-secondary-contrast-200: var(--color-secondary-contrast-dark);
 	--color-secondary-contrast-300: var(--color-secondary-contrast-dark);
 	--color-secondary-contrast-400: var(--color-secondary-contrast-dark);
-	--color-secondary-contrast-500: var(--color-secondary-contrast-light);
+	--color-secondary-contrast-500: var(--color-secondary-contrast-dark);
 	--color-secondary-contrast-600: var(--color-secondary-contrast-light);
 	--color-secondary-contrast-700: var(--color-secondary-contrast-light);
 	--color-secondary-contrast-800: var(--color-secondary-contrast-light);
 	--color-secondary-contrast-900: var(--color-secondary-contrast-light);
 	--color-secondary-contrast-950: var(--color-secondary-contrast-light);
 
-	/* tertiary: steel, routine and quiet lines */
-	--color-tertiary-50: #f1f4f6;
-	--color-tertiary-100: #dfe5e9;
-	--color-tertiary-200: #c4ced4;
-	--color-tertiary-300: #a5b3be;
-	--color-tertiary-400: #8191a0;
-	--color-tertiary-500: #687886;
-	--color-tertiary-600: #53626e;
-	--color-tertiary-700: #3f4c57;
-	--color-tertiary-800: #2b3943;
-	--color-tertiary-900: #1a242c;
-	--color-tertiary-950: #0e151b;
+	/* tertiary: warm greys, routine and quiet lines */
+	--color-tertiary-50: #f6f1ec;
+	--color-tertiary-100: #e9e0d8;
+	--color-tertiary-200: #d4c6bb;
+	--color-tertiary-300: #bba89b;
+	--color-tertiary-400: #9e877c;
+	--color-tertiary-500: #836c62;
+	--color-tertiary-600: #6a5750;
+	--color-tertiary-700: #4f3f39;
+	--color-tertiary-800: #382b27;
+	--color-tertiary-900: #241a17;
+	--color-tertiary-950: #150e0c;
 	--color-tertiary-contrast-dark: var(--color-tertiary-950);
-	--color-tertiary-contrast-light: #ffffff;
+	--color-tertiary-contrast-light: var(--color-tertiary-50);
 	--color-tertiary-contrast-50: var(--color-tertiary-contrast-dark);
 	--color-tertiary-contrast-100: var(--color-tertiary-contrast-dark);
 	--color-tertiary-contrast-200: var(--color-tertiary-contrast-dark);
 	--color-tertiary-contrast-300: var(--color-tertiary-contrast-dark);
 	--color-tertiary-contrast-400: var(--color-tertiary-contrast-dark);
-	--color-tertiary-contrast-500: var(--color-tertiary-contrast-light);
+	--color-tertiary-contrast-500: var(--color-tertiary-contrast-dark);
 	--color-tertiary-contrast-600: var(--color-tertiary-contrast-light);
 	--color-tertiary-contrast-700: var(--color-tertiary-contrast-light);
 	--color-tertiary-contrast-800: var(--color-tertiary-contrast-light);
 	--color-tertiary-contrast-900: var(--color-tertiary-contrast-light);
 	--color-tertiary-contrast-950: var(--color-tertiary-contrast-light);
 
-	/* success: contained, sent (the teal family leaning green) */
-	--color-success-50: #e8faf1;
-	--color-success-100: #c6f2dc;
-	--color-success-200: #95e6bf;
-	--color-success-300: #5fd6a0;
-	--color-success-400: #34c085;
-	--color-success-500: #1fa36d;
-	--color-success-600: #168a5b;
-	--color-success-700: #11744c;
-	--color-success-800: #0e5a3b;
-	--color-success-900: #0a3f2a;
-	--color-success-950: #06281a;
+	/* success: contained, sent, authorised. 300 night #86CFA2, 700 day #1E6A44 */
+	--color-success-50: #ecf8f0;
+	--color-success-100: #d0efdb;
+	--color-success-200: #a9e1bf;
+	--color-success-300: #86cfa2;
+	--color-success-400: #5fb783;
+	--color-success-500: #3f9a66;
+	--color-success-600: #2b8053;
+	--color-success-700: #1e6a44;
+	--color-success-800: #175236;
+	--color-success-900: #103a26;
+	--color-success-950: #082416;
 	--color-success-contrast-dark: var(--color-success-950);
 	--color-success-contrast-light: #ffffff;
 	--color-success-contrast-50: var(--color-success-contrast-dark);
@@ -170,18 +171,18 @@
 	--color-success-contrast-900: var(--color-success-contrast-light);
 	--color-success-contrast-950: var(--color-success-contrast-light);
 
-	/* warning: amber, due soon. 300 night #F2B84B, 700 day #8A5D00 */
-	--color-warning-50: #fdf6e3;
-	--color-warning-100: #fbe9bd;
-	--color-warning-200: #f8d98d;
-	--color-warning-300: #f2b84b;
-	--color-warning-400: #dc9d2a;
-	--color-warning-500: #b8800f;
-	--color-warning-600: #9c6c05;
-	--color-warning-700: #8a5d00;
-	--color-warning-800: #6b4800;
-	--color-warning-900: #4a3200;
-	--color-warning-950: #2c1d00;
+	/* warning: sodium amber, due soon, unusual, missing. 300 night #F2B04A, 700 day #8A5200 */
+	--color-warning-50: #fdf5e6;
+	--color-warning-100: #fae6c2;
+	--color-warning-200: #f6cf89;
+	--color-warning-300: #f2b04a;
+	--color-warning-400: #dc9529;
+	--color-warning-500: #b97a12;
+	--color-warning-600: #9a6407;
+	--color-warning-700: #8a5200;
+	--color-warning-800: #6a3f00;
+	--color-warning-900: #4a2c00;
+	--color-warning-950: #2c1a00;
 	--color-warning-contrast-dark: var(--color-warning-950);
 	--color-warning-contrast-light: #ffffff;
 	--color-warning-contrast-50: var(--color-warning-contrast-dark);
@@ -196,18 +197,18 @@
 	--color-warning-contrast-900: var(--color-warning-contrast-light);
 	--color-warning-contrast-950: var(--color-warning-contrast-light);
 
-	/* error: overdue, critical. 400 night #FF6B5E, 700 day #B42318 */
-	--color-error-50: #fff0ee;
-	--color-error-100: #ffdcd7;
-	--color-error-200: #ffb8ae;
-	--color-error-300: #ff8a7d;
-	--color-error-400: #ff6b5e;
-	--color-error-500: #e5483b;
-	--color-error-600: #c9342a;
-	--color-error-700: #b42318;
-	--color-error-800: #8c1b13;
-	--color-error-900: #5f130d;
-	--color-error-950: #3a0b07;
+	/* error: overdue, critical (shown inverted and with ● so it never relies on hue) */
+	--color-error-50: #fff0ed;
+	--color-error-100: #ffd9d2;
+	--color-error-200: #ffb3a6;
+	--color-error-300: #ff8270;
+	--color-error-400: #ff6a55;
+	--color-error-500: #ff5340;
+	--color-error-600: #e03a28;
+	--color-error-700: #b3241a;
+	--color-error-800: #8a1a12;
+	--color-error-900: #5c110b;
+	--color-error-950: #350905;
 	--color-error-contrast-dark: var(--color-error-950);
 	--color-error-contrast-light: #ffffff;
 	--color-error-contrast-50: var(--color-error-contrast-dark);
@@ -215,8 +216,8 @@
 	--color-error-contrast-200: var(--color-error-contrast-dark);
 	--color-error-contrast-300: var(--color-error-contrast-dark);
 	--color-error-contrast-400: var(--color-error-contrast-dark);
-	--color-error-contrast-500: var(--color-error-contrast-light);
-	--color-error-contrast-600: var(--color-error-contrast-light);
+	--color-error-contrast-500: var(--color-error-contrast-dark);
+	--color-error-contrast-600: var(--color-error-contrast-dark);
 	--color-error-contrast-700: var(--color-error-contrast-light);
 	--color-error-contrast-800: var(--color-error-contrast-light);
 	--color-error-contrast-900: var(--color-error-contrast-light);

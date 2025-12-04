@@ -19,7 +19,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fontsource-variable/recursive": "5.2.8",
+    "@fontsource-variable/big-shoulders-display": "5.2.5",
+    "@fontsource-variable/fira-code": "5.2.7",
+    "@fontsource-variable/manrope": "5.2.8",
     "@skeletonlabs/skeleton": "3.2.2",
     "@skeletonlabs/skeleton-svelte": "1.5.3"
   },

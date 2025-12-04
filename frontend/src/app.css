@@ -2,37 +2,38 @@
 @import '@skeletonlabs/skeleton';
 @import '@skeletonlabs/skeleton/optional/presets';
 @import './lib/theme/nightjar.css';
-@import '@fontsource-variable/recursive/mono.css';
+@import '@fontsource-variable/big-shoulders-display/index.css';
+@import '@fontsource-variable/manrope/index.css';
+@import '@fontsource-variable/fira-code/index.css';
 
 @source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
 /* Skeleton's light/dark pairings and Tailwind's dark: variant follow the attribute the app already sets. */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
-/* Nightjar SOC tokens (frontend/DESIGN.md §0 and §8). Night is the default; "day watch" is the console in light;
-   the brief has its own dawn / night-edition tokens under .brief. The Skeleton theme (lib/theme/nightjar.css) is
-   built from the same values, so component presets and these tokens never disagree.
-   Type is one family, Recursive: Sans Linear for what a person reads, Mono Linear (the MONO axis at 1) for what a
-   machine wrote or a clock counts. */
+/* Nightjar SOC v3, "red light" (frontend/DESIGN.md §5–§7). Night is the default: an operations room lit red so the
+   watch keeps its night vision. Day is the same room by daylight. State is carried by glyph, word and brightness;
+   hue only reinforces it. Type: Big Shoulders Display for stencil-board headings (capitals, tracked), Manrope for
+   everything a person reads, Fira Code for what a clock counts or a machine wrote. */
 
 @theme inline {
-	--font-sans: 'Recursive Variable', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Recursive Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	--font-sans: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Fira Code Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	--font-display: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif-condensed, sans-serif;
 	--color-bg: var(--bg);
-	--color-pane: var(--pane);
+	--color-plate: var(--plate);
 	--color-raised: var(--raised);
 	--color-sunk: var(--sunk);
-	--color-line: var(--line);
-	--color-line-strong: var(--line-strong);
+	--color-rule: var(--rule);
+	--color-rule-2: var(--rule-2);
 	--color-ink: var(--ink);
 	--color-ink-2: var(--ink-2);
-	--color-muted: var(--muted);
+	--color-dim: var(--dim);
 	--color-faint: var(--faint);
-	--color-teal: var(--teal);
-	--color-teal-ink: var(--teal-ink);
-	--color-amber: var(--amber);
-	--color-red: var(--red);
-	--color-lav: var(--lav);
+	--color-acc: var(--acc);
+	--color-person: var(--person);
+	--color-soon: var(--soon);
+	--color-ok: var(--ok);
 	--ease-tick: cubic-bezier(0.2, 0.9, 0.1, 1);
 	--ease-drop: cubic-bezier(0.2, 1.3, 0.35, 1);
 	--ease-stamp: cubic-bezier(0.2, 1.4, 0.3, 1);
@@ -42,66 +43,75 @@
 
 :root {
 	color-scheme: dark;
-	--bg: #070b10;
-	--pane: #0c1219;
-	--raised: #121a23;
-	--sunk: #090e14;
-	--line: #1a2430;
-	--line-strong: #283646;
-	--ink: #e3ebf1;
-	--ink-2: #b9c6d0;
-	--muted: #8191a0;
-	--faint: #75879a;
-	--teal: #3ce6c8;
-	--teal-ink: #062a24;
-	--teal-wash: rgba(60, 230, 200, 0.1);
-	--teal-line: rgba(60, 230, 200, 0.38);
-	--amber: #f2b84b;
-	--red: #ff6b5e;
-	--lav: #b6a8ff;
-	--lav-wash: rgba(182, 168, 255, 0.1);
-	--sel: rgba(60, 230, 200, 0.16);
-	--night: rgba(0, 0, 0, 0.32);
-	--shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-	--sans: 'Recursive Variable', ui-sans-serif, system-ui, sans-serif;
-	--mono: 'Recursive Variable', ui-monospace, 'SF Mono', Menlo, monospace;
-	/* the shift grid: lane labels | the night | the deadline gutter. The axis and every chart share it. */
-	--gut: 150px;
-	--dl: minmax(250px, 32%);
-}
-@media (max-width: 1100px) {
-	:root {
-		--gut: 56px;
-		--dl: 210px;
-	}
+	/* the room at night */
+	--bg: #120a08;
+	--plate: #1a100d;
+	--raised: #231512;
+	--sunk: #0c0605;
+	--rule: #33201b;
+	--rule-2: #553630;
+	--ink: #f6e9e3;
+	--ink-2: #d9c3ba;
+	--dim: #b39a91;
+	--faint: #a1857c;
+	/* night-vision red, hue ≈ 5° */
+	--acc: #ff5340;
+	--acc-hi: #ff8270;
+	--acc-ink: #1a0805;
+	--acc-wash: rgba(255, 83, 64, 0.12);
+	--acc-line: rgba(255, 83, 64, 0.45);
+	--acc-glow: rgba(255, 83, 64, 0.28);
+	/* status: the brightest lamp is what needs a person */
+	--person: #ffe4da;
+	--person-wash: rgba(255, 228, 218, 0.08);
+	--soon: #f2b04a;
+	--ok: #86cfa2;
+	--ok-ink: #0c1a11;
+	--alarm: #ff8270;
+	--sel: rgba(255, 83, 64, 0.14);
+	--night: rgba(0, 0, 0, 0.35);
+	--shadow: 0 28px 90px rgba(0, 0, 0, 0.65);
+	--ui: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+	--code: 'Fira Code Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+	--display: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif;
+	--gut: 24px;
 }
 :root[data-theme='light'] {
 	color-scheme: light;
-	--bg: #e9eef0;
-	--pane: #ffffff;
-	--raised: #f3f6f7;
-	--sunk: #f6f8f9;
-	--line: #dce3e7;
-	--line-strong: #c4ced4;
-	--ink: #0b141b;
-	--ink-2: #2b3943;
-	--muted: #53626e;
-	--faint: #5f6e78;
-	--teal: #087565;
-	--teal-ink: #ffffff;
-	--teal-wash: rgba(8, 117, 101, 0.08);
-	--teal-line: rgba(8, 117, 101, 0.45);
-	--amber: #8a5d00;
-	--red: #b42318;
-	--lav: #5b45c9;
-	--lav-wash: rgba(91, 69, 201, 0.07);
-	--sel: rgba(8, 117, 101, 0.1);
-	--night: rgba(11, 20, 27, 0.05);
-	--shadow: 0 24px 70px rgba(14, 30, 40, 0.18);
+	/* the same room by daylight */
+	--bg: #f3eee8;
+	--plate: #fbf8f4;
+	--raised: #ece5de;
+	--sunk: #e9e2da;
+	--rule: #e0d6cd;
+	--rule-2: #c2b2a6;
+	--ink: #1d1311;
+	--ink-2: #47362f;
+	--dim: #6a5750;
+	--faint: #705b53;
+	--acc: #b3241a;
+	--acc-hi: #b3241a;
+	--acc-ink: #ffffff;
+	--acc-wash: rgba(179, 36, 26, 0.08);
+	--acc-line: rgba(179, 36, 26, 0.45);
+	--acc-glow: rgba(179, 36, 26, 0.14);
+	--person: #1d1311;
+	--person-wash: rgba(29, 19, 17, 0.05);
+	--soon: #8a5200;
+	--ok: #1e6a44;
+	--ok-ink: #ffffff;
+	--alarm: #b3241a;
+	--sel: rgba(179, 36, 26, 0.08);
+	--night: rgba(29, 19, 17, 0.05);
+	--shadow: 0 24px 70px rgba(40, 18, 10, 0.18);
+}
+@media (max-width: 760px) {
+	:root {
+		--gut: 14px;
+	}
 }
 
-/* Element resets live in the base layer so Skeleton's utilities and presets (backgrounds, borders, padding,
-   colours on buttons and links) win over them. */
+/* Element resets live in the base layer so Skeleton's utilities and presets win over them. */
 @layer base {
 	* {
 		box-sizing: border-box;
@@ -113,9 +123,9 @@
 	body {
 		background: var(--bg);
 		color: var(--ink);
-		font: 400 14px/1.45 var(--sans);
-		font-variation-settings: 'MONO' 0;
+		font: 400 15px/1.5 var(--ui);
 		-webkit-font-smoothing: antialiased;
+		font-feature-settings: 'ss01';
 	}
 	button {
 		font: inherit;
@@ -137,35 +147,60 @@
 		font: inherit;
 		color: inherit;
 	}
+	h1,
+	h2,
+	h3,
+	h4 {
+		font-family: var(--display);
+		text-transform: uppercase;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		line-height: 0.95;
+	}
 }
+
+/* ---------- type roles ---------- */
 .mono {
-	font-family: var(--mono);
-	font-variation-settings: 'MONO' 1;
+	font-family: var(--code);
 	font-feature-settings: 'tnum', 'zero';
+	font-variant-ligatures: none;
+	letter-spacing: 0;
 }
 .tnum {
 	font-feature-settings: 'tnum', 'zero';
 }
-.muted {
-	color: var(--muted);
+/* the stencil-board label: capitals, tracked, condensed */
+.eng {
+	font-family: var(--display);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.16em;
+	line-height: 1;
+}
+.dim {
+	color: var(--dim);
 }
 .faint {
 	color: var(--faint);
 }
-.teal {
-	color: var(--teal);
+.acc {
+	color: var(--acc-hi);
 }
-.amber {
-	color: var(--amber);
+.person {
+	color: var(--person);
+	font-weight: 700;
 }
-.lav {
-	color: var(--lav);
+.soon {
+	color: var(--soon);
 }
-.red {
-	color: var(--red);
+.ok {
+	color: var(--ok);
+}
+.alarm {
+	color: var(--alarm);
 }
 :focus-visible {
-	outline: 2px solid var(--teal);
+	outline: 2px solid var(--acc);
 	outline-offset: 2px;
 }
 .sr {
@@ -181,11 +216,11 @@
 	left: 8px;
 	top: -60px;
 	z-index: 100;
-	background: var(--teal);
-	color: var(--teal-ink);
+	background: var(--acc);
+	color: var(--acc-ink);
 	padding: 8px 12px;
-	border-radius: 3px;
-	font-weight: 500;
+	border-radius: 2px;
+	font-weight: 700;
 }
 .skip-link:focus {
 	top: 8px;
@@ -198,69 +233,101 @@
 	gap: 9px;
 	text-decoration: none;
 	white-space: nowrap;
-}
-.brand svg {
-	width: 22px;
-	height: 22px;
-	color: var(--teal);
-	flex: none;
-}
-.brand b {
-	font: 600 14px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
-	letter-spacing: -0.01em;
+	font: 800 15px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
 	color: var(--ink);
 }
+.brand svg {
+	width: 24px;
+	height: 24px;
+	color: var(--acc);
+	flex: none;
+}
 .brand i {
-	font: 400 14px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
 	font-style: normal;
-	color: var(--muted);
+	color: var(--acc-hi);
+}
+
+/* ---------- corner ticks: the bezel marks on the dial, the hold box and the decision plate ---------- */
+.ticks {
+	--tk: var(--rule-2);
+	--tl: 12px;
+	background-image:
+		linear-gradient(var(--tk), var(--tk)), linear-gradient(var(--tk), var(--tk)), linear-gradient(var(--tk), var(--tk)),
+		linear-gradient(var(--tk), var(--tk)), linear-gradient(var(--tk), var(--tk)), linear-gradient(var(--tk), var(--tk)),
+		linear-gradient(var(--tk), var(--tk)), linear-gradient(var(--tk), var(--tk));
+	background-position:
+		top left, top left, top right, top right,
+		bottom left, bottom left, bottom right, bottom right;
+	background-size:
+		var(--tl) 1px, 1px var(--tl), var(--tl) 1px, 1px var(--tl),
+		var(--tl) 1px, 1px var(--tl), var(--tl) 1px, 1px var(--tl);
+	background-repeat: no-repeat;
 }
 
 /* ---------- the Nightjar skin over Skeleton's utilities ---------- */
 kbd {
-	font: 500 11px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
+	font: 500 11px/1 var(--code);
 	color: var(--ink-2);
 	padding: 3px 5px;
-	border-radius: 3px;
-	border: 1px solid var(--line-strong);
+	border-radius: 2px;
+	border: 1px solid var(--rule-2);
 	border-bottom-width: 2px;
 	background: var(--sunk);
 	white-space: nowrap;
 }
 .btn {
-	height: 32px;
-	padding-inline: 12px;
-	font-size: 13px;
-	font-weight: 500;
-	line-height: 1;
+	height: 36px;
+	padding-inline: 16px;
+	font: 700 15px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
 	gap: 8px;
+	border-radius: 2px;
+}
+.btn[class*='preset-filled-primary'] {
+	background: var(--acc);
+	color: var(--acc-ink);
+	box-shadow:
+		inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+		0 0 0 1px var(--acc),
+		0 0 22px -6px var(--acc-glow);
+}
+.btn[class*='preset-filled-primary']:hover:not(:disabled) {
+	filter: brightness(1.08);
+}
+.btn[class*='preset-filled-surface'] {
+	background: var(--ink);
+	color: var(--bg);
 }
 .btn[class*='preset-outlined'] {
 	color: var(--ink);
 	background: transparent;
+	box-shadow: inset 0 0 0 1px var(--rule-2);
+	border: 0;
 }
 .btn[class*='preset-outlined']:hover:not(:disabled) {
 	filter: none;
-	border-color: var(--muted);
+	box-shadow: inset 0 0 0 1px var(--dim);
+	background: var(--raised);
 }
 .btn-sm {
-	height: 26px;
-	padding-inline: 9px;
-	font-size: 12px;
+	height: 28px;
+	padding-inline: 11px;
+	font-size: 13px;
+	letter-spacing: 0.12em;
 }
 .btn-lg {
-	height: 44px;
-	padding-inline: 18px;
-	font-size: 15px;
+	height: 48px;
+	padding-inline: 22px;
+	font-size: 18px;
 }
 .btn-icon {
 	width: 32px;
 	height: 32px;
 	padding: 0;
-	color: var(--muted);
+	color: var(--dim);
 }
 .btn-icon:hover:not(:disabled) {
 	color: var(--ink);
@@ -272,45 +339,48 @@ kbd {
 }
 .badge,
 .chip {
-	font: 500 11.5px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
-	height: 22px;
-	padding-inline: 8px;
+	font: 700 12px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	height: 24px;
+	padding-inline: 9px;
 	gap: 6px;
+	border-radius: 2px;
 }
 .lnk {
-	font: 400 12px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
-	color: var(--muted);
+	font: 600 13px/1 var(--ui);
+	color: var(--ink-2);
 	text-decoration: none;
-	border-bottom: 1px solid var(--line-strong);
-	padding-bottom: 2px;
+	border-bottom: 1px solid var(--rule-2);
+	padding-bottom: 3px;
 	white-space: nowrap;
 }
 .lnk:hover {
 	color: var(--ink);
-	border-color: var(--muted);
+	border-color: var(--acc);
 }
 .label {
 	display: grid;
-	gap: 6px;
+	gap: 7px;
 }
 .label > span:first-child,
 .label-text {
-	font: 400 12px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
-	color: var(--muted);
+	font: 700 12.5px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.16em;
+	color: var(--dim);
 }
 .input,
 .select,
 .textarea {
-	min-height: 36px;
-	padding-inline: 11px;
+	min-height: 40px;
+	padding-inline: 12px;
 	background: var(--sunk);
 	color: var(--ink);
-	font-size: 14px;
+	font-size: 15px;
 	min-width: 0;
-	--tw-ring-color: var(--line-strong);
+	border-radius: 2px;
+	--tw-ring-color: var(--rule-2);
 }
 .textarea {
 	padding-block: 10px;
@@ -320,80 +390,119 @@ kbd {
 .input:focus,
 .select:focus,
 .textarea:focus {
-	--tw-ring-color: var(--teal);
-	outline: 2px solid var(--teal);
+	--tw-ring-color: var(--acc);
+	outline: 2px solid var(--acc);
 	outline-offset: -1px;
 }
 .ferr {
-	font: 400 12px/1.4 var(--mono);
-	font-variation-settings: 'MONO' 1;
-	color: var(--red);
+	font: 600 13px/1.4 var(--ui);
+	color: var(--alarm);
 }
+.ferr::before {
+	content: '● ';
+}
+
+/* ---------- strip bays: every register is strips racked in a bay (Skeleton `table`) ---------- */
 .table {
-	font-size: 13px;
-	border-collapse: collapse;
+	font-size: 14px;
+	border-collapse: separate;
+	border-spacing: 0 4px;
+	margin-top: -4px;
 }
 .table th {
-	font: 400 11.5px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
-	color: var(--faint);
-	padding: 10px 14px;
-	border-bottom: 1px solid var(--line);
+	font: 700 12px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.16em;
+	color: var(--dim);
+	padding: 12px 14px 8px;
+	text-align: left;
 	white-space: nowrap;
 	position: sticky;
 	top: 0;
-	background: var(--pane);
+	background: var(--bg);
 	z-index: 1;
+	border: 0;
 }
 .table td {
 	padding: 11px 14px;
-	border-bottom: 1px solid var(--line);
 	color: var(--ink-2);
 	vertical-align: top;
+	background: var(--plate);
+	border-top: 1px solid var(--rule);
+	border-bottom: 1px solid var(--rule);
+	border-left: 1px solid var(--rule);
+}
+.table td:first-child {
+	border-left: 4px solid var(--hold, var(--rule-2));
+}
+.table td:last-child {
+	border-right: 1px solid var(--rule);
 }
 .table tr.sel td {
 	background: var(--sel);
 }
 .table tbody tr:hover td {
-	background: color-mix(in srgb, var(--raised) 70%, transparent);
+	background: var(--raised);
 }
 .table tr.sel:hover td {
 	background: var(--sel);
 }
 .table td.m {
-	font: 400 12px/1.4 var(--mono);
-	font-variation-settings: 'MONO' 1;
+	font: 400 12.5px/1.4 var(--code);
+	font-feature-settings: 'tnum', 'zero';
 	color: var(--faint);
 	white-space: nowrap;
 }
 .table .rowbtn {
 	text-align: left;
 	color: var(--ink);
-	font-weight: 500;
+	font-weight: 700;
+}
+.table tr.h-acc {
+	--hold: var(--acc);
+}
+.table tr.h-soon {
+	--hold: var(--soon);
+}
+.table tr.h-person {
+	--hold: var(--person);
+}
+.table tr.h-ok {
+	--hold: var(--ok);
 }
 
 /* ---------- status glyphs (never colour alone) ---------- */
 .sev {
-	font: 500 12px/1 var(--mono);
-	font-variation-settings: 'MONO' 1;
+	font: 700 12.5px/1 var(--display);
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
 	display: inline-flex;
-	gap: 6px;
+	gap: 7px;
 	align-items: center;
 	white-space: nowrap;
 }
 .sev .bars {
+	font-family: var(--code);
 	letter-spacing: -1px;
+	font-size: 11px;
 }
-.sev.critical .bars,
-.sev.high .bars {
-	color: var(--red);
+.sev.critical {
+	background: var(--acc);
+	color: var(--acc-ink);
+	padding: 4px 7px;
+	border-radius: 2px;
 }
-.sev.medium .bars {
-	color: var(--amber);
+.sev.high .bars,
+.sev.high {
+	color: var(--acc-hi);
 }
-.sev.low .bars,
-.sev.info .bars {
-	color: var(--muted);
+.sev.medium .bars,
+.sev.medium {
+	color: var(--soon);
+}
+.sev.low,
+.sev.info {
+	color: var(--dim);
 }
 
 /* ---------- scroll areas ---------- */
@@ -402,39 +511,39 @@ kbd {
 	min-height: 0;
 	flex: 1;
 	scrollbar-width: thin;
-	scrollbar-color: var(--line-strong) transparent;
+	scrollbar-color: var(--rule-2) transparent;
 }
 
 /* ---------- untrusted text (contract §1.1) ---------- */
 .untrusted {
 	display: block;
-	font: 400 12px/1.5 var(--mono);
-	font-variation-settings: 'MONO' 1;
+	font: 400 12.5px/1.5 var(--code);
 	color: var(--ink-2);
 	background: var(--sunk);
-	border: 1px dashed var(--line-strong);
-	border-radius: 3px;
+	border: 1px dashed var(--rule-2);
+	border-radius: 2px;
 	padding: 6px 9px;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
 
 /* ---------- motion helpers ---------- */
+/* a live lamp: a red point that breathes */
 .pulse {
-	width: 7px;
-	height: 7px;
+	width: 8px;
+	height: 8px;
 	border-radius: 50%;
-	background: var(--teal);
-	box-shadow: 0 0 0 0 var(--teal-line);
+	background: var(--acc);
+	box-shadow: 0 0 0 0 var(--acc-line);
 	animation: nj-pulse 2.4s ease-out infinite;
 	flex: none;
 }
 @keyframes nj-pulse {
 	0% {
-		box-shadow: 0 0 0 0 var(--teal-line);
+		box-shadow: 0 0 0 0 var(--acc-line);
 	}
 	70% {
-		box-shadow: 0 0 0 7px transparent;
+		box-shadow: 0 0 0 8px transparent;
 	}
 	100% {
 		box-shadow: 0 0 0 0 transparent;
@@ -453,30 +562,45 @@ kbd {
 		opacity: 1;
 	}
 }
-/* Resolve: a raw log line (MONO 1) eases into plain words (MONO 0) when it joins an incident. */
+/* Resolve: a line the watch has read settles from a lit red into plain ink */
 .resolve {
-	animation: nj-resolve 600ms var(--ease-step) both;
+	animation: nj-resolve 900ms var(--ease-step) both;
 }
 @keyframes nj-resolve {
 	from {
-		font-variation-settings: 'MONO' 1;
-	}
-	to {
-		font-variation-settings: 'MONO' 0;
+		color: var(--acc-hi);
 	}
 }
-/* Bands settle in, 6 px apart, once per route */
-.band-in {
-	animation: nj-band 260ms var(--ease-step) both;
+/* Lamp: a new alarm flashes twice, then glows steady (ISA-18.1 style) */
+.flash {
+	animation: nj-flash 640ms steps(1, end) 1;
 }
-@keyframes nj-band {
+@keyframes nj-flash {
+	0%,
+	50% {
+		filter: brightness(1.6);
+	}
+	25%,
+	75% {
+		filter: brightness(0.7);
+	}
+	100% {
+		filter: none;
+	}
+}
+/* Rack: plates and strips slide in from the left, once per route */
+.band-in,
+.rack {
+	animation: nj-rack 300ms var(--ease-step) both;
+}
+@keyframes nj-rack {
 	from {
 		opacity: 0;
-		transform: translateY(6px);
+		transform: translateX(-8px);
 	}
 }
 
-/* Dawn: watch → brief page transition (View Transitions), DESIGN.md §11 */
+/* First light: watch → brief page transition (View Transitions), DESIGN.md §9 */
 ::view-transition-old(root),
 ::view-transition-new(root) {
 	animation: none;
@@ -502,12 +626,10 @@ kbd {
 		animation-iteration-count: 1 !important;
 		transition-duration: 1ms !important;
 	}
-	.pulse {
-		animation: none;
-	}
+	.pulse,
+	.flash,
 	.resolve {
 		animation: none;
-		font-variation-settings: 'MONO' 0;
 	}
 	:root.dawn::view-transition-new(root) {
 		animation: nj-fade 150ms ease both;

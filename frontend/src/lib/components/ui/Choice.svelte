@@ -1,5 +1,6 @@
 <script lang="ts" generics="V extends string">
-	// A segmented choice on Skeleton's Segment (Zag radio group): arrow keys move, the indicator slides.
+	// A segmented choice on Skeleton's Segment (Zag radio group), drawn as a row of small lamp windows: the chosen
+	// one is lit. Arrow keys move.
 	import { Segment } from '@skeletonlabs/skeleton-svelte';
 	let {
 		value = $bindable(),
@@ -28,13 +29,13 @@
 			onchange?.(value);
 		}}
 		labelledby="{name}-l"
-		background="preset-outlined-surface-300-700"
+		background="bg-[var(--sunk)] shadow-[inset_0_0_0_1px_var(--rule)]"
 		padding="p-0.5"
 		gap="gap-0"
 		rounded="rounded-base"
-		indicatorBg="preset-filled-primary-700-300"
-		indicatorText="text-[var(--teal-ink)]"
-		indicatorRounded="rounded-[2px]"
+		indicatorBg="bg-[var(--acc)]"
+		indicatorText="text-[var(--acc-ink)]"
+		indicatorRounded="rounded-[1px]"
 	>
 		{#each options as o (o.value)}
 			<Segment.Item value={o.value} disabled={o.disabled} classes="choice-item">{o.label}</Segment.Item>
@@ -46,23 +47,33 @@
 	.choice {
 		display: inline-flex;
 		flex: none;
+		max-width: 100%;
 	}
 	.choice :global(.choice-item) {
-		height: 24px;
-		padding-inline: 10px;
-		font: 500 12px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--ink-2);
+		height: 26px;
+		padding-inline: 11px;
+		font: 700 13px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--dim);
+		white-space: nowrap;
 	}
 	.choice.md :global(.choice-item) {
-		height: 30px;
-		padding-inline: 12px;
+		height: 32px;
+		padding-inline: 14px;
+		font-size: 14px;
 	}
 	.choice :global([data-part='root']) {
 		position: relative;
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+	.choice :global([data-state='checked']) {
+		color: var(--acc-ink);
 	}
 	.choice :global(.focused) {
-		outline: 2px solid var(--teal);
+		outline: 2px solid var(--acc);
 		outline-offset: -2px;
 	}
 </style>

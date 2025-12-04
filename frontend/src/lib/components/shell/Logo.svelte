@@ -1,10 +1,11 @@
 <script lang="ts">
-	// The nightjar's eye: an upper arc, a fainter lower arc and a dot.
-	let { size = 22 }: { size?: number } = $props();
+	// The nightjar's eye inside a dial ring: an upper lid arc, a dot, and one tick at midnight.
+	let { size = 24 }: { size?: number } = $props();
 </script>
 
 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width={size} height={size}>
-	<path d="M2.5 13.2C5.6 7.6 9 5.6 12 5.6s6.4 2 9.5 7.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-	<path d="M5.6 13.6c2 2.9 4.2 4.2 6.4 4.2s4.4-1.3 6.4-4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
-	<circle cx="12" cy="12" r="2.3" fill="currentColor" />
+	<circle cx="12" cy="12" r="10.4" stroke="currentColor" stroke-width="1.4" opacity=".55" />
+	<path d="M12 1.2v3.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" />
+	<path d="M5.2 13.4C7.1 10 9.4 8.6 12 8.6s4.9 1.4 6.8 4.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+	<circle cx="12" cy="13.6" r="2.4" fill="currentColor" />
 </svg>
