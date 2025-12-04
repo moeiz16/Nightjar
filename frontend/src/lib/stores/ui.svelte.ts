@@ -28,7 +28,7 @@ export function sectionsFor(role: Role | null): SectionKind[] {
 	return [...SECTIONS[role]];
 }
 
-/** The numbered windows of the watch bar (Alt+1 … Alt+8), tmux style. */
+/** The lamp panel's eight windows (Alt+1 … Alt+8): the navigation, engraved like an annunciator. */
 export const WINDOWS = [
 	{ n: 1, href: '/watch', label: 'watch', perm: null },
 	{ n: 2, href: '/hunt', label: 'hunt', perm: 'hunting:read' },
@@ -39,6 +39,45 @@ export const WINDOWS = [
 	{ n: 7, href: '/activity', label: 'log', perm: 'audit:read' },
 	{ n: 8, href: '/brief', label: 'brief', perm: null }
 ] as const;
+/** The station name the head shows for a path, before a page names itself (DESIGN.md §3). */
+const STATIONS: [string, string][] = [
+	['/incidents/', 'Incident'],
+	['/watch', 'The watch'],
+	['/hunt/saved', 'Saved searches'],
+	['/hunt', 'Hunt'],
+	['/behaviour', 'Unusual behaviour'],
+	['/rules/', 'Rule'],
+	['/rules', 'Detection rules'],
+	['/assets', 'Assets'],
+	['/identities', 'People and accounts'],
+	['/activity', 'Activity log'],
+	['/settings/members', 'Members'],
+	['/settings/regimes', 'Regulator contacts'],
+	['/brief/week', 'Weekly report'],
+	['/brief', 'Morning brief']
+];
+export function stationFor(path: string): string {
+	if (/^\/incidents\/[^/]+\/notice\//.test(path)) return 'Notice draft';
+	return STATIONS.find(([p]) => path.startsWith(p))?.[1] ?? 'Nightjar SOC';
+}
+
+/** The line under the station name for pages that do not write their own. */
+const LINES: [string, string][] = [
+	['/hunt/saved', 'Searches worth repeating, with an owner, a note and an alert'],
+	['/hunt', 'Ask the events a question in plain words'],
+	['/behaviour', 'Each person and device against their own normal, last 14 days'],
+	['/rules/', 'What it matches, in a sentence, with its noise and its exceptions'],
+	['/rules', 'Every detection rule and how often it has been right'],
+	['/assets', 'Every server, laptop and cloud account, and what it does for the business'],
+	['/identities', 'How each account normally signs in, and what is out of character'],
+	['/activity', 'Every sensitive action, by a person or a teammate, sealed in order'],
+	['/settings/members', 'Who is on the watch bill, and what each role may authorise'],
+	['/settings/regimes', 'Which regulators apply, and who is asked and who submits']
+];
+export function stationLine(path: string): string {
+	return LINES.find(([p]) => path.startsWith(p))?.[1] ?? '';
+}
+
 /** The window a path belongs to (an incident and its notice live under the watch). */
 export function windowFor(path: string): number {
 	if (path.startsWith('/incidents') || path.startsWith('/watch')) return 1;
@@ -76,8 +115,10 @@ class Ui {
 	sections = $state<SectionKind[]>(sectionsFor(null));
 	holdByTyping = $state(false);
 	announcement = $state('');
-	/** A short "since you last looked" line for the watch bar. */
+	/** A short "since you last looked" line under the station name. */
 	statusNote = $state('');
+	/** A page's own station name and summary line, kept only while that page is open. */
+	station = $state<{ path: string; title: string; sub?: string } | null>(null);
 
 	init() {
 		const t = read('nj_theme');
@@ -110,6 +151,10 @@ class Ui {
 	}
 	closePalette() {
 		this.paletteOpen = false;
+	}
+	/** Name the open page in the head (pass its path, so a stale name never shows on the next page). */
+	setStation(path: string, title: string, sub?: string) {
+		this.station = { path, title, sub };
 	}
 	// ---------- the turnover ----------
 	loadSections(role: Role | null) {

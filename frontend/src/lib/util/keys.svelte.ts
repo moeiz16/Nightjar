@@ -1,4 +1,4 @@
-// Global keyboard: ⌘K / Ctrl K, ⌘B, g-chords and Alt+1…8 for the watch bar's windows. Keys never fire while
+// Global keyboard: ⌘K / Ctrl K, ⌘B, g-chords and Alt+1…8 for the lamp panel's windows. Keys never fire while
 // typing in a field.
 import { goto } from '$app/navigation';
 import { G_CHORDS, isTyping } from '$lib/commands';
@@ -20,7 +20,7 @@ export function handleShellKey(e: KeyboardEvent, state: { g: number }): boolean 
 		goto('/brief');
 		return true;
 	}
-	// Alt+1 … Alt+8: the numbered windows of the watch bar (e.code, so Option on a Mac works too)
+	// Alt+1 … Alt+8: the numbered windows of the lamp panel (e.code, so Option on a Mac works too)
 	if (e.altKey && !mod && /^Digit[1-8]$/.test(e.code)) {
 		const w = WINDOWS.find((x) => x.n === Number(e.code.slice(5)));
 		if (w && (!w.perm || session.can(w.perm))) {

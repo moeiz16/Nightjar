@@ -1,33 +1,43 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	const items = [
-		['/settings/regimes', 'regime contacts'],
-		['/settings/members', 'members']
+		['/settings/regimes', 'Regulator contacts'],
+		['/settings/members', 'Members']
 	];
 </script>
 
-<nav class="snav mono" aria-label="Settings sections">
-	<span class="faint">settings ›</span>
+<nav class="snav" aria-label="Settings sections">
+	<span class="faint eng">Settings</span>
 	{#each items as [href, label] (href)}<a {href} aria-current={page.url.pathname === href ? 'page' : undefined}>{label}</a>{/each}
 </nav>
 
 <style>
 	.snav {
 		display: flex;
-		gap: 16px;
+		gap: 6px;
 		align-items: center;
-		padding: 12px 22px;
-		border-bottom: 1px solid var(--line);
-		font-size: 12px;
+		margin: 0 0 14px;
+		font: 700 14px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+	}
+	.snav .eng {
+		margin-right: 10px;
+		font-size: 13px;
 	}
 	a {
 		text-decoration: none;
-		color: var(--muted);
-		padding-bottom: 2px;
-		border-bottom: 1px solid transparent;
+		color: var(--dim);
+		padding: 9px 14px;
+		box-shadow: inset 0 0 0 1px var(--rule);
+		background: var(--plate);
+	}
+	a:hover {
+		color: var(--ink);
 	}
 	a[aria-current='page'] {
-		color: var(--ink);
-		border-color: var(--teal);
+		color: var(--acc-ink);
+		background: var(--acc);
+		box-shadow: none;
 	}
 </style>

@@ -1,11 +1,10 @@
 <script lang="ts">
-	// The console shell (DESIGN.md §0.1): the shift axis on top, the page's bands, the watch bar at the bottom,
-	// and ⌘K everywhere. No sidebar, no top navigation, no side panels.
+	// The shell (DESIGN.md §3): the station head (plate, lamp panel, chronometer) and the page under it, scrolling as
+	// one sheet, with ⌘K everywhere. No side rail, no bottom bar, no right panel.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount, onDestroy } from 'svelte';
-	import ShiftAxis from '$lib/components/shell/ShiftAxis.svelte';
-	import WatchBar from '$lib/components/shell/WatchBar.svelte';
+	import StationHead from '$lib/components/shell/StationHead.svelte';
 	import CommandPalette from '$lib/components/shell/CommandPalette.svelte';
 	import { onSessionEnded, client } from '$lib/api';
 	import { session } from '$lib/stores/session.svelte';
@@ -47,39 +46,32 @@
 
 <svelte:window onpointerdown={activity} onkeydown={activity} />
 
-<a class="skip-link" href="#main">Skip to the console</a>
-<div class="shell">
-	<ShiftAxis />
+<a class="skip-link" href="#main">Skip to the page</a>
+<div class="room">
+	{#if ready}<StationHead />{/if}
 	<main id="main" class="work" tabindex="-1">
-		{#if ready}{@render children()}{:else}<div class="boot mono faint" aria-live="polite">Taking the watch…</div>{/if}
+		{#if ready}{@render children()}{:else}<div class="boot eng faint" aria-live="polite">Taking the watch…</div>{/if}
 	</main>
-	<WatchBar />
 </div>
 <CommandPalette />
 
 <style>
-	.shell {
-		height: 100vh;
-		height: 100dvh;
-		display: grid;
-		grid-template-rows: auto minmax(0, 1fr) auto;
-		overflow: hidden;
+	.room {
+		min-height: 100vh;
+		min-height: 100dvh;
+		display: flex;
+		flex-direction: column;
 	}
 	.work {
-		min-height: 0;
+		flex: 1;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		overflow-y: auto;
-		overflow-x: hidden;
-		scrollbar-gutter: stable;
 		outline: none;
-		background: var(--bg);
-		scrollbar-width: thin;
-		scrollbar-color: var(--line-strong) transparent;
+		padding-bottom: 48px;
 	}
 	.boot {
-		padding: 40px;
-		font-size: 12px;
+		padding: 48px var(--gut);
+		font-size: 15px;
 	}
 </style>
