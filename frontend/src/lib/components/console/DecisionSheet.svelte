@@ -77,7 +77,7 @@
 </script>
 
 <form class="sheet {tone}" onsubmit={record} aria-label="Record the decision for {reference}">
-	<p class="lbl mono">◆ {sec ? 'materiality decision · SEC Form 8-K, Item 1.05' : `${regimeShort(a.regime)} determination`} · {reference}</p>
+	<p class="lbl eng">◆ {sec ? 'materiality decision · SEC Form 8-K, Item 1.05' : `${regimeShort(a.regime)} determination`} · {reference}</p>
 	{#if !can}
 		<p class="ro">Only the CISO or the disclosure committee can record this. You can read the watch’s view and the evidence.</p>
 	{/if}
@@ -87,17 +87,17 @@
 		<label class="opt" class:on={outcome === 'no'}><input type="radio" bind:group={outcome} value="no" /><span><b>{words.no}</b><small>{words.noNote}</small></span></label>
 		<label class="opt" class:on={outcome === 'later'}><input type="radio" bind:group={outcome} value="later" /><span><b>{words.later}</b><small>{words.laterNote}</small></span></label>
 		{#if outcome === 'later'}
-			<label class="label"><span>decide by</span><input class="input" type="date" bind:value={decideBy} /></label>
+			<label class="label"><span>Decide by</span><input class="input" type="date" bind:value={decideBy} /></label>
 		{/if}
 		{#if a.regime === 'soci' && outcome === 'yes'}
-			<label class="label"><span>impact on the critical asset</span><select class="select" bind:value={impact}><option value="significant">significant (12 h)</option><option value="relevant">relevant (72 h)</option></select></label>
+			<label class="label"><span>Impact on the critical asset</span><select class="select" bind:value={impact}><option value="significant">significant (12 h)</option><option value="relevant">relevant (72 h)</option></select></label>
 		{/if}
-		<label class="label"><span>{outcome === 'later' ? 'note (optional)' : 'reasons (kept with the decision)'}</span><textarea class="textarea" rows="3" bind:value={rationale} placeholder={sec ? 'e.g. One mailbox, no money moved, no customer data reached, contained in two minutes.' : ''}></textarea></label>
+		<label class="label"><span>{outcome === 'later' ? 'Note (optional)' : 'Reasons (kept with the decision)'}</span><textarea class="textarea" rows="3" bind:value={rationale} placeholder={sec ? 'e.g. One mailbox, no money moved, no customer data reached, contained in two minutes.' : ''}></textarea></label>
 	</fieldset>
 	{#if err}<p class="ferr" role="alert">{err}</p>{/if}
 	<div class="row">
-		<button class="btn preset-filled-surface-950-50" type="submit" disabled={!can || busy}>{busy ? 'Recording…' : 'Record the decision'}</button>
-		{#if oncancel}<button class="lnk" type="button" onclick={oncancel}>not now</button>{/if}
+		<button class="btn preset-filled-primary-500" type="submit" disabled={!can || busy}>{busy ? 'Recording…' : 'Record the decision'}</button>
+		{#if oncancel}<button class="lnk" type="button" onclick={oncancel}>Not now</button>{/if}
 	</div>
 </form>
 
@@ -108,13 +108,13 @@
 	}
 	.lbl {
 		margin: 0;
-		font-size: 11.5px;
-		color: var(--lav);
+		font-size: 13px;
+		color: var(--person);
 	}
 	.ro {
 		margin: 0;
 		font-size: 13px;
-		color: var(--muted);
+		color: var(--dim);
 	}
 	fieldset {
 		border: 0;
@@ -127,31 +127,31 @@
 		display: flex;
 		gap: 10px;
 		align-items: flex-start;
-		padding: 10px 12px;
-		border-radius: 6px;
-		border: 1px solid var(--line-strong);
+		padding: 11px 13px;
+		border-radius: 0;
+		border: 1px solid var(--rule-2);
+		border-left-width: 4px;
 		cursor: pointer;
 	}
 	.opt.on {
-		border-color: color-mix(in srgb, var(--lav) 60%, transparent);
-		background: var(--lav-wash);
+		border-color: var(--person);
+		background: var(--person-wash);
 	}
 	.opt input {
 		margin-top: 3px;
-		accent-color: var(--lav);
+		accent-color: var(--person);
 	}
 	.opt span {
 		display: grid;
 		gap: 2px;
 	}
 	.opt b {
-		font-size: 14px;
-		font-weight: 600;
+		font-size: 15px;
+		font-weight: 700;
 	}
 	.opt small {
-		font: 400 11.5px/1.4 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--muted);
+		font: 500 13px/1.4 var(--ui);
+		color: var(--dim);
 	}
 	.row {
 		display: flex;
@@ -159,6 +159,6 @@
 		align-items: center;
 	}
 	.brief .opt {
-		border-color: var(--rule-2, var(--line-strong));
+		border-color: var(--rule-2, var(--rule-2));
 	}
 </style>

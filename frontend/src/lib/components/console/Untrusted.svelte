@@ -30,21 +30,19 @@
 		min-width: 0;
 	}
 	figcaption {
-		font: 400 11px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
+		font: 400 11px/1 var(--code);
 		color: var(--faint);
 	}
 	blockquote {
 		margin: 0;
 	}
 	.flagged blockquote {
-		border-color: color-mix(in srgb, var(--amber) 55%, transparent);
+		border-color: color-mix(in srgb, var(--soon) 55%, transparent);
 	}
 	.flag {
 		margin: 0;
-		font: 400 11.5px/1.45 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--amber);
+		font: 400 11.5px/1.45 var(--code);
+		color: var(--soon);
 		display: flex;
 		gap: 6px;
 		flex-wrap: wrap;
@@ -53,11 +51,10 @@
 		font-weight: 600;
 	}
 	.flag .why {
-		color: var(--muted);
+		color: var(--dim);
 	}
 	.inl {
-		font: 400 12px/1.5 var(--mono);
-		font-variation-settings: 'MONO' 1;
+		font: 400 12px/1.5 var(--code);
 		color: var(--ink-2);
 		overflow-wrap: anywhere;
 	}
@@ -65,7 +62,7 @@
 		color: var(--faint);
 	}
 	.inl.flagged {
-		text-decoration: underline dashed color-mix(in srgb, var(--amber) 60%, transparent);
+		text-decoration: underline dashed color-mix(in srgb, var(--soon) 60%, transparent);
 		text-underline-offset: 3px;
 	}
 	.inl .flag {

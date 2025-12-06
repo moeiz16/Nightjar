@@ -117,7 +117,7 @@
 		<label class="label"><span>Type <b class="mono">{confirmName}</b> to confirm</span>
 			<input class="input mono" bind:value={typed} {disabled} autocomplete="off" spellcheck="false" aria-describedby={hintId} />
 		</label>
-		<button class="btn preset-filled-primary-700-300" type="submit" disabled={disabled || busy}>{busy ? 'Working…' : label.replace('Hold to', 'Confirm and')}</button>
+		<button class="btn preset-filled-primary-500" type="submit" disabled={disabled || busy}>{busy ? 'Working…' : label.replace('Hold to', 'Confirm and')}</button>
 		<span id={hintId} class="sr">Typed confirmation replaces holding. Change it in ⌘K.</span>
 	</form>
 {:else}
@@ -144,10 +144,10 @@
 			<ProgressRing
 				value={finished ? 100 : prefersReducedMotion.current ? pct : Math.round(shown.current * 100)}
 				max={100}
-				size="size-[38px]"
+				size="size-[42px]"
 				strokeWidth="9px"
-				trackStroke={finished ? 'stroke-[color-mix(in_srgb,var(--teal-ink)_30%,transparent)]' : 'stroke-surface-300-700'}
-				meterStroke={finished ? 'stroke-[var(--teal-ink)]' : 'stroke-primary-700-300'}
+				trackStroke={finished ? 'stroke-[color-mix(in_srgb,var(--ok-ink)_30%,transparent)]' : 'stroke-[var(--rule-2)]'}
+				meterStroke={finished ? 'stroke-[var(--ok-ink)]' : 'stroke-[var(--acc)]'}
 				meterTransition=""
 				meterDuration=""
 			/>
@@ -164,17 +164,20 @@
 {#if error}<p class="ferr" role="alert">{error}</p>{/if}
 
 <style>
+	/* a lit push-button: hold it and the lamp fills from the left while the ring closes */
 	.hold {
 		position: relative;
 		display: flex;
 		align-items: center;
 		gap: 14px;
 		width: 100%;
-		height: 56px;
-		padding: 0 16px 0 10px;
-		border-radius: 3px;
-		border: 1px solid var(--teal-line);
-		background: var(--teal-wash);
+		height: 64px;
+		padding: 0 18px 0 11px;
+		border-radius: 2px;
+		background: var(--sunk);
+		box-shadow:
+			inset 0 0 0 1px var(--acc-line),
+			0 0 0 3px color-mix(in srgb, var(--acc) 10%, transparent);
 		color: var(--ink);
 		overflow: hidden;
 		user-select: none;
@@ -186,10 +189,15 @@
 		content: '';
 		position: absolute;
 		inset: 0;
-		background: var(--teal);
+		background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 30%, transparent), color-mix(in srgb, var(--acc) 55%, transparent));
 		transform-origin: left;
 		transform: scaleX(var(--p));
-		opacity: 0.22;
+	}
+	.hold:hover:not([aria-disabled='true']) {
+		box-shadow:
+			inset 0 0 0 1px var(--acc),
+			0 0 0 3px color-mix(in srgb, var(--acc) 16%, transparent),
+			0 0 26px -8px var(--acc-glow);
 	}
 	.hold[aria-disabled='true']:not(.done) {
 		opacity: 0.55;
@@ -197,8 +205,8 @@
 	}
 	.dial {
 		position: relative;
-		width: 38px;
-		height: 38px;
+		width: 42px;
+		height: 42px;
 		flex: none;
 	}
 	.glyph {
@@ -207,42 +215,40 @@
 		inset: 0;
 		display: grid;
 		place-items: center;
-		font: 500 13px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--teal);
+		font: 600 14px/1 var(--code);
+		color: var(--acc-hi);
 	}
 	.txt {
 		position: relative;
 		display: grid;
-		gap: 4px;
+		gap: 6px;
 		text-align: left;
 		min-width: 0;
 	}
 	.txt b {
-		font-weight: 600;
-		font-size: 15px;
+		font: 800 21px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 	.txt small {
-		font: 400 11.5px/1.2 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--muted);
+		font: 500 12.5px/1.2 var(--ui);
+		color: var(--dim);
 	}
 	.pct {
 		position: relative;
 		margin-left: auto;
-		font: 500 13px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--teal);
-		min-width: 3ch;
+		font: 500 14px/1 var(--code);
+		color: var(--ink);
+		min-width: 4ch;
 		text-align: right;
 	}
 	.hold.done {
-		border-color: var(--teal);
-		background: var(--teal);
-		color: var(--teal-ink);
+		background: var(--ok);
+		box-shadow: none;
+		color: var(--ok-ink);
 		cursor: default;
 	}
 	.hold.done::before {
@@ -251,7 +257,7 @@
 	.hold.done .txt small,
 	.hold.done .pct,
 	.hold.done .glyph {
-		color: var(--teal-ink);
+		color: var(--ok-ink);
 	}
 	.typed {
 		display: grid;
@@ -262,7 +268,10 @@
 	}
 	@media (max-width: 760px) {
 		.hold {
-			height: 60px;
+			height: 66px;
+		}
+		.txt b {
+			font-size: 19px;
 		}
 	}
 </style>

@@ -1,12 +1,13 @@
 <script lang="ts">
-	// Incident (DESIGN.md §0.2): bands, never a side column. The header band (who, what, ATT&CK, the stage rail in
-	// time), then the decisions waiting on you directly under it, then Skeleton Tabs: what happened and why (the baton
-	// replay) · clocks and notices · actions decided · service desk · evidence. The materiality decision is a Modal.
+	// Incident (DESIGN.md §4): strip, orders, log. The incident as one flight strip (who, what, reporting, the stage
+	// rail, ATT&CK), then the orders waiting on you directly under it, then the record on an engraved index (Skeleton
+	// Tabs): what happened and why (the watch log replay) · clocks and notices · actions decided · service desk ·
+	// evidence. Never a side column. The materiality decision is a Modal.
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { tick } from 'svelte';
 	import { Tabs } from '@skeletonlabs/skeleton-svelte';
-	import Band from '$lib/components/ui/Band.svelte';
+	import Plate from '$lib/components/ui/Plate.svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import IncidentHeader from '$lib/components/console/IncidentHeader.svelte';
 	import BatonTimeline from '$lib/components/console/BatonTimeline.svelte';
@@ -23,7 +24,7 @@
 	import { actionTitle } from '$lib/util/approvals';
 	import { buildBaton } from '$lib/util/baton';
 	import { loadIncident, stageTimes, type IncidentBundle } from '$lib/util/incident';
-	import { plural, regimeShort } from '$lib/util/labels';
+	import { plural, regimeShort, STATUS_WORD } from '$lib/util/labels';
 
 	let bundle = $state<IncidentBundle | null>(null);
 	let error = $state('');
@@ -62,6 +63,10 @@
 		if (bundle) ui.scope = { id: bundle.incident.id, reference: bundle.incident.reference };
 	});
 	$effect(() => {
+		const i = bundle?.incident;
+		ui.setStation(page.url.pathname, i ? i.reference : 'Incident', i ? `Incident · opened ${timeOf(i.firstSeen)} · ${(STATUS_WORD[i.status] ?? i.status).toLowerCase()}` : undefined);
+	});
+	$effect(() => {
 		if (holdParam && bundle) tick().then(() => document.getElementById('hold-' + holdParam)?.focus());
 	});
 
@@ -86,40 +91,40 @@
 <svelte:head><title>{bundle ? `${bundle.incident.reference} ${bundle.incident.title}` : 'Incident'} · Nightjar SOC</title></svelte:head>
 
 {#if error}
-	<Band title="incident" sub={param}>
+	<Plate title="Incident" sub={param}>
 		<div class="empty"><p>{error}</p><a class="lnk" href="/watch">Back to the watch</a></div>
-	</Band>
+	</Plate>
 {:else if !bundle}
-	<Band title="incident" sub={param}><p class="empty mono faint" aria-live="polite">Opening the incident…</p></Band>
+	<Plate title="Incident" sub={param}><p class="empty faint" aria-live="polite">Opening the incident…</p></Plate>
 {:else}
-	<Band title="incident" sub="{bundle.incident.reference} · opened {timeOf(bundle.incident.firstSeen, undefined, true)}" flush>
-		{#snippet actions()}<a class="lnk" href="/watch">back to the watch</a>{/snippet}
+	<div class="stripw rack">
+		<div class="back"><a class="lnk" href="/watch">← Back to the watch</a></div>
 		<IncidentHeader incident={bundle.incident} times={stageTimes(bundle)} clocks={live.clocks} pending={pending.length} />
-	</Band>
+	</div>
 
 	{#if pending.length || open.length}
-		<Band title="waiting on you" sub={pending.length ? plural(pending.length, 'decision') : 'a regulator decision'} n="‖" flush>
+		<Plate title="Orders · waiting on you" sub={pending.length ? plural(pending.length, 'decision') : 'a regulator decision'} n="‖" flush class="orders">
 			<div class="decide" style="--cols:{Math.min(3, pending.length + open.length)}">
 				{#each pending as p, i (p.id)}
 					<div class="col"><ApprovalCard {p} {people} index={i + 1} total={pending.length} holdId={'hold-' + p.id} startDeclining={declineParam === p.id} onwhy={() => why(p)} onchange={onChange} /></div>
 				{/each}
 				{#each open as r (r.regime)}
 					<div class="col assess">
-						<p class="lbl mono"><span class="lav">◆</span> {regimeShort(r.regime)} · {r.entityName} · to assess</p>
+						<p class="lbl eng"><span aria-hidden="true">◆</span> {regimeShort(r.regime)} · {r.entityName} · to assess</p>
 						<h3>Is this {r.regime === 'sec_8k' ? 'material' : 'reportable'} to {r.entityName}?</h3>
 						<ul>{#each r.proposal.reasons as reason (reason)}<li>{reason}</li>{/each}</ul>
 						<a class="btn preset-filled-surface-950-50" href="?decide={r.regime}" data-sveltekit-noscroll>Record the decision</a>
 					</div>
 				{/each}
 			</div>
-		</Band>
+		</Plate>
 	{/if}
 
-	<section class="tabs band-in" aria-label="The incident record">
+	<section class="tabs rack" aria-label="The incident record">
 		<Tabs
 			value={tab}
 			onValueChange={(e) => (tab = e.value ?? 'story')}
-			listBorder="border-b border-[var(--line)]"
+			listBorder="border-b border-[var(--rule)]"
 			listMargin="mb-0"
 			listGap="gap-0"
 			listClasses="tabl"
@@ -143,7 +148,7 @@
 						{#each decided as p (p.id)}
 							<div class="r"><span>{actionTitle(p, people)}</span><span class="mono faint">{p.status === 'rejected' ? `✕ declined · ${p.rejection?.reason ?? ''}` : `✓ ${p.approvals.map((a) => a.name.split(' ')[0]).join(' + ')} · ${timeOf(p.approvals.at(-1)?.decidedAt ?? p.createdAt)}`}</span></div>
 						{:else}
-							<p class="mono faint">Nothing decided yet.</p>
+							<p class="faint">Nothing decided yet.</p>
 						{/each}
 					</div>
 				</Tabs.Panel>
@@ -152,7 +157,7 @@
 						{#each bundle!.incident.tickets as t (t.id)}
 							<div class="r"><span>{t.title}</span><span class="mono faint">{t.key} · {t.status.replace('_', ' ')}</span></div>
 						{:else}
-							<p class="mono faint">No service-desk tickets.</p>
+							<p class="faint">No service-desk tickets.</p>
 						{/each}
 					</div>
 				</Tabs.Panel>
@@ -175,87 +180,105 @@
 		padding: 18px 22px 20px;
 	}
 	.empty {
-		padding: 28px 22px;
-		color: var(--muted);
+		color: var(--dim);
 		display: grid;
 		gap: 12px;
 		justify-items: start;
-		font-size: 13px;
+		font-size: 14px;
 		margin: 0;
+	}
+	.stripw {
+		margin: 22px var(--gut) 0;
+	}
+	.back {
+		margin-bottom: 10px;
+	}
+	:global(.orders .ph .n) {
+		background: var(--person);
+		color: var(--bg);
 	}
 	.decide {
 		display: grid;
 		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-		background: var(--pane);
+		box-shadow: inset 0 2px 0 var(--person);
 	}
 	.col {
 		min-width: 0;
-		border-left: 1px solid var(--line);
+		border-left: 1px solid var(--rule);
 	}
 	.col:first-child {
 		border-left: 0;
 	}
 	.assess {
-		padding: 16px 20px 18px;
-		background: var(--lav-wash);
+		padding: 18px 20px 20px;
+		background: var(--person-wash);
 	}
 	.assess .lbl {
-		margin: 0 0 8px;
-		font-size: 11.5px;
-		color: var(--lav);
+		margin: 0 0 10px;
+		font-size: 12.5px;
+		color: var(--person);
 	}
 	.assess h3 {
-		margin: 0 0 8px;
-		font-size: 17px;
-		font-weight: 600;
+		margin: 0 0 10px;
+		font: 800 25px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
 	.assess ul {
-		margin: 0 0 14px;
+		margin: 0 0 16px;
 		padding-left: 18px;
 		color: var(--ink-2);
-		font-size: 13px;
+		font-size: 14px;
 	}
 	.tabs {
-		background: var(--pane);
+		margin: 30px var(--gut) 0;
 		flex: 1 0 auto;
 	}
 	.tabs :global(.tabl) {
-		background: var(--bg);
-		padding: 0 10px;
+		gap: 4px;
 		overflow-x: auto;
 		scrollbar-width: none;
+		border-bottom: 2px solid var(--rule-2) !important;
 	}
 	.tabs :global(.tabc) {
-		border-bottom: 2px solid transparent;
-		margin-bottom: -1px;
 		flex: none;
-	}
-	.tabs :global(.tabc.on) {
-		border-bottom-color: var(--teal);
+		margin-bottom: -2px;
 	}
 	.tabs :global(.tabt) {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		height: 40px;
-		padding: 0 12px;
-		font: 500 12.5px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--muted);
+		gap: 9px;
+		height: 44px;
+		padding: 0 16px;
+		font: 700 15px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--dim);
 		white-space: nowrap;
+		background: var(--plate);
+		box-shadow: inset 0 0 0 1px var(--rule);
 	}
 	.tabs :global(.tabc.on .tabt) {
 		color: var(--ink);
+		background: radial-gradient(120% 120% at 50% 100%, color-mix(in srgb, var(--acc) 26%, transparent), var(--plate) 70%);
+		box-shadow:
+			inset 0 0 0 1px var(--acc-line),
+			inset 0 -3px 0 var(--acc);
 	}
 	.tabs :global(.tabt:hover) {
 		color: var(--ink);
 	}
 	.ct {
-		font-size: 11px;
+		font: 500 11.5px/1 var(--code);
+		letter-spacing: 0;
 		color: var(--faint);
-		border: 1px solid var(--line-strong);
-		border-radius: 2px;
-		padding: 2px 5px;
+		box-shadow: inset 0 0 0 1px var(--rule-2);
+		padding: 3px 5px;
+	}
+	.tabs :global([data-part='content']) {
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-top: 0;
 	}
 	.pad {
 		padding: 14px 22px 22px;
@@ -265,16 +288,16 @@
 		display: flex;
 		justify-content: space-between;
 		gap: 10px;
-		padding: 10px 0;
-		border-top: 1px solid var(--line);
-		font-size: 13px;
+		padding: 11px 0;
+		border-top: 1px solid var(--rule);
+		font-size: 14px;
 		color: var(--ink-2);
 	}
 	.r:first-child {
 		border-top: 0;
 	}
 	.r .mono {
-		font-size: 11.5px;
+		font-size: 12px;
 		white-space: nowrap;
 	}
 	@media (max-width: 1000px) {
@@ -283,7 +306,7 @@
 		}
 		.col {
 			border-left: 0;
-			border-top: 1px solid var(--line);
+			border-top: 1px solid var(--rule);
 		}
 		.col:first-child {
 			border-top: 0;

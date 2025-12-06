@@ -117,7 +117,7 @@
 	<div class="replay">
 		<span class="transport" role="group" aria-label="Replay">
 			<button class="btn btn-sm preset-outlined-surface-300-700" type="button" aria-label="Previous step" onclick={() => ((playing = false), goTo(cur - 1, false))}>⏮</button>
-			<button class="btn btn-sm {playing ? 'preset-filled-primary-700-300' : 'preset-outlined-surface-300-700'}" type="button" onclick={play} aria-pressed={playing}>{playing ? '❚❚ Pause' : '▶ Replay'}</button>
+			<button class="btn btn-sm {playing ? 'preset-filled-primary-500' : 'preset-outlined-surface-300-700'}" type="button" onclick={play} aria-pressed={playing}>{playing ? '❚❚ Pause' : '▶ Replay'}</button>
 			<button class="btn btn-sm preset-outlined-surface-300-700" type="button" aria-label="Next step" onclick={() => ((playing = false), goTo(cur + 1))}>⏭</button>
 		</span>
 		<Choice label="Replay speed" value={speed === 1 ? '1' : '4'} options={[{ value: '1', label: '1×' }, { value: '4', label: '4×' }]} onchange={(v) => (speed = v === '4' ? 4 : 1)} />
@@ -127,7 +127,7 @@
 		<span class="sp">
 			<span class="mono stepl" aria-live="polite">step {cur + 1} of {rows.length}{rows[cur] ? ` · ${timeOf(rows[cur]!.at, undefined, true)}` : ''}</span>
 			{#if !compact}
-				<Switch name="all-activity" checked={all} onCheckedChange={(e) => (all = e.checked)} classes="tog" controlActive="bg-[var(--teal)]" controlInactive="bg-[var(--line-strong)]" compact={false}>all activity</Switch>
+				<Switch name="all-activity" checked={all} onCheckedChange={(e) => (all = e.checked)} classes="tog" controlActive="bg-[var(--acc)]" controlInactive="bg-[var(--rule-2)]" compact={false}>all activity</Switch>
 				<button class="lnk" type="button" onclick={exportReplay}>export replay</button>
 			{/if}
 		</span>
@@ -193,10 +193,10 @@
 		align-items: center;
 		gap: 10px;
 		padding: 10px 22px;
-		border-bottom: 1px solid var(--line);
-		font: 400 12px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--muted);
+		border-bottom: 1px solid var(--rule);
+		font: 500 12.5px/1 var(--code);
+		color: var(--dim);
+		background: var(--sunk);
 		flex-wrap: nowrap;
 		white-space: nowrap;
 	}
@@ -209,16 +209,16 @@
 		flex: 0 1 auto;
 	}
 	.steps i {
-		width: 14px;
-		height: 6px;
+		width: 10px;
+		height: 14px;
 		border-radius: 1px;
-		background: var(--line-strong);
+		background: var(--rule-2);
 	}
 	.steps i.on {
-		background: var(--teal);
+		background: var(--acc);
 	}
 	.steps i.now {
-		background: var(--lav);
+		background: var(--person);
 	}
 	.sp {
 		margin-left: auto;
@@ -243,8 +243,8 @@
 		grid-template-columns: var(--tcol) repeat(4, var(--lane)) minmax(0, 1fr);
 	}
 	.lanes {
-		height: 46px;
-		border-bottom: 1px solid var(--line);
+		height: 52px;
+		border-bottom: 1px solid var(--rule);
 		align-items: center;
 		flex: none;
 	}
@@ -252,31 +252,32 @@
 		display: grid;
 		justify-items: center;
 		gap: 4px;
-		font: 400 10.5px/1 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		color: var(--muted);
+		font: 700 11px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--dim);
 	}
 	.who {
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
+		width: 22px;
+		height: 22px;
+		border-radius: 1px;
 		display: grid;
 		place-items: center;
-		font: 600 10px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		border: 1px solid var(--teal-line);
-		color: var(--teal);
-		background: var(--pane);
+		font: 800 13px/1 var(--display);
+		box-shadow: inset 0 0 0 1px var(--acc-line);
+		color: var(--acc-hi);
+		background: var(--plate);
 	}
 	.people .who {
-		border-color: color-mix(in srgb, var(--lav) 55%, transparent);
-		color: var(--lav);
+		box-shadow: inset 0 0 0 1px var(--person);
+		color: var(--person);
 	}
 	.hd {
 		padding-left: 18px;
-		font: 400 11.5px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--faint);
+		font: 700 13px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--dim);
 	}
 	.rows {
 		position: relative;
@@ -290,8 +291,8 @@
 		opacity: 0.35;
 	}
 	.tm {
-		padding: 11px 0 0 18px;
-		font-size: 11.5px;
+		padding: 12px 0 0 18px;
+		font-size: 12px;
 		line-height: 1;
 		color: var(--faint);
 		position: relative;
@@ -300,7 +301,7 @@
 	.card {
 		grid-column: 6;
 		padding: 8px 18px;
-		border-top: 1px solid var(--line);
+		border-top: 1px solid var(--rule);
 		text-align: left;
 		min-width: 0;
 		display: block;
@@ -310,21 +311,21 @@
 		border-top: 0;
 	}
 	.card:hover b {
-		color: var(--teal);
+		text-decoration: underline;
+		text-decoration-color: var(--acc);
 	}
 	.card b {
 		display: block;
-		font-size: 13.5px;
-		line-height: 18px;
-		font-weight: 500;
+		font-size: 14.5px;
+		line-height: 19px;
+		font-weight: 700;
 		color: var(--ink);
 	}
 	.card small {
 		display: block;
 		margin-top: 3px;
-		font: 400 11.5px/15px var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--muted);
+		font: 500 12.5px/16px var(--ui);
+		color: var(--dim);
 		overflow-wrap: anywhere;
 	}
 	.card small .whos {
@@ -332,24 +333,24 @@
 	}
 	.card small em {
 		font-style: normal;
-		color: var(--teal);
+		font-weight: 700;
+		color: var(--acc-hi);
 	}
 	.ck {
 		margin-right: 6px;
-		color: var(--teal);
-		font-family: var(--mono);
-		font-variation-settings: 'MONO' 1;
+		color: var(--ok);
+		font-family: var(--code);
 	}
 	.brow.minor .card b {
-		font-weight: 400;
+		font-weight: 500;
 		color: var(--ink-2);
-		font-size: 12.5px;
+		font-size: 13.5px;
 	}
 	.brow.minor {
 		min-height: 40px;
 	}
 	.brow.wait {
-		background: linear-gradient(90deg, transparent, var(--lav-wash) 30%);
+		background: linear-gradient(90deg, transparent, var(--person-wash) 30%);
 	}
 	.brow.wait::before,
 	.brow.head::before {
@@ -358,21 +359,21 @@
 		left: 0;
 		top: 0;
 		bottom: 0;
-		width: 2px;
-		background: var(--lav);
+		width: 3px;
+		background: var(--person);
 	}
 	.brow.head {
 		background: var(--sel);
 	}
 	.brow.head::before {
-		background: var(--teal);
+		background: var(--acc);
 	}
 	.brow.sel .card b {
-		color: var(--teal);
+		color: var(--acc-hi);
 	}
 	.brow.wait .card small,
 	.brow.wait .tm {
-		color: var(--lav);
+		color: var(--person);
 	}
 	svg.links {
 		position: absolute;
@@ -382,49 +383,49 @@
 		overflow: visible;
 	}
 	.guide {
-		stroke: var(--line);
+		stroke: var(--rule);
 		stroke-dasharray: 2 4;
 	}
 	path {
 		fill: none;
-		stroke: var(--teal);
+		stroke: var(--dim);
 		stroke-width: 1.6;
-		opacity: 0.7;
+		opacity: 0.8;
 		transition: opacity 360ms ease-out;
 	}
 	path.dim {
 		opacity: 0.15;
 	}
 	path.w {
-		stroke: var(--lav);
+		stroke: var(--person);
 		stroke-dasharray: 3 4;
 		opacity: 1;
 	}
 	.dot {
-		fill: var(--pane);
-		stroke: var(--teal);
+		fill: var(--plate);
+		stroke: var(--ink-2);
 		stroke-width: 1.6;
 		transition: opacity 240ms;
 	}
 	.dot.p {
-		stroke: var(--lav);
+		stroke: var(--person);
 	}
 	.dot.wd {
-		stroke: var(--lav);
+		stroke: var(--person);
 	}
 	.dot.dim {
 		opacity: 0.35;
 	}
 	.dot.lit {
-		fill: var(--teal);
+		fill: var(--acc);
 	}
 	.dot.now {
-		fill: var(--lav);
-		stroke: var(--lav);
+		fill: var(--person);
+		stroke: var(--person);
 	}
 	.halo {
 		fill: none;
-		stroke: var(--lav);
+		stroke: var(--person);
 		opacity: 0.35;
 	}
 	.bead {
@@ -433,9 +434,9 @@
 		top: 0;
 		width: 18px;
 		height: 6px;
-		border-radius: 3px;
-		background: var(--teal);
-		box-shadow: 0 0 10px var(--teal);
+		border-radius: 1px;
+		background: var(--acc);
+		box-shadow: 0 0 12px var(--acc-glow);
 		offset-rotate: auto;
 		pointer-events: none;
 		z-index: 2;

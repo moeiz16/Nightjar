@@ -89,18 +89,18 @@
 <article class="ask" aria-labelledby="ap-{p.id}">
 	<div class="top">
 		{#if p.status === 'rejected'}
-			<span class="badge preset-outlined-surface-300-700">✕ Declined · {p.rejection?.reason}</span>
+			<span class="badge st dec">✕ Declined · {p.rejection?.reason}</span>
 		{:else if p.status === 'approved' || p.status === 'executed'}
-			<span class="badge preset-tonal-success">✓ {p.status === 'executed' ? 'Done' : 'Authorised'}</span>
+			<span class="badge st okb">✓ {p.status === 'executed' ? 'Done' : 'Authorised'}</span>
 		{:else if p.approvals.length && p.requiredRoles.length > 1}
-			<span class="badge preset-tonal-secondary">‖ {p.approvals.length} of {p.requiredRoles.length} held · waiting for a second person</span>
+			<span class="badge st per">‖ {p.approvals.length} of {p.requiredRoles.length} held · waiting for a second person</span>
 		{:else}
-			<span class="badge preset-tonal-secondary">‖ Awaiting {gate.canHold ? 'your' : 'a person’s'} approval</span>
+			<span class="badge st per">‖ Awaiting {gate.canHold ? 'your' : 'a person’s'} approval</span>
 		{/if}
 		{#if total > 1}<span class="mono faint n">{index} of {total}</span>{/if}
 	</div>
 	<h2 id="ap-{p.id}">{title}</h2>
-	<div class="by mono">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
+	<div class="by">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
 	<dl class="facts">
 		<div><dt>does</dt><dd>{p.expectedEffect}</dd></div>
 		<div><dt>why</dt><dd>{p.rationale} {#if onwhy}<button class="lnk" type="button" onclick={onwhy}>why ↗</button>{/if}</dd></div>
@@ -133,7 +133,7 @@
 	{:else if p.status === 'pending' && declining}
 		<form class="decline" onsubmit={decline}>
 			<fieldset>
-				<legend class="mono faint">decline · the reason goes back to Response</legend>
+				<legend class="eng faint">decline · the reason goes back to Response</legend>
 				{#each REASONS as r (r)}
 					<label class="rad"><input type="radio" name="reason-{p.id}" value={r} bind:group={reason} /> {r}</label>
 				{/each}
@@ -148,7 +148,7 @@
 <style>
 	.ask {
 		padding: 18px 18px 20px;
-		border-bottom: 1px solid var(--line);
+		border-bottom: 1px solid var(--rule);
 	}
 	.top {
 		display: flex;
@@ -157,37 +157,59 @@
 		gap: 8px;
 		margin-bottom: 12px;
 	}
+	.st {
+		height: auto;
+		padding: 5px 8px;
+		line-height: 1.15;
+		white-space: normal;
+		text-align: left;
+	}
+	.per {
+		color: var(--person);
+		box-shadow: inset 0 0 0 1px var(--person);
+		background: var(--person-wash);
+	}
+	.okb {
+		color: var(--ok-ink);
+		background: var(--ok);
+	}
+	.dec {
+		color: var(--dim);
+		box-shadow: inset 0 0 0 1px var(--rule-2);
+	}
 	.top .n {
-		font-size: 11.5px;
+		font-size: 12px;
+		white-space: nowrap;
 	}
 	h2 {
-		margin: 0 0 4px;
-		font: 600 19px/1.25 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.01em;
+		margin: 0 0 6px;
+		font: 800 25px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--ink);
 	}
 	.by {
-		font: 400 11.5px/1.5 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--muted);
+		font: 500 12.5px/1.5 var(--ui);
+		color: var(--dim);
 		overflow-wrap: anywhere;
 	}
 	.facts {
 		margin: 14px 0 16px;
 		display: grid;
-		gap: 10px;
+		gap: 9px;
 	}
 	.facts div {
 		display: grid;
-		grid-template-columns: 46px minmax(0, 1fr);
-		gap: 8px;
-		font-size: 13px;
+		grid-template-columns: 52px minmax(0, 1fr);
+		gap: 10px;
+		font-size: 14px;
 		line-height: 1.45;
 		color: var(--ink-2);
 	}
 	dt {
-		font: 400 11.5px/1.65 var(--mono);
-		font-variation-settings: 'MONO' 1;
+		font: 700 12px/1.7 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
 		color: var(--faint);
 	}
 	dd {
@@ -195,12 +217,12 @@
 	}
 	.msg {
 		margin-top: 6px;
-		font-size: 12.5px;
+		font-size: 13.5px;
 	}
 	.alt {
 		display: flex;
 		justify-content: space-between;
-		margin-top: 12px;
+		margin-top: 14px;
 		gap: 12px;
 	}
 	.decline {
@@ -209,26 +231,26 @@
 		gap: 10px;
 	}
 	fieldset {
-		border: 1px solid var(--line);
-		border-radius: 6px;
+		border: 1px solid var(--rule-2);
+		border-radius: 2px;
 		padding: 10px 12px;
 		margin: 0;
 		display: grid;
-		gap: 7px;
+		gap: 8px;
 	}
 	legend {
-		font-size: 11.5px;
+		font-size: 12px;
 		padding: 0 4px;
 	}
 	.rad {
 		display: flex;
 		gap: 8px;
 		align-items: center;
-		font-size: 13px;
+		font-size: 14px;
 		color: var(--ink-2);
 	}
 	.rad input {
-		accent-color: var(--teal);
+		accent-color: var(--acc);
 	}
 	.row {
 		display: flex;

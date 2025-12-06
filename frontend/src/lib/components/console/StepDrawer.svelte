@@ -45,12 +45,12 @@
 		<button class="lnk" type="button" onclick={onclose}>close <kbd>esc</kbd></button>
 	</header>
 	<h3>{row.title}</h3>
-	{#if row.why}<p class="why"><span class="mono faint">why</span> {row.why}</p>{/if}
-	{#if confidence !== null}<p class="why"><span class="mono faint">confidence</span> {confidence} in 100</p>{/if}
+	{#if row.why}<p class="why"><span class="eng faint">Why</span> {row.why}</p>{/if}
+	{#if confidence !== null}<p class="why"><span class="eng faint">Confidence</span> {confidence} in 100</p>{/if}
 
 	{#if reasons.length}
 		<div class="blk">
-			<h4>reasons, by weight</h4>
+			<h4>Reasons, by weight</h4>
 			<ul class="reasons">
 				{#each reasons as r, i (i)}
 					<li><span class="w mono {r.weight}">{r.weight === 'strong' ? '▮▮▮' : r.weight === 'medium' ? '▮▮▯' : '▮▯▯'} {r.weight}</span>{r.text}</li>
@@ -60,13 +60,13 @@
 	{/if}
 	{#if row.lookedAt.length}
 		<div class="blk">
-			<h4>looked at</h4>
+			<h4>Looked at</h4>
 			<p class="looked">{row.lookedAt.join(' · ')}</p>
 		</div>
 	{/if}
 	{#if evidence.length}
 		<div class="blk evb">
-			<h4>evidence cited</h4>
+			<h4>Evidence cited</h4>
 			<ul class="ev">
 				{#each evidence as e, i (i)}
 					<li>
@@ -121,22 +121,24 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		font-size: 11.5px;
+		font-size: 12.5px;
 	}
 	h3 {
 		margin: 0;
-		font: 600 15px/1.3 var(--sans);
-		font-variation-settings: 'MONO' 0;
+		font: 800 30px/0.95 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 	}
 	h4 {
-		margin: 0 0 7px;
-		font: 400 11px/1 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--faint);
+		margin: 0 0 8px;
+		font: 700 13px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--dim);
 	}
 	.why {
 		margin: 0;
-		font-size: 13px;
+		font-size: 14.5px;
 		color: var(--ink-2);
 	}
 	.reasons,
@@ -151,20 +153,19 @@
 		display: grid;
 		grid-template-columns: 112px 1fr;
 		gap: 10px;
-		font-size: 13px;
+		font-size: 14px;
 		color: var(--ink-2);
 	}
 	.w {
-		font-size: 11.5px;
-		color: var(--muted);
+		font-size: 12px;
+		color: var(--dim);
 	}
 	.w.strong {
-		color: var(--teal);
+		color: var(--acc-hi);
 	}
 	.looked {
 		margin: 0;
-		font: 400 12px/1.5 var(--mono);
-		font-variation-settings: 'MONO' 1;
+		font: 400 12px/1.5 var(--code);
 		color: var(--ink-2);
 	}
 	.ev li {
