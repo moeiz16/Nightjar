@@ -9,4 +9,4 @@
 	});
 </script>
 
-<p class="mono" style="padding:40px 20px;max-width:1160px;margin:0 auto;color:var(--muted)">Opening this week’s report…</p>
+<p style="padding:40px var(--gut);color:var(--dim)">Opening this week’s report…</p>

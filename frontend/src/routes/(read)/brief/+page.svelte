@@ -1,12 +1,13 @@
 <script lang="ts">
-	// The CISO morning brief (DESIGN.md §0.2, §6.11): dawn bands, full width, finishable in two minutes. The headline,
-	// then the one decision, then the same night the watch saw (the shift chart, read only), then a ruled band of
-	// clocks · approved overnight · on watch now. Everything is composed from the API at runtime.
+	// The CISO morning brief (DESIGN.md §4): the morning report, finishable in two minutes. A stencil headline across
+	// the page, then three columns: the one decision (the only boxed thing on the page) · the night the watch saw (the
+	// same dial, read only) · clocks, approved overnight and who is on watch. Then overnight in plain words and seven
+	// nights. Everything is composed from the API at runtime.
 	import { api } from '$lib/api';
 	import type { IdentityDoc, IncidentSummary, Member, MorningBrief, Posture, ProposalDoc, RegimeAssessment } from '$lib/api/types';
 	import DecisionSheet from '$lib/components/console/DecisionSheet.svelte';
 	import SevenNights from '$lib/components/brief/SevenNights.svelte';
-	import ShiftChart from '$lib/components/console/ShiftChart.svelte';
+	import WatchDial from '$lib/components/console/WatchDial.svelte';
 	import { shift } from '$lib/stores/shift.svelte';
 	import { live } from '$lib/stores/live.svelte';
 	import { session } from '$lib/stores/session.svelte';
@@ -88,10 +89,10 @@
 
 <svelte:head><title>Morning brief · Nightjar SOC</title></svelte:head>
 
-<main class="wrap">
-	<section class="bb head" aria-labelledby="bh">
-		<p class="dateline mono"><b>{longDate(at)}</b> · prepared {prepared} for {session.name}, {session.role === 'executive' ? 'CISO' : session.roleLabel.toLowerCase()} · a 2-minute read</p>
-		<h1 id="bh">{head.lead}{head.tail}{#if head.em}<em>{head.em}</em>{/if}{head.end}</h1>
+<main class="report rack">
+	<section class="lead" aria-labelledby="bh">
+		<p class="dateline"><b class="eng">{longDate(at)}</b><span>Prepared {prepared} for {session.name}, {session.role === 'executive' ? 'CISO' : session.roleLabel.toLowerCase()} · a 2-minute read</span></p>
+		<h2 id="bh" class="headline">{head.lead}{head.tail}{#if head.em}<em>{head.em}</em>{/if}{head.end}</h2>
 		<p class="lede">
 			{lede()}
 			{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise. <b>No one was woken.</b>{/if}
@@ -99,557 +100,441 @@
 		</p>
 	</section>
 
-	{#if decision}
-		<section class="bb decide" aria-labelledby="dq">
-			<div class="decision">
-				<div class="lbl mono">◆ Needs your decision · {decision.a.regime === 'sec_8k' ? 'SEC Form 8-K, Item 1.05' : decision.a.regimeLabel}</div>
-				<h2 id="dq">{decisionQuestion(decision.a, decision.i)}</h2>
+	<div class="cols">
+		{#if decision}
+			<section class="decision ticks" aria-labelledby="dq">
+				<div class="lbl eng">◆ Needs your decision · {decision.a.regime === 'sec_8k' ? 'SEC Form 8-K, Item 1.05' : decision.a.regimeLabel}</div>
+				<h3 id="dq">{decisionQuestion(decision.a, decision.i)}</h3>
 				{#if decision.a.regime === 'sec_8k'}
 					<p>Halden’s shares are listed in the US, so a cybersecurity incident it judges material must be disclosed within four business days of that decision. The decision belongs to you and the disclosure committee, not to the watch.</p>
 				{:else}
 					<p>The watch cannot decide this for {decision.a.entityName}. It belongs to you, with legal and data protection.</p>
 				{/if}
-				<div class="view"><span class="mono">the watch’s view · {decision.a.proposal.reasons.length} reasons</span>
+				<div class="view"><span class="eng">The watch’s view · {decision.a.proposal.reasons.length} reasons</span>
 					<ul>{#each decision.a.proposal.reasons as r (r)}<li>{r}</li>{/each}</ul>
 				</div>
 				{#if deciding}
 					<DecisionSheet incidentId={decision.i.id} reference={decision.i.reference} a={decision.a} tone="brief" onrecorded={() => ((deciding = false), load(), live.loadClocks())} oncancel={() => (deciding = false)} />
 				{:else}
 					<div class="row">
-						<button class="b ink" type="button" onclick={() => (deciding = true)}>Record the decision</button>
-						<button class="b" type="button" onclick={askLead}>Ask the watch lead</button>
-						{#if decision.a.regime === 'sec_8k'}<span class="if mono">If material: 8-K due <b>{shortDay(secDue, NY)}</b></span>{/if}
+						<button class="btn preset-filled-primary-500" type="button" onclick={() => (deciding = true)}>Record the decision</button>
+						<button class="btn preset-outlined-surface-300-700" type="button" onclick={askLead}>Ask the watch lead</button>
 					</div>
+					{#if decision.a.regime === 'sec_8k'}<p class="if">If material: 8-K due <b class="mono">{shortDay(secDue, NY)}</b></p>{/if}
 				{/if}
 				{#if others.length}
 					<p class="also">Also yours: {#each others as o, k (o.i.id + o.a.regime)}{k ? ' · ' : ''}<a href="/incidents/{o.i.reference}?decide={o.a.regime}">{decisionQuestion(o.a, o.i).replace(/\?$/, '')}</a>{/each}.</p>
 				{/if}
-			</div>
+			</section>
+		{/if}
+
+		<section class="col nightcol" aria-labelledby="nb">
+			<h3 id="nb" class="ch">The night the watch saw</h3>
+			<p class="cs">Each line is an incident moving inward through the response; the hand is now.</p>
+			<WatchDial win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} clocks={live.clocks} compact max={400} />
 		</section>
-	{/if}
 
-	<section class="bb nightband" aria-labelledby="nb">
-		<h3 id="nb" class="rl mono">── the night the watch saw <span>· response stages down, hours across · the same chart the watch works from</span></h3>
-		<ShiftChart win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} compact dawn />
-	</section>
-
-	<section class="bb three" aria-label="The handover">
-		<section class="part" aria-labelledby="ck">
-			<h3 id="ck" class="mono">Clocks running <span>{clocks.length} · {clocks.length ? (allOnTrack ? 'all on track' : 'one needs attention') : 'none'}</span></h3>
+		<section class="col" aria-label="The handover">
+			<h3 id="ck" class="ch">Clocks running <span>{clocks.length} · {clocks.length ? (allOnTrack ? 'all on track' : 'one needs attention') : 'none'}</span></h3>
 			{#each clocks as c (c.id)}
 				{@const st = clockState(c, at)}
 				{@const left = hmParts(secondsLeft(c.dueAt, at))}
-				<div class="clk" style="--elapsed:{elapsedFraction(c.startsAt, c.dueAt, at)}">
-					<div class="what"><b>{clockLongLabel(c)}</b><small>{c.incidentReference} · {c.basis}</small></div>
-					<div class="due mono">due<b>{dueLabel(c.dueAt!, at)}</b>{c.regime === 'nis2' ? '' : `${timeOf(c.dueAt!, REGIME_TZ[c.regime])} ${c.regime === 'sec_8k' ? 'New York' : 'Melbourne'}`}</div>
-					<div class="left"><div class="n mono">{left.h}<span class="u">h</span>{left.m}<span class="u">m</span></div><small class:soon={st !== 'on_track'}><span class="g mono">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small></div>
-					<i class="bar2"></i>
+				<div class="clk {st}" style="--elapsed:{elapsedFraction(c.startsAt, c.dueAt, at)}">
+					<div class="what"><b>{clockLongLabel(c)}</b><small>{c.incidentReference} · due {dueLabel(c.dueAt!, at)}{c.regime === 'nis2' ? '' : ` · ${timeOf(c.dueAt!, REGIME_TZ[c.regime])} ${c.regime === 'sec_8k' ? 'New York' : 'Melbourne'}`}</small></div>
+					<div class="left"><div class="n mono">{left.h}<span class="u">h</span>{left.m}<span class="u">m</span></div><small><span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small></div>
+					<i class="bar2" aria-hidden="true"></i>
 				</div>
 			{/each}
-		</section>
-		<section class="part side" aria-label="Approved overnight">
-			<h3 class="mono">Approved overnight · by a person</h3>
-			<ul>
-				{#each approvedOvernight.slice(0, 4) as p (p.id)}<li><span class="ok mono">✓</span> {actionTitle(p, people)}<small class="mono">{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}</small></li>{/each}
-				{#if approvedOvernight.length > 4}<li class="more mono">+ {approvedOvernight.length - 4} more, all logged</li>{/if}
-				{#each pendingNow as p (p.id)}<li><span class="wait mono">‖</span> {actionTitle(p, people)}<small class="mono">waiting for {p.requiredRoles.includes('executive') ? 'you and a responder' : responder}</small></li>{/each}
+
+			<h3 class="ch">Approved overnight · by a person</h3>
+			<ul class="acts">
+				{#each approvedOvernight.slice(0, 4) as p (p.id)}<li><span class="okg mono">✓</span><span>{actionTitle(p, people)}<small>{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}</small></span></li>{/each}
+				{#if approvedOvernight.length > 4}<li class="more">+ {approvedOvernight.length - 4} more, all logged</li>{/if}
+				{#each pendingNow as p (p.id)}<li><span class="wait mono">‖</span><span>{actionTitle(p, people)}<small>waiting for {p.requiredRoles.includes('executive') ? 'you and a responder' : responder}</small></span></li>{/each}
 				{#if !approvedOvernight.length && !pendingNow.length}<li class="faint">Nothing needed a person overnight.</li>{/if}
 			</ul>
-		</section>
-		<section class="part side" aria-label="On watch now and posture">
-			<h3 class="mono">On watch now</h3>
+
+			<h3 class="ch">On watch now</h3>
 			<p class="onw">{responder}, responder, with Triage, Enrichment and Response. Next brief tomorrow at 08:00.</p>
 			{#if posture}
-				<h3 class="mono pt">Posture</h3>
-				<div class="posture">{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'} <small class="mono">— {posture.meanTimeToTriage.trend === 'better' ? 'better than last week' : 'same as last week'}</small></div>
+				<div class="posture"><span class="eng">Posture</span> <b>{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'}</b> <small>{posture.meanTimeToTriage.trend === 'better' ? 'better than last week' : 'same as last week'}</small></div>
 				{#if posturePts}
-					<svg class="spark" viewBox="0 0 300 46" width="300" height="46" role="img" aria-label="Posture over the last 8 weeks: {posture.scoreBand}"><polyline fill="none" stroke="var(--teal)" stroke-width="1.6" points={posturePts} /><circle cx={lastPt[0]} cy={lastPt[1]} r="3" fill="var(--teal)" /><line x1="0" y1="45" x2="300" y2="45" stroke="var(--rule-2)" /></svg>
+					<svg class="spark" viewBox="0 0 300 46" width="300" height="46" role="img" aria-label="Posture over the last 8 weeks: {posture.scoreBand}"><polyline fill="none" stroke="var(--acc)" stroke-width="1.8" points={posturePts} /><circle cx={lastPt[0]} cy={lastPt[1]} r="3" fill="var(--acc)" /><line x1="0" y1="45" x2="300" y2="45" stroke="var(--rule-2)" /></svg>
 				{/if}
 				<p class="onw">{posture.highlights[0] ?? posture.components[0]?.note}</p>
 			{/if}
 		</section>
-	</section>
+	</div>
 
-	<section class="bb two" aria-label="Overnight and the week">
-		<section class="part" aria-labelledby="ov">
-			<h3 id="ov" class="mono">Overnight, in plain words</h3>
+	<div class="two">
+		<section class="col" aria-labelledby="ov">
+			<h3 id="ov" class="ch big">Overnight, in plain words</h3>
 			<ol class="night">
 				{#each overnight as i (i.id)}
 					<li><span class="t mono">{timeOf(i.firstSeen)}</span><p>{plainTitle(i.title).replace(/^./, (c) => c.toUpperCase())}. {#if i.verdict === 'benign'}<b>Closed as noise.</b>{:else if i.status === 'monitoring' || i.status === 'resolved'}<b>Contained.</b>{:else if i.pendingApprovals}Response is waiting for a person to authorise the next step.{:else if i.verdict === 'needs_review'}A person is looking at it this morning.{/if}</p></li>
 				{/each}
 			</ol>
-			<p class="sign mono">— the night watch: Triage, Enrichment and Response, with {responder} on call</p>
+			<p class="sign">— the night watch: Triage, Enrichment and Response, with {responder} on call</p>
 		</section>
 
-		<section class="part week" aria-labelledby="wk">
-			<h3 id="wk" class="mono">Seven nights <span>18:00 to 08:00 · ◆ incident · ● closed as noise</span></h3>
+		<section class="col" aria-labelledby="wk">
+			<h3 id="wk" class="ch big">Seven nights <span>18:00 to 08:00 · ◆ incident · ● closed as noise</span></h3>
 			<SevenNights incidents={week} {at} />
 			{#if posture}
 				<p class="facts">This week the watch looked closely at <b>{posture.alerts.last7d.toLocaleString('en-GB')}</b> alerts and opened <b>{week.length}</b> incidents, <b>{week.filter((i) => i.reportable === 'yes').length}</b> of them reportable. It closed <b>{posture.alerts.suppressedAsNoise.toLocaleString('en-GB')}</b> alerts as noise. Median time to a triage verdict was <b>{posture.meanTimeToTriage.last7dSeconds} s</b>; median time to contain after a person approved was <b>{Math.round(posture.meanTimeToContain.last7dSeconds / 60)} min</b>. Every one of the <b>{weekActions.length}</b> response actions was authorised by a person.</p>
 			{/if}
 		</section>
-	</section>
+	</div>
 </main>
 
 <style>
-	.wrap {
-		position: relative;
-		padding: 0 0 80px;
+	.report {
+		padding: 30px var(--gut) 0;
+		max-width: 1480px;
+		margin: 0 auto;
 	}
-	/* dawn bands: full width, hard-edged, content starts on the shift grid's lane-label line */
-	.bb {
-		position: relative;
-		padding: 34px 28px 36px calc(var(--gut) + 6px);
-		border-bottom: 1px solid var(--rule);
-	}
-	.bb.head {
-		padding-top: 48px;
-	}
-	.bb.head h1,
-	.bb.head .lede {
-		max-width: 920px;
-	}
-	.bb.decide {
-		background: color-mix(in srgb, var(--lav) 7%, transparent);
-		border-top: 1px solid color-mix(in srgb, var(--lav) 30%, transparent);
-	}
-	.bb.decide .decision {
-		max-width: 920px;
-	}
-	.bb.nightband {
-		padding: 18px 0 8px;
-		background: color-mix(in srgb, var(--page) 70%, transparent);
-	}
-	.rl {
-		margin: 0 0 6px calc(var(--gut) + 6px);
-		font-size: 12px;
-		font-weight: 600;
-		color: var(--ink);
-	}
-	.rl span {
-		font-weight: 400;
-		color: var(--muted);
-	}
-	.bb.three,
-	.bb.two {
+	.lead {
 		display: grid;
-		gap: 0;
-		padding-top: 0;
-		padding-bottom: 0;
-	}
-	.bb.three {
-		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
-	}
-	@media (min-width: 761px) {
-		.bb.three .clk {
-			grid-template-columns: minmax(0, 1fr) auto auto;
-			gap: 22px;
-		}
-	}
-	.bb.two {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-	}
-	.bb.three > .part,
-	.bb.two > .part {
-		margin: 0;
-		padding: 28px 28px 30px 0;
-	}
-	.bb.three > .part + .part,
-	.bb.two > .part + .part {
-		padding-left: 28px;
-		border-left: 1px solid var(--rule);
-	}
-	.onw {
-		margin: 0 0 12px;
-		font-size: 15px;
-		line-height: 1.55;
-		color: var(--ink-2);
-	}
-	.pt {
-		margin-top: 18px !important;
+		grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+		column-gap: 44px;
+		align-items: end;
 	}
 	.dateline {
-		margin: 0;
-		font-size: 13px;
-		line-height: 1.5;
-		color: var(--muted);
+		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 16px;
+		align-items: baseline;
+		margin: 0 0 16px;
+		font-size: 14px;
+		color: var(--dim);
 	}
 	.dateline b {
-		color: var(--ink);
-		font-weight: 500;
+		font-size: 15px;
+		color: var(--acc);
 	}
-	h1 {
-		margin: 18px 0 22px;
-		font: 500 46px/1.12 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.03em;
+	.headline {
+		margin: 0;
+		font: 800 68px/0.9 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.015em;
+		color: var(--ink);
 		text-wrap: balance;
 	}
-	h1 em {
+	.headline em {
 		font-style: normal;
-		color: var(--teal);
+		color: var(--acc);
 	}
 	.lede {
 		margin: 0;
-		font-size: 19px;
-		line-height: 1.62;
+		padding-left: 18px;
+		border-left: 3px solid var(--acc);
+		font-size: 17px;
+		line-height: 1.6;
 		color: var(--ink-2);
-		max-width: 680px;
 	}
 	.lede b {
 		color: var(--ink);
-		font-weight: 600;
+	}
+	.cols {
+		display: grid;
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 1fr);
+		gap: 34px;
+		margin-top: 28px;
+		padding-top: 26px;
+		border-top: 3px double var(--rule-2);
+		align-items: start;
 	}
 	.decision {
-		padding: 0 0 0 22px;
-		border-left: 3px solid var(--lav);
+		padding: 22px 24px 24px;
+		background-color: var(--plate);
+		box-shadow: inset 4px 0 0 var(--person);
+		--tk: var(--acc);
+		--tl: 16px;
 	}
 	.decision .lbl {
-		font-size: 12px;
-		font-weight: 500;
-		color: var(--lav);
+		font-size: 13px;
+		color: var(--ink);
+		margin-bottom: 12px;
 	}
-	.decision h2 {
-		margin: 12px 0 10px;
-		font: 600 23px/1.3 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.015em;
+	.decision h3 {
+		margin: 0 0 12px;
+		font: 800 36px/0.95 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
 	.decision p {
-		margin: 0 0 10px;
-		font-size: 15.5px;
+		margin: 0 0 14px;
+		font-size: 16px;
 		line-height: 1.6;
 		color: var(--ink-2);
 	}
 	.view {
-		margin: 16px 0 20px;
-		padding: 14px 16px;
-		border-radius: 4px;
-		background: var(--lav-wash);
+		margin: 4px 0 18px;
+		padding: 12px 14px;
+		background: var(--raised);
+	}
+	.view .eng {
+		font-size: 12px;
+		color: var(--dim);
+	}
+	.view ul {
+		margin: 8px 0 0;
+		padding-left: 18px;
 		font-size: 15px;
 		line-height: 1.55;
 		color: var(--ink);
 	}
-	.view span {
-		display: block;
-		font-size: 12px;
-		color: var(--muted);
-		margin-bottom: 8px;
-	}
-	.view ul {
-		margin: 0;
-		padding-left: 20px;
-	}
 	.row {
 		display: flex;
-		gap: 10px;
-		align-items: center;
 		flex-wrap: wrap;
+		gap: 10px;
 	}
 	.if {
-		margin-left: 8px;
-		font-size: 12.5px;
-		color: var(--muted);
+		margin: 12px 0 0 !important;
+		font-size: 14px !important;
 	}
 	.also {
-		margin-top: 16px !important;
+		margin-top: 14px !important;
 		font-size: 14px !important;
 	}
 	.also a {
-		color: var(--lav);
-	}
-	.b {
-		height: 40px;
-		padding: 0 16px;
-		border-radius: 6px;
-		font-size: 14.5px;
-		font-weight: 500;
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		border: 1px solid var(--rule-2);
-		color: var(--ink);
-		text-decoration: none;
-	}
-	.b.ink {
-		background: var(--ink);
-		color: var(--page);
-		border-color: var(--ink);
-	}
-	.decision :global(.btn.preset-filled-surface-950-50) {
-		background: var(--ink);
-		color: var(--page);
-		border-color: var(--ink);
-		height: 40px;
-		font-size: 14.5px;
-	}
-	.decision :global(.textarea),
-	.decision :global(.input),
-	.decision :global(.select) {
-		background: var(--page);
-		border-color: var(--rule-2);
 		color: var(--ink);
 	}
-	.part {
-		margin-top: 64px;
+	.col {
+		min-width: 0;
 	}
-	.part > h3 {
+	.ch {
+		margin: 0 0 12px;
 		display: flex;
+		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 12px;
-		margin: 0 0 6px;
-		font-size: 13px;
-		font-weight: 600;
-		color: var(--ink);
+		gap: 4px 12px;
+		font: 700 20px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		padding-bottom: 9px;
+		border-bottom: 2px solid var(--ink);
 	}
-	.part > h3 span {
-		font-weight: 400;
-		color: var(--muted);
+	.ch + * {
+		margin-top: 0;
+	}
+	.col .ch:not(:first-child) {
+		margin-top: 28px;
+	}
+	.ch span {
+		font: 600 13px/1 var(--ui);
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--dim);
+	}
+	.ch.big {
+		font-size: 26px;
+	}
+	.cs {
+		margin: 0;
+		font-size: 14px;
+		color: var(--dim);
+	}
+	.nightcol :global(.wd) {
+		margin-top: 4px;
 	}
 	.clk {
-		display: grid;
-		grid-template-columns: 1fr 150px 168px;
-		gap: 20px;
-		align-items: center;
-		padding: 20px 0 22px;
-		border-bottom: 1px solid var(--rule);
 		position: relative;
-	}
-	.clk:first-of-type {
-		border-top: 1px solid var(--rule-2);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 12px;
+		align-items: center;
+		padding: 12px 0 14px;
+		border-bottom: 1px solid var(--rule);
 	}
 	.what b {
 		display: block;
-		font-size: 16.5px;
-		font-weight: 600;
+		font-weight: 700;
+		font-size: 15px;
 	}
 	.what small {
 		display: block;
-		margin-top: 4px;
-		font-size: 14px;
-		color: var(--muted);
-	}
-	.due {
+		margin-top: 3px;
 		font-size: 13px;
-		line-height: 1.45;
-		color: var(--muted);
-	}
-	.due b {
-		display: block;
-		color: var(--ink);
-		font-weight: 500;
+		color: var(--dim);
 	}
 	.left {
 		text-align: right;
 	}
 	.n {
-		font-size: 34px;
-		font-weight: 300;
-		line-height: 1;
-		letter-spacing: -0.03em;
+		font-size: 26px;
+		font-weight: 400;
 		color: var(--ink);
+		line-height: 1;
 	}
 	.n .u {
-		font-size: 15px;
-		color: var(--muted);
-		letter-spacing: 0;
-		margin: 0 6px 0 2px;
+		font-size: 13px;
+		color: var(--dim);
+		margin: 0 2px;
 	}
 	.left small {
 		display: block;
-		margin-top: 6px;
-		font-size: 12.5px;
-		color: var(--teal);
+		margin-top: 4px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--ink-2);
 	}
-	.left small.soon {
-		color: var(--amber);
+	.clk.due_soon .left small {
+		color: var(--soon);
 	}
 	.bar2 {
 		position: absolute;
 		left: 0;
-		right: 0;
 		bottom: -1px;
 		height: 2px;
-		background: linear-gradient(90deg, var(--teal) calc(var(--elapsed) * 100%), transparent 0);
-		opacity: 0.55;
+		width: calc(var(--elapsed) * 100%);
+		background: var(--acc);
+	}
+	.acts {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.acts li {
+		display: grid;
+		grid-template-columns: 22px minmax(0, 1fr);
+		gap: 6px;
+		padding: 9px 0;
+		border-bottom: 1px solid var(--rule);
+		font-size: 15px;
+	}
+	.acts small {
+		display: block;
+		font-size: 13px;
+		color: var(--dim);
+	}
+	.okg {
+		color: var(--ok);
+	}
+	.wait {
+		color: var(--person);
+		font-weight: 700;
+	}
+	.more {
+		display: block !important;
+		color: var(--dim);
+		font-size: 13.5px !important;
+	}
+	.onw {
+		margin: 0 0 10px;
+		font-size: 15px;
+		line-height: 1.55;
+		color: var(--ink-2);
+	}
+	.posture {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		margin: 14px 0 6px;
+	}
+	.posture .eng {
+		font-size: 13px;
+		color: var(--dim);
+	}
+	.posture b {
+		font: 800 26px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	.posture small {
+		font-size: 13px;
+		color: var(--dim);
+	}
+	.spark {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		margin-bottom: 8px;
+	}
+	.two {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 40px;
+		margin-top: 44px;
 	}
 	.night {
 		list-style: none;
-		margin: 18px 0 0;
+		margin: 0;
 		padding: 0;
 	}
 	.night li {
 		display: grid;
-		grid-template-columns: 76px 1fr;
-		gap: 18px;
-		padding: 14px 0;
+		grid-template-columns: 56px minmax(0, 1fr);
+		gap: 12px;
+		padding: 12px 0;
 		border-bottom: 1px solid var(--rule);
 	}
 	.night .t {
-		font-size: 13px;
-		line-height: 1.7;
-		color: var(--muted);
+		font-size: 14px;
+		color: var(--acc);
+		padding-top: 3px;
 	}
 	.night p {
 		margin: 0;
-		font-size: 16px;
-		line-height: 1.62;
-		color: var(--ink-2);
-	}
-	.night p b {
-		color: var(--ink);
-		font-weight: 600;
+		font-size: 16.5px;
+		line-height: 1.55;
 	}
 	.sign {
-		margin-top: 18px;
-		font-size: 13px;
-		line-height: 1.6;
-		color: var(--muted);
+		margin: 14px 0 0;
+		font-size: 14px;
+		font-style: italic;
+		color: var(--dim);
 	}
 	.facts {
-		margin-top: 18px;
-		font-size: 16px;
-		line-height: 1.75;
+		margin: 16px 0 0;
+		font-size: 15.5px;
+		line-height: 1.6;
 		color: var(--ink-2);
 	}
 	.facts b {
-		font-family: var(--mono);
-		font-variation-settings: 'MONO' 1;
-		font-weight: 500;
 		color: var(--ink);
-		font-size: 15px;
 	}
-	.side {
-		padding-top: 6px;
-	}
-	.posture {
-		font: 500 28px/1 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.02em;
-		display: flex;
-		align-items: baseline;
-		gap: 10px;
-		flex-wrap: wrap;
-	}
-	.posture small {
-		font-size: 12.5px;
-		color: var(--teal);
-		letter-spacing: 0;
-	}
-	.spark {
-		display: block;
-		margin-top: 12px;
-		max-width: 100%;
-		height: auto;
-	}
-	.side p {
-		margin: 10px 0 0;
-		font-size: 14px;
-		line-height: 1.55;
-		color: var(--ink-2);
-	}
-	.side ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 12px;
-	}
-	.side li {
-		font-size: 14px;
-		line-height: 1.45;
-		color: var(--ink-2);
-	}
-	.side li small {
-		display: block;
-		font-size: 12px;
-		line-height: 1.4;
-		color: var(--muted);
-	}
-	.ok {
-		color: var(--teal);
-	}
-	.more {
-		font-size: 12px;
-		color: var(--muted) !important;
-	}
-	.wait {
-		color: var(--lav);
-	}
-	@media (max-width: 1100px) {
-		.bb.three {
+	@media (max-width: 1180px) {
+		.cols {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		}
-		.bb.three > .part:first-child {
+		.decision {
 			grid-column: 1 / -1;
-			border-bottom: 1px solid var(--rule);
 		}
-		.bb.three > .part:nth-child(2) {
-			padding-left: 0;
-			border-left: 0;
+		.headline {
+			font-size: 58px;
+		}
+		.lead {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.lede {
+			margin-top: 20px;
 		}
 	}
 	@media (max-width: 760px) {
-		.bb {
-			padding: 26px 16px 28px;
+		.report {
+			padding-top: 20px;
 		}
-		.bb.nightband {
-			padding: 14px 0 6px;
-		}
-		.rl {
-			margin-left: 16px;
-		}
-		.bb.three,
-		.bb.two {
-			grid-template-columns: minmax(0, 1fr);
-			padding: 0 16px;
-		}
-		.bb.three > .part,
-		.bb.two > .part,
-		.bb.three > .part + .part,
-		.bb.two > .part + .part,
-		.bb.three > .part:nth-child(2) {
-			padding: 22px 0;
-			border-left: 0;
-			border-top: 1px solid var(--rule);
-		}
-		.bb.three > .part:first-child,
-		.bb.two > .part:first-child {
-			border-top: 0;
-		}
-		h1 {
-			font-size: 31px;
+		.headline {
+			font-size: 42px;
 		}
 		.lede {
-			font-size: 17px;
+			font-size: 16.5px;
+		}
+		.cols,
+		.two {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 26px;
 		}
 		.decision {
-			padding: 20px 16px 20px 18px;
+			padding: 18px 16px;
 		}
-		.decision h2 {
-			font-size: 20px;
+		.decision h3 {
+			font-size: 28px;
 		}
-		.clk {
-			grid-template-columns: 1fr auto;
-			gap: 10px;
-		}
-		.clk .due {
-			grid-column: 1;
-			grid-row: 2;
-		}
-		.clk .left {
-			grid-row: 1 / 3;
-			grid-column: 2;
-		}
-		.n {
-			font-size: 26px;
-		}
-		.night li {
-			grid-template-columns: 52px 1fr;
-			gap: 12px;
-		}
-		.if {
-			margin-left: 0;
+		.nightcol {
+			display: none;
 		}
 	}
 </style>

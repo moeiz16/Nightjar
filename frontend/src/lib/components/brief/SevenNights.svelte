@@ -27,11 +27,11 @@
 <svg viewBox="0 0 720 236" role="img" aria-label="Seven nights from 18:00 to 08:00. {marks.length} incidents; {marks.filter((m) => m.pos.row === 6).length} last night.">
 	{#each TICKS as { l, h } (l)}
 		<line x1={x(h)} y1="6" x2={x(h)} y2={7 * ROW + 4} stroke="var(--rule)" stroke-dasharray={h === 6 ? undefined : '2 4'} />
-		<text x={x(h)} y={7 * ROW + 22} text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--faint)">{l}</text>
+		<text x={x(h)} y={7 * ROW + 22} text-anchor="middle" font-family="var(--code)" font-size="11" fill="var(--faint)">{l}</text>
 	{/each}
 	{#each labels as l, d (d)}
 		{@const y = 20 + d * ROW}
-		<text x="0" y={y + 4} font-family="var(--sans)" font-size="12.5" fill={d === 6 ? 'var(--ink)' : 'var(--muted)'}>{l}</text>
+		<text x="0" y={y + 4} font-family="var(--ui)" font-size="12.5" fill={d === 6 ? 'var(--ink)' : 'var(--dim)'}>{l}</text>
 		<line x1={X0} y1={y} x2={X1} y2={y} stroke="var(--rule-2)" />
 	{/each}
 	{#each marks as m (m.i.id)}
@@ -40,11 +40,11 @@
 		{#if m.i.verdict === 'benign' || m.i.likelyBenign}
 			<circle {cx} cy={y} r="3.2" fill="var(--faint)" opacity=".75"><title>{m.i.reference} {m.i.title} · closed as noise</title></circle>
 		{:else}
-			<rect x={cx - 6} y={y - 6} width="12" height="12" transform="rotate(45 {cx} {y})" fill={m.pos.row === 6 ? 'var(--lav)' : 'var(--teal)'}><title>{m.i.reference} {m.i.title}</title></rect>
+			<rect x={cx - 6} y={y - 6} width="12" height="12" transform="rotate(45 {cx} {y})" fill={m.pos.row === 6 ? 'var(--person)' : 'var(--acc)'}><title>{m.i.reference} {m.i.title}</title></rect>
 		{/if}
 	{/each}
 	{#each lastNight as m, k (m.i.id)}
-		<text x={x(m.pos.hour) + (k % 2 ? -10 : 12)} y={20 + 6 * ROW - 10} text-anchor={k % 2 ? 'end' : 'start'} font-family="var(--sans)" font-size="12" fill="var(--ink-2)">{short(m.i.title)}</text>
+		<text x={x(m.pos.hour) + (k % 2 ? -10 : 12)} y={20 + 6 * ROW - 10} text-anchor={k % 2 ? 'end' : 'start'} font-family="var(--ui)" font-size="12" fill="var(--ink-2)">{short(m.i.title)}</text>
 	{/each}
 </svg>
 

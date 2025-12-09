@@ -69,24 +69,24 @@
 		<p class="err">{err}</p>
 		<p><a href="/brief/week">Open this week’s report</a></p>
 	{:else if brief && m}
-		<p class="dateline mono">Week {week.split('-W')[1]} · {label} · Halden Logistics · prepared for the board</p>
-		<h1>{brief.headline}</h1>
-		<div class="tools mono"><button type="button" onclick={() => window.print()}>Save as PDF ⇩</button>
+		<p class="dateline eng">Week {week.split('-W')[1]} · {label} · Halden Logistics · prepared for the board</p>
+		<h2 class="headline">{brief.headline}</h2>
+		<div class="tools"><button type="button" onclick={() => window.print()}>Save as PDF ⇩</button>
 			{#each list.filter((l) => l.week !== week).slice(0, 3) as l (l.week)}<a href="/brief/week/{l.week}">week {l.week.split('-W')[1]}</a>{/each}
 		</div>
 
 		<section>
-			<h2 class="mono">Seven nights <span>◆ incident · ● closed as noise</span></h2>
+			<h3 class="sh">Seven nights <span>◆ incident · ● closed as noise</span></h3>
 			<SevenNights incidents={inWeek} at={range ? range.to : now()} />
 		</section>
 
 		<section>
-			<h2 class="mono">Incidents, as told by their replays</h2>
+			<h3 class="sh">Incidents, as told by their replays</h3>
 			{#each notable as i (i.id)}
 				{@const st = stories[i.id] ?? []}
 				<article class="story">
-					<h3><span class="lav mono">◆</span> {i.reference} {i.title}</h3>
-					<p class="meta mono">{i.reportable === 'yes' ? `reportable · ${i.nextDeadline ? regimeShort(i.nextDeadline.regime) : 'notices filed'}` : 'not reportable'} · {contained(i) ? `contained in ${contained(i)}` : 'no action needed'} · {actionsFor(i.id).length} {actionsFor(i.id).length === 1 ? 'action' : 'actions'} approved by a person</p>
+					<h4><span class="person mono">◆</span> <span class="mono ref">{i.reference}</span> {i.title}</h4>
+					<p class="meta">{i.reportable === 'yes' ? `reportable · ${i.nextDeadline ? regimeShort(i.nextDeadline.regime) : 'notices filed'}` : 'not reportable'} · {contained(i) ? `contained in ${contained(i)}` : 'no action needed'} · {actionsFor(i.id).length} {actionsFor(i.id).length === 1 ? 'action' : 'actions'} approved by a person</p>
 					<dl>
 						<div><dt>What happened</dt><dd>{incidentShortName(i).replace(/^./, (c) => c.toUpperCase())}, first seen {shortDay(i.firstSeen)} at {timeOf(i.firstSeen)}.</dd></div>
 						<div><dt>What we did</dt><dd>{st.length ? st.slice(0, 4).map((e) => `${timeOf(e.at)} ${e.title.replace(/ · /g, ', ')}`).join('. ') + '.' : 'The watch triaged and grouped the alerts.'}</dd></div>
@@ -94,52 +94,53 @@
 					</dl>
 				</article>
 			{:else}
-				<p class="muted">No incident this week needed more than the watch.</p>
+				<p class="dim">No incident this week needed more than the watch.</p>
 			{/each}
 		</section>
 
 		<section class="facts">
-			<h2 class="mono">The numbers, in sentences</h2>
+			<h3 class="sh">The numbers, in sentences</h3>
 			<p><b>Clocks:</b> {#if reportableCount}{reportableCount} reportable {reportableCount === 1 ? 'incident' : 'incidents'}; every notice due this week went out on time, recorded with who submitted it.{:else}no incident this week needed a regulator notice.{/if}</p>
 			<p><b>Noise:</b> {m.alerts.last7d.toLocaleString('en-GB')} alerts became {m.alerts.incidentsLast7d} {m.alerts.incidentsLast7d === 1 ? 'incident' : 'incidents'} ({m.alerts.reductionPct}% fewer things to look at than rules alone){#if m.alerts.suppressedAsNoise}; triage set {m.alerts.suppressedAsNoise.toLocaleString('en-GB')} aside as noise{/if}, and {noiseClosed} {noiseClosed === 1 ? 'incident was' : 'incidents were'} closed as harmless.</p>
 			<p><b>Speed:</b> the first verdict on an incident took {duration(m.meanTimeToTriage.last7dSeconds)} on average ({duration(m.meanTimeToTriage.last30dSeconds)} over 30 days); containment followed in {duration(m.meanTimeToContain.last7dSeconds)}.</p>
 			<svg class="dotplot" viewBox="0 0 640 60" role="img" aria-label="Time to contain per incident this week">
 				<line x1="0" y1="30" x2="640" y2="30" stroke="var(--rule-2)" />
-				{#each [0, 15, 30, 45, 60] as t (t)}<text x={t * 10 + 10} y="54" font-size="11" font-family="var(--mono)" fill="var(--faint)">{t} min</text>{/each}
-				{#each dots as i, k (i.id)}{@const c = contained(i)}{#if c && c.endsWith('min')}<circle cx={Math.min(620, parseInt(c) * 10 + 10)} cy={30 - (k % 3) * 6 + 6} r="5" fill="var(--teal)" opacity=".8"><title>{i.reference}: {c}</title></circle>{/if}{/each}
+				{#each [0, 15, 30, 45, 60] as t (t)}<text x={t * 10 + 10} y="54" font-size="11" font-family="var(--code)" fill="var(--faint)">{t} min</text>{/each}
+				{#each dots as i, k (i.id)}{@const c = contained(i)}{#if c && c.endsWith('min')}<circle cx={Math.min(620, parseInt(c) * 10 + 10)} cy={30 - (k % 3) * 6 + 6} r="5" fill="var(--acc)" opacity=".8"><title>{i.reference}: {c}</title></circle>{/if}{/each}
 			</svg>
 			<p><b>Next week:</b> {m.components[0]?.note ?? ''} The NIS2 final report for the dispatch incident is due one month after its incident notification.</p>
 		</section>
-		<p class="foot mono">Sample company and data · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; not legal advice.</p>
+		<p class="foot">Sample company and data · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; not legal advice.</p>
 	{:else}
-		<p class="mono muted">Assembling the week…</p>
+		<p class="dim">Assembling the week…</p>
 	{/if}
 </main>
 
 <style>
 	.doc {
 		position: relative;
-		max-width: calc(var(--gut) + 900px);
+		max-width: 1080px;
 		margin: 0;
-		padding: 44px 28px 100px calc(var(--gut) + 6px);
+		padding: 30px var(--gut) 80px;
 	}
 	.dateline {
-		font-size: 13px;
-		color: var(--muted);
+		font-size: 14px;
+		color: var(--acc);
 		margin: 0;
 	}
-	h1 {
-		margin: 16px 0 14px;
-		font: 500 30px/1.25 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.02em;
+	.headline {
+		margin: 16px 0 18px;
+		font: 800 64px/0.92 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.015em;
 		text-wrap: balance;
 	}
 	.tools {
 		display: flex;
 		gap: 16px;
-		font-size: 12px;
-		color: var(--muted);
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--dim);
 	}
 	.tools button,
 	.tools a {
@@ -149,34 +150,48 @@
 		border-bottom: 1px solid var(--rule-2);
 	}
 	section {
-		margin-top: 52px;
+		margin-top: 48px;
 	}
-	h2 {
+	.sh {
 		display: flex;
-		gap: 12px;
+		flex-wrap: wrap;
+		gap: 4px 14px;
 		align-items: baseline;
-		margin: 0 0 6px;
-		font-size: 13px;
-		font-weight: 600;
+		margin: 0 0 10px;
+		padding-bottom: 9px;
+		border-bottom: 2px solid var(--ink);
+		font: 700 24px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
 		color: var(--ink);
 	}
-	h2 span {
-		font-weight: 400;
-		color: var(--muted);
+	.sh span {
+		font: 600 13px/1 var(--ui);
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--dim);
 	}
 	.story {
 		padding: 20px 0;
 		border-top: 1px solid var(--rule);
 	}
-	.story h3 {
-		margin: 0 0 4px;
-		font: 600 17px/1.35 var(--sans);
-		font-variation-settings: 'MONO' 0;
+	.story h4 {
+		margin: 0 0 6px;
+		font: 800 28px/0.98 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.story .ref {
+		font-size: 0.7em;
+		font-weight: 500;
+		letter-spacing: 0;
+		color: var(--acc);
 	}
 	.meta {
 		margin: 0 0 12px;
-		font-size: 12px;
-		color: var(--muted);
+		font-size: 13.5px;
+		font-weight: 600;
+		color: var(--dim);
 	}
 	dl {
 		margin: 0;
@@ -189,8 +204,9 @@
 		gap: 16px;
 	}
 	dt {
-		font: 400 12.5px/1.7 var(--mono);
-		font-variation-settings: 'MONO' 1;
+		font: 700 13px/1.7 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
 		color: var(--faint);
 	}
 	dd {
@@ -215,7 +231,7 @@
 	}
 	.foot {
 		margin-top: 60px;
-		font-size: 11.5px;
+		font-size: 13px;
 		color: var(--faint);
 	}
 	.err {
@@ -225,8 +241,8 @@
 		.doc {
 			padding: 28px 16px 70px;
 		}
-		h1 {
-			font-size: 24px;
+		.headline {
+			font-size: 40px;
 		}
 		dl div {
 			grid-template-columns: 1fr;

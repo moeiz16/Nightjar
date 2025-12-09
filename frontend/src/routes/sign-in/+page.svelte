@@ -1,16 +1,19 @@
 <script lang="ts">
-	// Sign on to the watch (DESIGN.md §0.2): the idle shift axis on top, then one left-aligned band. A shift starts
-	// with a sign-on that says which watch you are joining; the demo roles are a Segment, not a grid of cards.
+	// Sign on to the watch (DESIGN.md §4): the watch bill. The idle dial shows the time on the left; on the right a
+	// shift starts with a sign-on that says which watch you are joining, then the roster of demo roles (role, who,
+	// what they do, Take), then your own account.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import ShiftAxis from '$lib/components/shell/ShiftAxis.svelte';
-	import Choice from '$lib/components/ui/Choice.svelte';
+	import StationHead from '$lib/components/shell/StationHead.svelte';
+	import LampPanel from '$lib/components/shell/LampPanel.svelte';
+	import WatchDial from '$lib/components/console/WatchDial.svelte';
 	import { problemMessage, ApiError } from '$lib/api';
 	import { live } from '$lib/stores/live.svelte';
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { BRUSSELS, longDate, timeOf } from '$lib/time/clock';
+	import { shiftWindow, watchOf } from '$lib/util/shift';
 
 	const DEMO_PASSWORD = 'Nightjar-demo-2025!';
 	const ROLES = [
@@ -19,14 +22,20 @@
 		{ key: 'ciso', label: 'CISO', name: 'Ingrid Vos', email: 'ingrid.vos@halden.example', note: 'lands on the morning brief and owns the regulator decisions' },
 		{ key: 'auditor', label: 'Auditor', name: 'Samira Haddad', email: 'samira.haddad@halden.example', note: 'reads everything and checks the sealed activity log' }
 	] as const;
-	type RoleKey = (typeof ROLES)[number]['key'];
-	let role = $state<RoleKey>('responder');
-	const picked = $derived(ROLES.find((r) => r.key === role)!);
+	const win = $derived(shiftWindow(live.now, BRUSSELS));
+	const watch = $derived(watchOf(live.now, BRUSSELS));
+	const PUBLIC = [
+		{ n: 1, href: '/', label: 'The night' },
+		{ n: 2, href: '/#round', label: 'The round' },
+		{ n: 3, href: '/#clocks', label: 'The clocks' },
+		{ n: 4, href: '/sign-in', label: 'Sign on', lit: true }
+	];
 	let email = $state('');
 	let password = $state('');
 	let err = $state('');
 	let fieldErr = $state<Record<string, string>>({});
 	let busy = $state<string | null>(null);
+	const roleWord = (r: (typeof ROLES)[number]) => (r.key === 'ciso' ? 'the CISO' : r.label.toLowerCase());
 
 	onMount(async () => {
 		document.documentElement.dataset.theme = ui.theme;
@@ -64,34 +73,54 @@
 <svelte:head><title>Take the watch · Nightjar SOC</title></svelte:head>
 
 <div class="page">
-	<ShiftAxis idle />
-	<main class="work">
-		<section class="band band-in" aria-labelledby="t">
-			<header class="rule mono"><span class="dash" aria-hidden="true">──</span><h1 id="t">sign on</h1><span>· Halden Logistics demo</span><span class="run" aria-hidden="true"></span><a class="lnk" href="/">↺ replay the night</a></header>
-			<div class="body">
-				<p class="when mono">You take the watch at <b>{timeOf(live.now, BRUSSELS)}</b> · {longDate(live.now, BRUSSELS)}</p>
-				<p class="lede">Three teammates are on shift: Triage, Enrichment and Response. Nothing is switched off until a person holds to authorise it.</p>
-
-				<div class="demo">
-					<span class="mono faint step">1 · choose a role</span>
-					<Choice label="Demo role" size="md" bind:value={role} options={ROLES.map((r) => ({ value: r.key, label: r.label }))} />
-					<p class="who"><b>{picked.name}</b> · {picked.note}</p>
-					<button class="btn preset-filled-primary-700-300 btn-lg" type="button" onclick={() => signIn(picked.email, DEMO_PASSWORD, picked.key)} disabled={!!busy}>
-						{busy === picked.key ? 'Signing on…' : `Sign on as ${picked.label.toLowerCase() === 'ciso' ? 'the CISO' : picked.label.toLowerCase()} →`}
-					</button>
-				</div>
-
-				<div class="own">
-					<span class="mono faint step">or with your own account</span>
-					<form onsubmit={submit} novalidate>
-						<label class="label"><span>Work email</span><input class="input" type="email" autocomplete="username" bind:value={email} placeholder="marcus.bell@halden.example" aria-invalid={!!fieldErr.email} /></label>
-						<label class="label"><span>Password</span><input class="input" type="password" autocomplete="current-password" bind:value={password} aria-invalid={!!fieldErr.password} /></label>
-						<button class="btn preset-filled-surface-950-50" type="submit" disabled={!!busy}>{busy === 'form' ? 'Taking the watch…' : 'Take the watch →'}</button>
-					</form>
-					{#if err}<p class="ferr" role="alert">{err}</p>{/if}
-				</div>
-				<p class="fine mono">Forgot your password? Ask your administrator · Sample company and data</p>
+	<StationHead title="Sign on" sub="Halden Logistics demo · sample company and data" home="/">
+		{#snippet panel()}<LampPanel items={PUBLIC} />{/snippet}
+		{#snippet right()}
+			<div class="pr">
+				<span class="t mono">{timeOf(live.now, BRUSSELS)}</span>
+				<span class="eng d">{watch.label} watch · Antwerp</span>
+				<a class="lnk" href="/">↺ Replay the night</a>
 			</div>
+		{/snippet}
+	</StationHead>
+	<main class="bill rack" id="main">
+		<div class="dialw" aria-hidden="true">
+			<WatchDial {win} incidents={[]} log={[]} tz={BRUSSELS} compact max={460} />
+		</div>
+		<section class="on" aria-labelledby="t">
+			<p class="eng kicker">The watch bill · {longDate(live.now, BRUSSELS)}</p>
+			<h2 id="t" class="when">You take the watch at <span class="mono">{timeOf(live.now, BRUSSELS)}</span></h2>
+			<p class="lede">Three teammates are on shift: Triage, Enrichment and Response. Nothing is switched off until a person holds to authorise it.</p>
+
+			<table class="roster">
+				<caption class="sr">Demo roles</caption>
+				<thead><tr><th scope="col">Station</th><th scope="col">On watch</th><th scope="col">Does</th><th scope="col"><span class="sr">Sign on</span></th></tr></thead>
+				<tbody>
+					{#each ROLES as r (r.key)}
+						<tr>
+							<th scope="row" class="eng rl">{r.label}</th>
+							<td class="nm">{r.name}</td>
+							<td class="nt">{r.note}</td>
+							<td class="go">
+								<button class="btn btn-sm {r.key === 'responder' ? 'preset-filled-primary-500' : 'preset-outlined-surface-300-700'}" type="button" onclick={() => signIn(r.email, DEMO_PASSWORD, r.key)} disabled={!!busy} aria-label="Sign on as {roleWord(r)}">
+									{busy === r.key ? 'Signing on…' : 'Take →'}
+								</button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+
+			<div class="own">
+				<p class="eng step">Or with your own account</p>
+				<form onsubmit={submit} novalidate>
+					<label class="label"><span>Work email</span><input class="input" type="email" autocomplete="username" bind:value={email} placeholder="marcus.bell@halden.example" aria-invalid={!!fieldErr.email} /></label>
+					<label class="label"><span>Password</span><input class="input" type="password" autocomplete="current-password" bind:value={password} aria-invalid={!!fieldErr.password} /></label>
+					<button class="btn preset-filled-surface-950-50" type="submit" disabled={!!busy}>{busy === 'form' ? 'Taking the watch…' : 'Take the watch →'}</button>
+				</form>
+				{#if err}<p class="ferr" role="alert">{err}</p>{/if}
+			</div>
+			<p class="fine">Forgot your password? Ask your administrator · Sample company and data</p>
 		</section>
 	</main>
 </div>
@@ -99,114 +128,184 @@
 <style>
 	.page {
 		min-height: 100vh;
-		min-height: 100dvh;
-		display: grid;
-		grid-template-rows: auto 1fr;
-		background: var(--bg);
-	}
-	.work {
-		min-width: 0;
-	}
-	.band {
-		background: var(--pane);
-		border-bottom: 1px solid var(--line);
-	}
-	.rule {
-		height: 34px;
 		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 0 16px;
-		font-size: 12px;
-		color: var(--muted);
-		background: var(--bg);
-		border-bottom: 1px solid var(--line);
-		white-space: nowrap;
+		flex-direction: column;
 	}
-	.rule h1 {
-		margin: 0;
-		font-size: 12px;
-		font-weight: 600;
+	.pr {
+		display: grid;
+		gap: 8px;
+		justify-items: start;
+	}
+	.pr .t {
+		font-size: 40px;
 		color: var(--ink);
 	}
-	.dash {
-		color: var(--line-strong);
+	.pr .d {
+		font-size: 12.5px;
+		color: var(--acc-hi);
 	}
-	.run {
-		flex: 1;
-		height: 1px;
-		background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 9px);
-	}
-	.body {
-		padding: 30px 0 34px calc(var(--gut) + 6px);
-		max-width: calc(var(--gut) + 760px);
+	.bill {
 		display: grid;
-		gap: 22px;
+		grid-template-columns: minmax(300px, 520px) minmax(0, 760px);
+		gap: 56px;
+		padding: 36px var(--gut) 56px;
+		align-items: start;
+		justify-content: center;
+	}
+	.dialw {
+		position: sticky;
+		top: 24px;
+	}
+	.kicker {
+		margin: 0 0 14px;
+		font-size: 13px;
+		color: var(--acc-hi);
 	}
 	.when {
 		margin: 0;
-		font-size: 22px;
-		line-height: 1.25;
-		color: var(--ink-2);
+		font: 800 76px/0.9 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
-	.when b {
-		color: var(--teal);
-		font-weight: 600;
+	.when .mono {
+		font-size: 0.78em;
+		font-weight: 400;
+		letter-spacing: -0.02em;
+		color: var(--acc-hi);
+		white-space: nowrap;
 	}
 	.lede {
-		margin: -8px 0 0;
-		max-width: 60ch;
-		color: var(--ink-2);
-		font-size: 15px;
+		margin: 18px 0 26px;
+		max-width: 56ch;
+		font-size: 17px;
 		line-height: 1.55;
+		color: var(--ink-2);
 	}
-	.demo,
+	.roster {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0 5px;
+	}
+	.roster thead th {
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--faint);
+		text-align: left;
+		padding: 0 14px 4px;
+	}
+	.roster tbody th,
+	.roster td {
+		background: var(--plate);
+		border-top: 1px solid var(--rule);
+		border-bottom: 1px solid var(--rule);
+		padding: 12px 14px;
+		text-align: left;
+		vertical-align: middle;
+	}
+	.roster tbody th {
+		border-left: 5px solid var(--rule-2);
+		font-size: 17px;
+		color: var(--ink);
+		white-space: nowrap;
+	}
+	.roster tbody tr:nth-child(2) th {
+		border-left-color: var(--acc);
+	}
+	.roster td:last-child {
+		border-right: 1px solid var(--rule);
+		text-align: right;
+	}
+	.nm {
+		font-weight: 700;
+		color: var(--ink);
+		white-space: nowrap;
+	}
+	.nt {
+		color: var(--dim);
+		font-size: 14px;
+	}
+	.roster tbody tr:hover th,
+	.roster tbody tr:hover td {
+		background: var(--raised);
+	}
 	.own {
-		display: grid;
-		gap: 12px;
-		justify-items: start;
-		padding-top: 18px;
-		border-top: 1px solid var(--line);
+		margin-top: 30px;
+		padding-top: 22px;
+		border-top: 1px solid var(--rule);
 	}
 	.step {
-		font-size: 11.5px;
-	}
-	.who {
-		margin: 0;
-		font-size: 14px;
-		color: var(--ink-2);
+		margin: 0 0 12px;
+		font-size: 13px;
+		color: var(--dim);
 	}
 	form {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
 		gap: 12px;
 		align-items: end;
-		width: 100%;
-	}
-	form .btn {
-		height: 38px;
 	}
 	.fine {
-		margin: 0;
-		font-size: 11.5px;
+		margin: 26px 0 0;
+		font-size: 13px;
 		color: var(--faint);
 	}
+	@media (max-width: 1100px) {
+		.bill {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 24px;
+		}
+		.dialw {
+			position: static;
+			max-width: 380px;
+			justify-self: center;
+			width: 100%;
+		}
+	}
 	@media (max-width: 760px) {
-		.body {
-			padding: 22px 16px 28px;
+		.bill {
+			padding: 20px var(--gut) 40px;
+		}
+		.dialw {
+			display: none;
 		}
 		.when {
-			font-size: 18px;
+			font-size: 46px;
+		}
+		.roster thead {
+			display: none;
+		}
+		.roster tr {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			margin-bottom: 6px;
+			background: var(--plate);
+			border: 1px solid var(--rule);
+			border-left: 5px solid var(--rule-2);
+		}
+		.roster tbody tr:nth-child(2) {
+			border-left-color: var(--acc);
+		}
+		.roster tbody th,
+		.roster td {
+			border: 0 !important;
+			padding: 8px 12px;
+			background: none;
+		}
+		.roster .nm {
+			grid-column: 1;
+			padding-top: 0;
+		}
+		.roster .nt {
+			grid-column: 1 / -1;
+			padding-top: 0;
+		}
+		.roster .go {
+			grid-row: 1;
+			grid-column: 2;
 		}
 		form {
 			grid-template-columns: minmax(0, 1fr);
-		}
-		.demo :global(.choice) {
-			max-width: 100%;
-			overflow-x: auto;
-		}
-		.rule .lnk {
-			display: none;
 		}
 	}
 </style>

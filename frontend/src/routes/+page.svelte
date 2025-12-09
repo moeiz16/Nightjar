@@ -1,18 +1,21 @@
 <script lang="ts">
-	// "Replay the night" (DESIGN.md §0.2, §4): the landing is the product's own grammar replaying one night at Halden
-	// Logistics. The shift axis fills toward 03:13, intake bars rise, the incident's line steps down the response
-	// lanes, the NIS2 flag drops into the deadline gutter, and the night log types under it, ending on the headline.
-	// Time-driven, not scroll-driven; `?still` and reduced motion show the finished night at once.
+	// "Replay the night" (DESIGN.md §4): the landing is the product replaying one night at Halden Logistics on its
+	// own watch dial. The hand sweeps toward 03:13, intake bars stand out from their ring, Joy's incident runs round
+	// the triage ring and steps inward, the NIS2 clock drops in beside the chronometer, and the night log runs beside
+	// the dial, ending on the stencil headline. Time-driven, not scroll-driven; `?still` and reduced motion show the
+	// finished night at once.
 	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { prefersReducedMotion } from 'svelte/motion';
-	import ShiftAxis from '$lib/components/shell/ShiftAxis.svelte';
+	import { backOut } from 'svelte/easing';
 	import Tick from '$lib/components/shell/Tick.svelte';
-	import ShiftChart from '$lib/components/console/ShiftChart.svelte';
+	import Logo from '$lib/components/shell/Logo.svelte';
+	import LampPanel from '$lib/components/shell/LampPanel.svelte';
+	import WatchDial from '$lib/components/console/WatchDial.svelte';
 	import HoldButton from '$lib/components/console/HoldButton.svelte';
 	import type { Deadline, IncidentSummary, ShiftLogEntry } from '$lib/api/types';
 	import { BRUSSELS, nightAt, nightOfLabel, now as clockNow, zonedParts } from '$lib/time/clock';
-	import { shiftWindow, type AxisMark } from '$lib/util/shift';
+	import { shiftWindow, watchOf } from '$lib/util/shift';
 	import { ui } from '$lib/stores/ui.svelte';
 
 	const ROUTINE: [string, string][] = [
@@ -237,461 +240,557 @@
 		}
 		return out;
 	});
-	const marks = $derived<AxisMark[]>([
-		...(tOpen ? [] : alerts).map((a) => ({ at: a.at, kind: 'approval' as const, glyph: '◇', text: a.text, refId: null })),
-		...(tOpen ? [{ at: tOpen, kind: 'incident' as const, glyph: '▲', text: 'Account takeover after a phishing email', refId: null }] : []),
-		...(tClock ? [{ at: tClock, kind: 'notice' as const, glyph: '✉', text: 'NIS2 early warning drafted', refId: null }] : []),
-		...(tAsk ? [{ at: tAsk, kind: 'approval' as const, glyph: '‖', text: 'Turn off Joy’s account: waiting for a person', refId: null }] : [])
-	]);
 	const hm = $derived(fmt(vNow).slice(0, 6));
 	const ss = $derived(fmt(vNow).slice(6));
 	const noise = Array.from({ length: 120 }, (_, i) => i === 37 || i === 91);
+	const watch = $derived(watchOf(vNow, BRUSSELS));
+	const PUBLIC = [
+		{ n: 1, href: '#top', label: 'The night', lit: true },
+		{ n: 2, href: '#round', label: 'The round' },
+		{ n: 3, href: '#clocks', label: 'The clocks' },
+		{ n: 4, href: '/sign-in', label: 'Sign on' }
+	];
+	const shownLog = $derived(done ? log.slice(-4) : log);
 </script>
 
 <svelte:head>
 	<title>Nightjar SOC · Someone is always on watch</title>
 </svelte:head>
 
-<a class="skip-link" href="#log">Skip to the shift log</a>
-<section class="stage" class:done aria-label="Replay of one night at Halden Logistics">
-	<ShiftAxis {win} now={vNow} {clocks} {marks} fast={!done} />
+<a class="skip-link" href="#round">Skip to the round</a>
+<header class="lhead" id="top">
+	<a class="brand" href="/" aria-label="Nightjar SOC"><Logo /><span>Nightjar <i>SOC</i></span></a>
+	<div class="lp"><LampPanel items={PUBLIC} /></div>
+	<a class="btn preset-filled-primary-500 cta" href="/sign-in">Take the watch →</a>
+</header>
 
-	<div class="band">
-		<header class="rule mono">
-			<span class="dash" aria-hidden="true">──</span><span class="rec" aria-hidden="true">●</span>
-			<b>replay</b><span class="hide-s">· Halden Logistics · the night of {nightOf}</span>
-			<span class="run" aria-hidden="true"></span>
-			<button class="lnk hide-s" type="button" onclick={replay}>↺ replay the night</button>
-			<a class="btn btn-sm preset-filled-primary-700-300" href="/sign-in">Take the watch →</a>
-		</header>
-		<ShiftChart {win} incidents={incident ? [incident] : []} log={replayLog} {intake} tz={BRUSSELS} hrefFor={() => '/sign-in'} />
+<section class="stage" class:done aria-label="Replay of one night at Halden Logistics">
+	<div class="dialcol">
+		<WatchDial {win} incidents={incident ? [incident] : []} log={replayLog} {intake} tz={BRUSSELS} compact max={660} hrefFor={() => '/sign-in'} />
+		<ol class="ticker" aria-hidden="true">
+			{#each rows.slice(0, 3) as r (r.id)}
+				<li class:odd={r.odd} in:fly={{ y: -6, duration: reduced ? 0 : 260 }}><span class="mono t">{fmt(r.at)}</span><span class="g">{r.odd ? '◇' : '·'}</span><span class="x">{r.text}</span></li>
+			{/each}
+		</ol>
 	</div>
 
-	<div class="lower">
-		<div class="nightlog-band">
+	<div class="logcol">
+		<p class="kicker eng"><span class="rec" aria-hidden="true">●</span> Replay · Halden Logistics · the night of {nightOf}</p>
+		<div class="chrono">
 			<div class="bigclock mono" aria-hidden="true"><Tick value={hm} fast={!done} /><span class="sec"><Tick value={ss} fast={!done} /></span></div>
-			<ol class="nightlog" aria-live="polite">
-				{#each log as l, i (l.id)}
-					<li class:now={i === log.length - 1 && !done} class:key={l.key} class:resolve={l.key && !reduced} in:fly={{ y: 6, duration: reduced ? 0 : 420 }}>
-						<span class="ts mono">{l.ts === 'intro' ? fmt(vNow) : l.ts}</span><span>{l.text}</span>
-					</li>
-				{/each}
-			</ol>
-			{#if done}
-				<div class="final" in:fly={{ y: 8, duration: reduced ? 0 : 600 }}>
-					<h1>Someone is always on watch.</h1>
-					<p>Nightjar SOC watches your company’s security through the night, separates real threats from noise, investigates with three AI teammates, starts the regulator’s clock and drafts the notice. Nothing is switched off or locked out until a person says so.</p>
-					<div class="ctas"><a class="btn btn-lg preset-filled-primary-700-300" href="/sign-in">Take the watch →</a><button class="btn btn-lg preset-outlined-surface-300-700" type="button" onclick={replay}>↺ Replay the night</button></div>
-				</div>
-			{:else}
-				<button class="skip mono" type="button" onclick={still}>skip replay →</button>
-			{/if}
+			<span class="eng wt">{watch.label} watch</span>
 		</div>
-		{#if asking}
+		<div class="lamps2" aria-live="polite">
+			{#each clocks as c, i (c.id)}
+				<span class="clk" in:fly={{ y: reduced ? 0 : -26, duration: reduced ? 0 : 620, delay: i * 120, easing: backOut }}>
+					<span class="eng">NIS2 · {c.noticeLabel}</span>
+					<span class="mono">{c.id === 'ew' ? '24:00:00' : '72:00:00'}</span>
+					<span class="st">○ on track</span>
+				</span>
+			{/each}
+		</div>
+		<ol class="nightlog" aria-live="polite">
+			{#each shownLog as l, i (l.id)}
+				<li class:now={i === shownLog.length - 1 && !done} class:key={l.key} class:resolve={l.key && !reduced} in:fly={{ y: 6, duration: reduced ? 0 : 420 }}>
+					<span class="ts mono">{l.ts === 'intro' ? fmt(vNow) : l.ts}</span><span>{l.text}</span>
+				</li>
+			{/each}
+		</ol>
+		{#if asking && !done}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="askbox" in:fly={{ y: 6, duration: reduced ? 0 : 380 }} onpointerdown={() => (userHeld = true)} onkeydown={() => (userHeld = true)}>
-				<p class="lbl mono">‖ waiting on a person · proposed by Response · reversible · logged</p>
+			<div class="askbox ticks" in:fly={{ y: 6, duration: reduced ? 0 : 380 }} onpointerdown={() => (userHeld = true)} onkeydown={() => (userHeld = true)}>
+				<p class="lbl eng">‖ Waiting on a person · proposed by Response · reversible · logged</p>
 				<p class="q">Turn off Joy’s account and sign her out everywhere</p>
 				<HoldButton bind:this={hold} hint="try it · or hold Space" done={authorised && done ? { label: `Authorised · ${fmt(authorised.at)}`, sub: `by ${authorised.by}` } : null} onconfirm={confirmHold} />
-				<p class="try mono">{authorised ? 'Logged with who, when and why.' : 'If you don’t, Marcus on call will.'}</p>
+				<p class="try">{authorised ? 'Logged with who, when and why.' : 'If you don’t, Marcus on call will.'}</p>
 			</div>
 		{/if}
+		{#if done}
+			<div class="final" in:fly={{ y: 10, duration: reduced ? 0 : 600 }}>
+				<h1>Someone is always on watch.</h1>
+				<p>Nightjar SOC watches your company’s security through the night, separates real threats from noise, investigates with three AI teammates, starts the regulator’s clock and drafts the notice. Nothing is switched off or locked out until a person says so.</p>
+				<div class="ctas"><a class="btn btn-lg preset-filled-primary-500" href="/sign-in">Take the watch →</a><button class="btn btn-lg preset-outlined-surface-300-700" type="button" onclick={replay}>↺ Replay the night</button></div>
+			</div>
+		{:else}
+			<button class="skip lnk" type="button" onclick={still}>Skip the replay →</button>
+		{/if}
 	</div>
-
-	<nav class="hours mono" aria-label="The night, hour by hour">
-		<a href="#t2200"><b>22:00</b> takes in everything</a>
-		<a href="#t0130"><b>01:30</b> sorts real from noise</a>
-		<a href="#t0312"><b>03:12</b> starts the regulator’s clock</a>
-		<a href="#t0800"><b>08:00</b> briefs the CISO</a>
-		<a class="end" href="/sign-in">sign in</a>
-	</nav>
 </section>
 
-<main class="log" id="log">
-	<header class="rule mono"><span class="dash" aria-hidden="true">──</span><b>the shift log</b><span>· one night, four entries</span><span class="run" aria-hidden="true"></span></header>
-	<div class="entries">
-		<article class="entry" id="t2200">
-			<p class="when mono">22:00 <small>the watch begins</small></p>
-			<h2>Every sign-in, email, laptop and cloud account, all night.</h2>
+<main class="round" id="round">
+	<header class="sh"><span class="bar" aria-hidden="true"></span><h2>The round</h2><span class="sub">One night, four stations</span></header>
+	<div class="stations">
+		<article class="stn" id="t2200">
+			<p class="when"><span class="mono">22:00</span><span class="eng">The watch begins</span></p>
+			<h3>Every sign-in, email, laptop and cloud account, all night.</h3>
 			<p class="lede">Nightjar SOC takes in your security events as they happen: sign-ins, mail, endpoints, firewalls and cloud services across every office. It writes each one in plain words and folds away the routine, so the few that matter stand out.</p>
 			<div class="noise" aria-hidden="true">{#each noise as k, i (i)}<i class:k></i>{/each}</div>
-			<p class="cap mono">One minute at Halden Logistics: 1,284 events · 1,282 routine, folded · ◇ 2 worth a look</p>
+			<p class="cap">One minute at Halden Logistics: 1,284 events · 1,282 routine, folded · ◇ 2 worth a look</p>
 		</article>
-		<article class="entry" id="t0130">
-			<p class="when mono">01:30 <small>a false-alarm storm</small></p>
-			<h2>146 alerts from one backup update. One note, not 146 pages.</h2>
+		<article class="stn" id="t0130">
+			<p class="when"><span class="mono">01:30</span><span class="eng">A false-alarm storm</span></p>
+			<h3>146 alerts from one backup update. One note, not 146 pages.</h3>
 			<p class="lede">Rules match patterns; patterns are noisy. Nightjar SOC groups related alerts into one incident, learns each person’s and laptop’s normal rhythm, and scores every alert for how likely it is to be real. It shows its reasons, so your team can disagree with it.</p>
 		</article>
-		<article class="entry" id="t0312">
-			<p class="when mono">03:12 <small>reportable</small></p>
-			<h2>When an incident may be reportable, the clock is ready before you are.</h2>
+		<article class="stn lit" id="t0312">
+			<p class="when"><span class="mono">03:12</span><span class="eng">Reportable</span></p>
+			<h3>When an incident may be reportable, the clock is ready before you are.</h3>
 			<p class="lede">Nightjar SOC checks each incident against where you operate and what happened, proposes which clocks apply, and drafts each notice with the required facts filled in from the evidence. A person decides, reviews and submits.</p>
 		</article>
-		<article class="entry dawn" id="t0800">
-			<p class="when mono">08:00 <small>first light</small></p>
-			<h2>One incident from overnight is reportable. It is contained, and one decision is yours.</h2>
+		<article class="stn" id="t0800">
+			<p class="when"><span class="mono">08:00</span><span class="eng">First light</span></p>
+			<h3>One incident from overnight is reportable. It is contained, and one decision is yours.</h3>
 			<p class="lede">The night watch hands over in plain words: what happened, which clocks are running, what was approved and by whom, and the one thing that needs the CISO today.</p>
 		</article>
 	</div>
-	<section class="clocksband" aria-labelledby="ck">
-		<header class="rule mono"><span class="dash" aria-hidden="true">──</span><b id="ck">the clocks it keeps</b><span class="run" aria-hidden="true"></span></header>
+
+	<section class="clocksband" id="clocks" aria-labelledby="ck">
+		<header class="sh"><span class="bar" aria-hidden="true"></span><h2 id="ck">The clocks it keeps</h2><span class="sub">Designed to support each regime’s reporting</span></header>
 		<div class="table-wrap">
 			<table class="table">
-				<thead><tr><th>regime</th><th>what is due</th><th>clock</th><th>counts from</th></tr></thead>
+				<thead><tr><th>Regime</th><th>What is due</th><th>Clock</th><th>Counts from</th></tr></thead>
 				<tbody>
-					<tr><td><b>NIS2 · EU</b></td><td>Early warning, then full notification, then a final report</td><td class="m">24 h · 72 h</td><td class="m">becoming aware of a significant incident; final report within a month</td></tr>
-					<tr><td><b>SEC Form 8-K · US</b></td><td>Item 1.05, once you decide an incident is material</td><td class="m">4 business days</td><td class="m">the materiality decision</td></tr>
-					<tr><td><b>SOCI · Australia</b></td><td>Report to the Australian Signals Directorate’s ACSC</td><td class="m">12 h · 72 h</td><td class="m">significant · relevant impact</td></tr>
+					<tr class="h-acc"><td><b>NIS2 · EU</b></td><td>Early warning, then full notification, then a final report</td><td class="m">24 h · 72 h</td><td>Becoming aware of a significant incident; final report within a month</td></tr>
+					<tr class="h-person"><td><b>SEC Form 8-K · US</b></td><td>Item 1.05, once you decide an incident is material</td><td class="m">4 business days</td><td>The materiality decision</td></tr>
+					<tr class="h-soon"><td><b>SOCI · Australia</b></td><td>Report to the Australian Signals Directorate’s ACSC</td><td class="m">12 h · 72 h</td><td>Significant · relevant impact</td></tr>
 				</tbody>
 			</table>
 		</div>
 	</section>
 </main>
 <footer class="fin">
+	<div class="horizon" aria-hidden="true"></div>
+	<p class="eng fk">08:00 · First light</p>
 	<h2>Take the watch at Halden Logistics.</h2>
-	<a class="btn btn-lg preset-filled-primary-700-300" href="/sign-in">Take the watch →</a>
-	<p class="fine mono">Sample company and data · For mid-size companies with operations in the EU, US and Australia · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; it does not submit anything without a person.</p>
+	<a class="btn btn-lg preset-filled-primary-500" href="/sign-in">Take the watch →</a>
+	<p class="fine">Sample company and data · For mid-size companies with operations in the EU, US and Australia · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; it does not submit anything without a person.</p>
 </footer>
 
 <style>
-	.stage {
-		position: relative;
-		min-height: 100vh;
-		min-height: 100dvh;
+	.lhead {
 		display: grid;
-		grid-template-rows: auto auto minmax(0, 1fr) auto;
-		background: var(--bg);
-	}
-	.band {
-		background: var(--pane);
-		border-bottom: 1px solid var(--line-strong);
-		position: relative;
-	}
-	.rule {
-		height: 34px;
-		display: flex;
+		grid-template-columns: auto minmax(0, 560px) auto;
 		align-items: center;
-		gap: 8px;
-		padding: 0 16px;
-		font-size: 12px;
-		color: var(--muted);
-		background: var(--bg);
-		border-bottom: 1px solid var(--line);
-		white-space: nowrap;
-		min-width: 0;
+		justify-content: space-between;
+		gap: 24px;
+		padding: 14px var(--gut);
+		border-bottom: 1px solid var(--rule);
+		background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 7%, var(--bg)), var(--bg));
 	}
-	.rule b {
-		color: var(--ink);
-		font-weight: 600;
+	.brand span {
+		letter-spacing: 0.24em;
 	}
-	.dash {
-		color: var(--line-strong);
-	}
-	.rec {
-		color: var(--red);
-		font-size: 9px;
-	}
-	.run {
-		flex: 1;
-		min-width: 12px;
-		height: 1px;
-		background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 9px);
-	}
-	.lower {
+	.stage {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) var(--dl);
-		min-height: 0;
-		border-bottom: 1px solid var(--line);
+		grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+		gap: 40px;
+		padding: 26px var(--gut) 40px;
+		min-height: calc(100vh - 82px);
+		align-items: start;
 	}
-	.nightlog-band {
-		padding: 22px 28px 24px calc(var(--gut) + 6px);
+	.dialcol {
+		display: grid;
+		gap: 10px;
+		justify-items: center;
+		position: sticky;
+		top: 12px;
+	}
+	.ticker {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		width: min(100%, 620px);
+		display: grid;
+		gap: 3px;
+		min-height: 66px;
+	}
+	.ticker li {
+		display: grid;
+		grid-template-columns: 70px 14px minmax(0, 1fr);
+		gap: 8px;
+		font: 400 12.5px/1.45 var(--code);
+		color: var(--faint);
+		white-space: nowrap;
+	}
+	.ticker .x {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.ticker li.odd {
+		color: var(--soon);
+	}
+	.logcol {
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 16px;
+		padding-top: 18px;
+		max-width: 660px;
 	}
-	.bigclock {
+	.kicker {
+		margin: 0;
+		font-size: 13.5px;
+		color: var(--dim);
+		display: flex;
+		align-items: center;
+		gap: 9px;
+	}
+	.rec {
+		color: var(--acc);
+		animation: nj-pulse 2.4s ease-out infinite;
+		border-radius: 50%;
+		font-size: 10px;
+	}
+	.chrono {
 		display: flex;
 		align-items: baseline;
-		font-size: clamp(44px, 5.4vw, 76px);
+		gap: 18px;
+		flex-wrap: wrap;
+	}
+	.bigclock {
+		font-size: 104px;
+		line-height: 0.9;
 		font-weight: 300;
-		line-height: 1;
-		letter-spacing: -0.03em;
 		color: var(--ink);
+		letter-spacing: -0.04em;
+		transition: font-size 0.5s var(--ease-tick);
 	}
 	.bigclock .sec {
-		color: var(--teal);
-		font-size: 0.62em;
-		margin-left: 2px;
+		color: var(--acc);
+	}
+	.wt {
+		font-size: 15px;
+		color: var(--acc-hi);
+	}
+	.done .bigclock {
+		font-size: 60px;
+		color: var(--dim);
+	}
+	.lamps2 {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+		min-height: 0;
+	}
+	.lamps2 .clk {
+		display: grid;
+		grid-template-columns: auto auto;
+		gap: 5px 14px;
+		padding: 9px 12px;
+		background: var(--plate);
+		box-shadow:
+			inset 0 0 0 1px var(--acc-line),
+			0 0 22px -10px var(--acc-glow);
+		border-top: 2px solid var(--acc);
+	}
+	.lamps2 .eng {
+		font-size: 12.5px;
+		color: var(--ink);
+		grid-column: 1 / -1;
+	}
+	.lamps2 .mono {
+		font-size: 18px;
+		color: var(--ink);
+	}
+	.lamps2 .st {
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--ink-2);
+		align-self: center;
 	}
 	.nightlog {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: 8px;
-		max-width: 860px;
+		gap: 2px;
 	}
 	.nightlog li {
 		display: grid;
-		grid-template-columns: 76px minmax(0, 1fr);
-		gap: 14px;
+		grid-template-columns: 78px minmax(0, 1fr);
+		gap: 12px;
+		padding: 7px 0;
+		border-top: 1px solid var(--rule);
 		font-size: 16px;
 		line-height: 1.45;
-		color: var(--muted);
-		font-variation-settings: 'MONO' 0;
+		color: var(--ink-2);
+		transition: font-size 0.4s var(--ease-tick);
 	}
 	.nightlog li.key {
-		color: var(--ink-2);
+		color: var(--ink);
 	}
 	.nightlog li.now {
+		font-size: 22px;
+		font-weight: 600;
+		line-height: 1.3;
 		color: var(--ink);
-		font-size: 19px;
 	}
 	.nightlog .ts {
-		font-size: 12.5px;
-		color: var(--teal);
-		padding-top: 3px;
+		font-size: 13px;
+		padding-top: 4px;
+		color: var(--faint);
 	}
-	.final {
-		display: grid;
-		gap: 12px;
-		max-width: 760px;
-		padding-top: 10px;
-		border-top: 1px solid var(--line);
-	}
-	.final h1 {
-		margin: 0;
-		font-size: clamp(32px, 4vw, 52px);
-		line-height: 1.05;
-		letter-spacing: -0.025em;
-		font-weight: 650;
-	}
-	.final p {
-		margin: 0;
-		color: var(--ink-2);
-		font-size: 15.5px;
-		line-height: 1.55;
-	}
-	.ctas {
-		display: flex;
-		gap: 10px;
-		flex-wrap: wrap;
-	}
-	.skip {
-		align-self: flex-start;
-		font-size: 12px;
-		color: var(--muted);
-		border-bottom: 1px solid var(--line-strong);
+	.done .nightlog li {
+		font-size: 14.5px;
+		padding: 5px 0;
 	}
 	.askbox {
-		border-left: 1px solid var(--line-strong);
-		background: var(--lav-wash);
-		padding: 22px 20px;
-		display: flex;
-		flex-direction: column;
+		padding: 18px;
+		background-color: var(--plate);
+		--tk: var(--acc);
+		--tl: 14px;
+		display: grid;
 		gap: 10px;
 	}
 	.askbox .lbl {
 		margin: 0;
-		font-size: 11.5px;
-		color: var(--lav);
+		font-size: 12.5px;
+		color: var(--person);
 	}
 	.askbox .q {
-		margin: 0;
-		font-size: 18px;
-		font-weight: 600;
-		line-height: 1.3;
+		margin: 0 0 4px;
+		font: 800 28px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 	}
 	.askbox .try {
 		margin: 0;
-		font-size: 11.5px;
-		color: var(--muted);
+		font-size: 13px;
+		color: var(--faint);
 	}
-	.hours {
-		display: flex;
-		height: 40px;
-		border-top: 1px solid var(--line);
-		background: var(--bg);
-		font-size: 12px;
-		overflow-x: auto;
-		scrollbar-width: none;
-	}
-	.hours a {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 0 16px;
-		border-right: 1px solid var(--line);
-		color: var(--muted);
-		text-decoration: none;
-		white-space: nowrap;
-	}
-	.hours a:hover {
+	.final h1 {
+		margin: 6px 0 16px;
+		font: 800 92px/0.86 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.01em;
 		color: var(--ink);
 	}
-	.hours b {
+	.final p {
+		margin: 0 0 22px;
+		font-size: 17.5px;
+		line-height: 1.55;
 		color: var(--ink-2);
+		max-width: 58ch;
+	}
+	.ctas {
+		display: flex;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+	.skip {
+		align-self: start;
+	}
+	.round {
+		padding: 40px var(--gut) 56px;
+		border-top: 1px solid var(--rule);
+	}
+	.sh {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px 14px;
+		margin-bottom: 18px;
+	}
+	.sh .bar {
+		width: 5px;
+		height: 30px;
+		background: var(--acc);
+	}
+	.sh h2 {
+		margin: 0;
+		font: 800 44px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	.sh .sub {
 		font-weight: 600;
+		color: var(--dim);
 	}
-	.hours .end {
-		margin-left: auto;
-		border-right: 0;
-		border-left: 1px solid var(--line);
-	}
-	.log {
-		background: var(--pane);
-	}
-	.entries {
+	.stations {
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 6px;
+		padding: 6px;
+		background: var(--sunk);
+		border: 1px solid var(--rule);
 	}
-	.entry {
-		padding: 26px 24px 34px;
-		border-left: 1px solid var(--line);
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
+	.stn {
+		padding: 22px 22px 24px;
+		background: linear-gradient(180deg, var(--raised), var(--plate));
+		box-shadow: inset 0 0 0 1px var(--rule);
+		scroll-margin-top: 20px;
 	}
-	.entry:first-child {
-		border-left: 0;
-		padding-left: calc(var(--gut) + 6px);
+	.stn.lit {
+		background: radial-gradient(130% 90% at 50% 0%, color-mix(in srgb, var(--acc) 22%, var(--plate)), var(--plate) 70%);
+		box-shadow:
+			inset 0 0 0 1px var(--acc-line),
+			0 0 30px -12px var(--acc-glow);
 	}
 	.when {
-		margin: 0;
-		font-size: 22px;
-		font-weight: 600;
-		color: var(--teal);
+		display: flex;
+		align-items: baseline;
+		gap: 12px;
+		margin: 0 0 14px;
 	}
-	.when small {
-		font-size: 11.5px;
-		font-weight: 400;
-		color: var(--faint);
-		margin-left: 6px;
+	.when .mono {
+		font-size: 34px;
+		color: var(--ink);
 	}
-	.entry h2 {
-		margin: 0;
-		font-size: 19px;
-		line-height: 1.3;
-		font-weight: 600;
-		letter-spacing: -0.01em;
+	.when .eng {
+		font-size: 13px;
+		color: var(--acc-hi);
 	}
-	.entry .lede {
+	.stn h3 {
+		margin: 0 0 12px;
+		font: 800 27px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.stn .lede {
 		margin: 0;
-		font-size: 14.5px;
-		line-height: 1.6;
+		font-size: 15px;
+		line-height: 1.55;
 		color: var(--ink-2);
-	}
-	.entry.dawn {
-		background: linear-gradient(180deg, #cbe5de, #f7f9f8);
-		color: #0b141b;
-	}
-	.entry.dawn .when {
-		color: #087565;
-	}
-	.entry.dawn .when small {
-		color: #4a5a62;
-	}
-	.entry.dawn .lede {
-		color: #2b3943;
 	}
 	.noise {
 		display: grid;
-		grid-template-columns: repeat(24, 1fr);
-		gap: 3px;
-		max-width: 360px;
+		grid-template-columns: repeat(30, 1fr);
+		gap: 2px;
+		margin: 18px 0 8px;
 	}
 	.noise i {
-		height: 8px;
-		border-radius: 1px;
-		background: var(--line-strong);
+		height: 9px;
+		background: var(--rule-2);
+		opacity: 0.6;
 	}
 	.noise i.k {
-		background: var(--amber);
+		background: var(--soon);
+		opacity: 1;
 	}
 	.cap {
 		margin: 0;
-		font-size: 11.5px;
+		font: 500 12px/1.4 var(--code);
 		color: var(--faint);
 	}
 	.clocksband {
-		border-top: 1px solid var(--line);
+		margin-top: 48px;
+		scroll-margin-top: 20px;
 	}
-	.clocksband .table-wrap {
-		padding: 0 16px 0 calc(var(--gut) + 6px);
+	.table-wrap {
+		overflow-x: auto;
 	}
-	.clocksband .table th {
-		background: var(--pane);
+	.table {
+		width: 100%;
 	}
 	.fin {
-		padding: 46px 16px 54px calc(var(--gut) + 6px);
+		position: relative;
+		overflow: hidden;
+		padding: 120px var(--gut) 56px;
+		background: #f3eee8;
+		color: #1d1311;
 		display: grid;
-		gap: 16px;
 		justify-items: start;
-		border-top: 1px solid var(--line-strong);
-		background: var(--bg);
+		gap: 18px;
+	}
+	.horizon {
+		position: absolute;
+		inset: 0 0 auto 0;
+		height: 110px;
+		background: linear-gradient(180deg, var(--bg) 0%, #5a160d 30%, #b84a2a 62%, #e9b49c 85%, #f3eee8 100%);
+	}
+	.fin > :not(.horizon) {
+		position: relative;
+	}
+	.fk {
+		margin: 0;
+		font-size: 13px;
+		color: #8a1a12;
 	}
 	.fin h2 {
 		margin: 0;
-		font-size: clamp(26px, 3vw, 36px);
-		letter-spacing: -0.02em;
-		font-weight: 650;
+		font: 800 76px/0.9 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		max-width: 16ch;
+	}
+	.fin .btn {
+		background: #b3241a;
+		color: #fff;
+		box-shadow: none;
 	}
 	.fine {
-		margin: 0;
-		font-size: 11.5px;
-		color: var(--faint);
-		max-width: 80ch;
+		margin: 6px 0 0;
+		max-width: 90ch;
+		font-size: 13.5px;
+		color: #5a4740;
 	}
 	@media (max-width: 1180px) {
-		.entries {
+		.stage {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.dialcol {
+			position: static;
+			max-width: 560px;
+			justify-self: center;
+			width: 100%;
+		}
+		.stations {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
-		.entry:nth-child(3) {
-			border-left: 0;
-			padding-left: calc(var(--gut) + 6px);
+		.final h1 {
+			font-size: 88px;
 		}
-		.entry:nth-child(n + 3) {
-			border-top: 1px solid var(--line);
+	}
+	@media (max-width: 860px) {
+		.lhead {
+			grid-template-columns: auto auto;
+		}
+		.lp {
+			grid-column: 1 / -1;
+			grid-row: 2;
 		}
 	}
 	@media (max-width: 760px) {
-		.lower {
-			grid-template-columns: minmax(0, 1fr);
+		.stage {
+			padding: 16px var(--gut) 28px;
+			gap: 18px;
+			min-height: 0;
 		}
-		.askbox {
-			border-left: 0;
-			border-top: 1px solid var(--line-strong);
+		.bigclock {
+			font-size: 64px;
 		}
-		.nightlog-band {
-			padding: 18px 16px 20px;
+		.done .bigclock {
+			font-size: 44px;
 		}
 		.nightlog li {
 			grid-template-columns: 64px minmax(0, 1fr);
 			font-size: 14.5px;
 		}
 		.nightlog li.now {
-			font-size: 16px;
+			font-size: 18px;
 		}
-		.entries {
+		.final h1 {
+			font-size: 58px;
+		}
+		.stations {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		.entry,
-		.entry:first-child,
-		.entry:nth-child(3) {
-			border-left: 0;
-			padding: 22px 16px 26px;
-			border-top: 1px solid var(--line);
+		.sh h2 {
+			font-size: 34px;
 		}
-		.clocksband .table-wrap,
-		.fin {
-			padding-left: 16px;
+		.fin h2 {
+			font-size: 48px;
 		}
-		:global(.hide-s) {
-			display: none;
+		.ticker li {
+			grid-template-columns: 62px 12px minmax(0, 1fr);
+			font-size: 11.5px;
 		}
-		.hours a:not(.end) {
-			display: none;
+		.lp :global(.lbl) {
+			font-size: 12px;
+			letter-spacing: 0.1em;
+		}
+		.lp :global(.win) {
+			padding: 0 4px;
 		}
 	}
 </style>
