@@ -1,8 +1,8 @@
-// The shift chart's layout logic: the window, the scale, each incident's path through the response lanes, the
-// intake bars and the axis marks.
+// The shift's layout logic: the window, the scale, each incident's path through the response stages, the intake bars,
+// and the watch dial's polar form of the same layout.
 import { describe, expect, it } from 'vitest';
 import type { IncidentSummary, ShiftLogEntry } from '$lib/api/types';
-import { axisMarks, incidentPaths, intakeBars, laneOfEntry, LANES, shiftWindow, stepPath, xOf } from '$lib/util/shift';
+import { dialAngle, dialAngleOn, dialPath, incidentPaths, intakeBars, laneOfEntry, LANES, polar, sectorPath, shiftWindow, stepPath, watchOf, xOf } from '$lib/util/shift';
 import { zonedParts } from '$lib/time/clock';
 
 const TZ = 'Europe/Brussels';
@@ -160,11 +160,55 @@ describe('intakeBars', () => {
 	});
 });
 
-describe('axisMarks', () => {
-	it('puts openings, approvals and notices on the axis in time order', () => {
+describe('the watch dial', () => {
+	it('names the watch a moment falls in, by local hour', () => {
+		expect(watchOf(NOW, TZ).key).toBe('forenoon'); // 10:24
+		expect(watchOf(new Date('2025-11-20T02:12:00Z'), TZ).key).toBe('middle'); // 03:12
+		expect(watchOf(new Date('2025-11-20T05:30:00Z'), TZ).key).toBe('morning'); // 06:30
+		expect(watchOf(new Date('2025-11-19T21:30:00Z'), TZ).key).toBe('first'); // 22:30
+		expect(watchOf(new Date('2025-11-19T23:00:00Z'), TZ).key).toBe('middle'); // 00:00
+		expect(watchOf(new Date('2025-11-20T17:00:00Z'), TZ).key).toBe('dog'); // 18:00
+	});
+	it('puts midnight at the top and runs clockwise: six at the right, noon at the bottom, 18:00 at the left', () => {
+		expect(dialAngle('2025-11-19T23:00:00Z', TZ)).toBe(0);
+		expect(dialAngle('2025-11-20T05:00:00Z', TZ)).toBe(90);
+		expect(dialAngle('2025-11-20T11:00:00Z', TZ)).toBe(180);
+		expect(dialAngle('2025-11-20T17:00:00Z', TZ)).toBe(270);
+	});
+	it('unwraps across midnight so the hand and the lines never run backwards', () => {
+		const w = shiftWindow(NOW, TZ); // from 18:00 yesterday
+		const evening = dialAngleOn('2025-11-19T20:00:00Z', w, TZ); // 21:00
+		const night = dialAngleOn('2025-11-20T02:12:00Z', w, TZ); // 03:12
+		const now = dialAngleOn(NOW, w, TZ);
+		expect(evening).toBeCloseTo(315);
+		expect(night).toBeCloseTo(360 + 48);
+		expect(now).toBeGreaterThan(night);
+		expect(now).toBeCloseTo(360 + 156);
+	});
+	it('clamps anything before the window to its start', () => {
 		const w = shiftWindow(NOW, TZ);
-		const marks = axisMarks([entry('2025-11-20T01:04:00Z', 'approval'), entry('2025-11-20T00:50:00Z', 'notice'), entry('2025-11-20T00:45:00Z', 'action')], [inc()], w);
-		expect(marks.map((m) => m.glyph)).toEqual(['▲', '✉', '‖']);
-		expect(marks[0]!.text).toMatch(/^NJ-1038 opened/);
+		expect(dialAngleOn('2025-11-18T12:00:00Z', w, TZ)).toBe(dialAngle(w.start, TZ));
+	});
+	it('places points by angle and radius around the centre', () => {
+		const [x, y] = polar(100, 100, 50, 90);
+		expect(x).toBeCloseTo(150);
+		expect(y).toBeCloseTo(100);
+		const [x2, y2] = polar(100, 100, 50, 0);
+		expect([Math.round(x2), Math.round(y2)]).toEqual([100, 50]);
+	});
+	it('draws an incident as arcs along its stage rings with steps inward between them', () => {
+		const w = shiftWindow(NOW, TZ);
+		const [p] = incidentPaths([inc()], [entry('2025-11-20T00:52:00Z', 'incident'), entry('2025-11-20T01:04:00Z', 'approval')], w);
+		const radius = (lane: number) => 200 - lane * 30;
+		const d = dialPath(p!, (t) => dialAngleOn(t, w, TZ), radius, 250, 250);
+		expect(d.startsWith('M')).toBe(true);
+		expect((d.match(/A/g) ?? []).length).toBeGreaterThanOrEqual(2);
+		expect((d.match(/L/g) ?? []).length).toBe(p!.steps.length - 1);
+	});
+	it('closes a ring segment for intake bars and the lit shift', () => {
+		const d = sectorPath(100, 100, 40, 60, 10, 40);
+		expect(d.startsWith('M')).toBe(true);
+		expect(d.endsWith('Z')).toBe(true);
+		expect(sectorPath(100, 100, 40, 60, 0, 360)).toContain('Z M');
 	});
 });

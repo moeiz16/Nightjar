@@ -1,14 +1,20 @@
-// The shell's model and the band primitives: turnover sections by role, the numbered windows, toasts through the
-// Skeleton toaster, and the Band, ClockList and ShiftChart components.
+// The shell's model and its primitives: turnover readouts by role, the lamp panel's windows, station names, toasts
+// through the Skeleton toaster, and the Plate, ClockList, WatchDial and LampPanel components.
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-import { sectionsFor, SECTIONS, toaster, ui, WINDOWS, windowFor } from '$lib/stores/ui.svelte';
+import { sectionsFor, SECTIONS, stationFor, stationLine, toaster, ui, WINDOWS, windowFor } from '$lib/stores/ui.svelte';
 import { createRawSnippet } from 'svelte';
-import Band from '$lib/components/ui/Band.svelte';
+import Plate from '$lib/components/ui/Plate.svelte';
 import ClockList from '$lib/components/console/ClockList.svelte';
-import ShiftChart from '$lib/components/console/ShiftChart.svelte';
+import WatchDial from '$lib/components/console/WatchDial.svelte';
+import LampPanel from '$lib/components/shell/LampPanel.svelte';
 import type { Deadline, IncidentSummary } from '$lib/api/types';
 import { shiftWindow } from '$lib/util/shift';
+
+// LampPanel reads the current page and the live watch; neither exists outside the browser app.
+vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/watch') } }));
+vi.mock('$lib/stores/live.svelte', () => ({ live: { incidents: [], clocks: [] } }));
+vi.mock('$lib/stores/session.svelte', () => ({ session: { can: () => true } }));
 
 const text = (t: string) => createRawSnippet(() => ({ render: () => `<p>${t}</p>` }));
 
@@ -35,7 +41,7 @@ describe('turnover sections', () => {
 	});
 });
 
-describe('the watch bar windows', () => {
+describe('the lamp panel windows', () => {
 	it('numbers eight windows 1 to 8, the watch first and the brief last', () => {
 		expect(WINDOWS.map((w) => w.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
 		expect(WINDOWS[0]!.href).toBe('/watch');
@@ -50,6 +56,45 @@ describe('the watch bar windows', () => {
 		expect(windowFor('/identities')).toBe(6);
 		expect(windowFor('/brief/week/2025-W47')).toBe(8);
 		expect(windowFor('/settings/members')).toBe(0);
+	});
+});
+
+describe('station names', () => {
+	it('names every page in the head before the page names itself', () => {
+		expect(stationFor('/watch')).toBe('The watch');
+		expect(stationFor('/incidents/NJ-1038')).toBe('Incident');
+		expect(stationFor('/incidents/NJ-1037/notice/nis2')).toBe('Notice draft');
+		expect(stationFor('/hunt/saved')).toBe('Saved searches');
+		expect(stationFor('/rules/r-1')).toBe('Rule');
+		expect(stationFor('/rules')).toBe('Detection rules');
+		expect(stationFor('/brief/week/2025-W47')).toBe('Weekly report');
+		expect(stationFor('/brief')).toBe('Morning brief');
+	});
+	it('gives registers a plain line under the name, and the watch none of its own', () => {
+		expect(stationLine('/assets')).toMatch(/server, laptop and cloud account/);
+		expect(stationLine('/hunt/saved')).toMatch(/^Searches worth repeating/);
+		expect(stationLine('/watch')).toBe('');
+	});
+	it('keeps a page’s own name only on that page', () => {
+		ui.setStation('/incidents/NJ-1038', 'Incident NJ-1038', 'Opened 02:16');
+		expect(ui.station).toEqual({ path: '/incidents/NJ-1038', title: 'Incident NJ-1038', sub: 'Opened 02:16' });
+	});
+});
+
+describe('LampPanel', () => {
+	it('lights the station you are on and hides none a role may open', () => {
+		render(LampPanel);
+		const nav = screen.getByRole('navigation', { name: 'Stations' });
+		expect(nav.querySelectorAll('a')).toHaveLength(8);
+		expect(nav.querySelector('a[aria-current="page"]')?.getAttribute('href')).toBe('/watch');
+	});
+	it('draws public windows with the lit one marked as the current page', () => {
+		render(LampPanel, { props: { items: [{ n: 1, href: '/', label: 'The night' }, { n: 2, href: '/sign-in', label: 'Sign on', lit: true }] } });
+		const nav = screen.getByRole('navigation', { name: 'Nightjar SOC' });
+		const links = nav.querySelectorAll('a');
+		expect(links).toHaveLength(2);
+		expect(links[1]!.getAttribute('aria-current')).toBe('page');
+		expect(links[0]!.getAttribute('aria-current')).toBeNull();
 	});
 });
 
@@ -70,18 +115,22 @@ describe('toasts', () => {
 	});
 });
 
-describe('Band', () => {
-	it('is a labelled region with a numbered rule and its actions', () => {
-		render(Band, { props: { title: 'waiting on you', sub: '2', n: 1, children: text('body'), actions: text('act') } });
+describe('Plate', () => {
+	it('is a labelled region with a numbered lamp, its summary and its actions', () => {
+		render(Plate, { props: { title: 'waiting on you', sub: '2 decisions', n: 1, children: text('body'), actions: text('act') } });
 		const region = screen.getByRole('region', { name: 'waiting on you' });
 		expect(region.querySelector('.n')?.textContent).toBe('1');
-		expect(region.textContent).toContain('· 2');
+		expect(region.querySelector('.sub')?.textContent).toBe('2 decisions');
 		expect(screen.getByText('act')).toBeTruthy();
 		expect(screen.getByText('body')).toBeTruthy();
 	});
 	it('takes an explicit label over the title', () => {
-		render(Band, { props: { title: 'notice', label: 'Notice draft', children: text('x') } });
+		render(Plate, { props: { title: 'notice', label: 'Notice draft', children: text('x') } });
 		expect(screen.getByRole('region', { name: 'Notice draft' })).toBeTruthy();
+	});
+	it('marks the plates that hold a decision with corner ticks', () => {
+		const { container } = render(Plate, { props: { title: 'rule', ticks: true, children: text('x') } });
+		expect(container.querySelector('.body.ticks')).toBeTruthy();
 	});
 });
 
@@ -122,7 +171,7 @@ describe('ClockList', () => {
 	});
 });
 
-describe('ShiftChart', () => {
+describe('WatchDial', () => {
 	const now = new Date('2025-11-20T09:24:00Z');
 	const win = shiftWindow(now, 'Europe/Brussels');
 	const inc = (id: string, ref: string, over: Partial<IncidentSummary> = {}): IncidentSummary => ({
@@ -148,18 +197,19 @@ describe('ShiftChart', () => {
 		...over
 	});
 	it('gives every incident line an accessible link that says where it is now', () => {
-		render(ShiftChart, { props: { win, incidents: [inc('a', 'NJ-1038', { pendingApprovals: 1 }), inc('b', 'NJ-1035', { status: 'resolved' })], log: [], tz: 'Europe/Brussels' } });
+		render(WatchDial, { props: { win, incidents: [inc('a', 'NJ-1038', { pendingApprovals: 1 }), inc('b', 'NJ-1035', { status: 'resolved' })], log: [], tz: 'Europe/Brussels' } });
 		const line = screen.getByRole('link', { name: /^NJ-1038 .*now in contain, waiting for a person$/ });
 		expect(line.getAttribute('href')).toBe('/incidents/NJ-1038');
 		expect(screen.getByRole('link', { name: /^NJ-1035 .*finished$/ })).toBeTruthy();
 	});
-	it('summarises the lanes for screen readers and lists open incidents in the now column', () => {
-		const { container } = render(ShiftChart, { props: { win, incidents: [inc('a', 'NJ-1038')], log: [], tz: 'Europe/Brussels' } });
+	it('summarises the rings for screen readers and lists open incidents under the dial', () => {
+		const { container } = render(WatchDial, { props: { win, incidents: [inc('a', 'NJ-1038')], log: [], tz: 'Europe/Brussels' } });
 		expect(screen.getByRole('figure').getAttribute('aria-label')).toBe('1 incidents on this shift: 0 open in triage, 0 open in investigate, 1 open in contain, 0 open in report');
-		expect(container.querySelectorAll('.nowcol .chip2')).toHaveLength(1);
+		expect(container.querySelectorAll('.open .tag')).toHaveLength(1);
+		expect(container.querySelector('.centre .w')?.textContent).toBe('forenoon watch');
 	});
 	it('links somewhere else when asked (the landing sends people to sign in)', () => {
-		render(ShiftChart, { props: { win, incidents: [inc('a', 'NJ-1038')], log: [], tz: 'Europe/Brussels', hrefFor: () => '/sign-in' } });
+		render(WatchDial, { props: { win, incidents: [inc('a', 'NJ-1038')], log: [], tz: 'Europe/Brussels', hrefFor: () => '/sign-in' } });
 		for (const a of screen.getAllByRole('link', { name: /NJ-1038/ })) expect(a.getAttribute('href')).toBe('/sign-in');
 	});
 });
