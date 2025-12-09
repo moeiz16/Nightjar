@@ -69,6 +69,10 @@
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
+	/* the lit indicator slides under the labels and never takes the click */
+	.choice :global([data-part='indicator']) {
+		pointer-events: none;
+	}
 	.choice :global([data-state='checked']) {
 		color: var(--acc-ink);
 	}

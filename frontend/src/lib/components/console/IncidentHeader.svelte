@@ -286,5 +286,8 @@
 		.stg small {
 			display: none;
 		}
+		.tq {
+			white-space: normal;
+		}
 	}
 </style>

@@ -5,7 +5,7 @@
 
 	let { n, fast = false }: { n: number; fast?: boolean } = $props();
 	const pos = Tween.of(() => n, {
-		duration: () => (prefersReducedMotion.current ? 0 : fast ? 140 : 420),
+		duration: () => (prefersReducedMotion.current ? 0 : fast ? 70 : 420),
 		easing: cubicOut
 	});
 </script>

@@ -107,9 +107,12 @@
 	}
 	.act {
 		display: flex;
-		gap: 14px;
+		flex-wrap: wrap;
+		gap: 10px 14px;
 		align-items: center;
-		flex: none;
+		flex: 0 1 auto;
+		min-width: 0;
+		max-width: 100%;
 	}
 	.body {
 		min-width: 0;

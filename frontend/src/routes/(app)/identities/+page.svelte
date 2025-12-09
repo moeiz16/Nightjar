@@ -66,6 +66,7 @@
 		height: 30px;
 		min-height: 30px;
 		width: 180px;
+		max-width: 100%;
 		font-size: 13px;
 	}
 	.table-wrap {

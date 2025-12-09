@@ -233,6 +233,12 @@
 	.tabs {
 		margin: 30px var(--gut) 0;
 		flex: 1 0 auto;
+		min-width: 0;
+	}
+	.tabs :global([data-scope='tabs'][data-part='root']),
+	.tabs :global(.tabl) {
+		min-width: 0;
+		max-width: 100%;
 	}
 	.tabs :global(.tabl) {
 		gap: 4px;
