@@ -1,842 +1,265 @@
-# Nightjar SOC frontend design: the night watch
+# Nightjar SOC frontend design, v3: red light
 
-> The design concept the web app is built to. A static HTML prototype was made at the design stage as the visual reference for type, colour, spacing, the baton grammar and the clock bar; it is not part of the repository. Wireframes below use illustrative names (`INC-0412`, Marta, Priya, Henrik); the shipped demo uses the seeded Halden Logistics people and `NJ-10xx` references.
+> The design the web app is built to. v1 (a tiling console under a regulator clock bar) and v2 (the shift chart: a time axis on top, full-width bands, a tmux-style watch bar) are in this file's history. v3 keeps every feature, route, role, data flow and stream, and changes how the product looks, reads, navigates and moves.
 
-Nightjar SOC is a managed security-operations platform for mid-size companies. It takes in security events around the clock and groups threats into incidents (Sigma rules, MITRE ATT&CK). It spots unusual behaviour, and three cooperating AI teammates (**Triage**, **Enrichment**, **Response**) investigate. When an incident is reportable, it starts the regulator's clock (EU NIS2, US SEC Form 8-K Item 1.05, Australia SOCI) and drafts the notice. **A person approves every response action.** Executives get a plain-language morning brief.
+Nightjar SOC is a managed security-operations platform for mid-size companies. It takes in security events around the clock, groups threats into incidents (Sigma rules, MITRE ATT&CK) and spots unusual behaviour. Three cooperating AI teammates (**Triage**, **Enrichment**, **Response**) investigate. When an incident is reportable, it starts the regulator's clock (EU NIS2, US SEC Form 8-K Item 1.05, Australia SOCI) and drafts the notice. **A person approves every response action.** Executives get a plain-language morning brief.
 
-- **Demo company:** **Halden Logistics**, with an EU distribution centre in Antwerp (NIS2, GDPR), a US-listed parent headquartered in Memphis (SEC Form 8-K), and a critical freight network run from Melbourne (SOCI).
-- **Stack:** SvelteKit + TypeScript + Tailwind 4.1 with the **Skeleton** design system (`@skeletonlabs/skeleton` 3.2.2 + `@skeletonlabs/skeleton-svelte` 1.5.3, Zag.js underneath) on a custom `nightjar` theme built from the tokens below. Motion uses Svelte built-ins only: `svelte/transition`, `svelte/animate` (`flip`), `crossfade`, and the `Spring`/`Tween` classes from `svelte/motion` with `prefersReducedMotion`. There is no animation library.
-- **Copy date:** copy is written as of **late November 2025**. Anything time-sensitive is computed at runtime (§13).
+- **Demo company:** **Halden Logistics**, with an EU distribution centre in Antwerp (NIS2, GDPR), a US-listed parent in Memphis (SEC Form 8-K) and a freight network run from Melbourne (SOCI).
+- **Stack:** SvelteKit + TypeScript + Tailwind 4.1 with **Skeleton** (`@skeletonlabs/skeleton` 3.2.2, `@skeletonlabs/skeleton-svelte` 1.5.3, Zag.js underneath) on a rebuilt `nightjar` theme. Motion uses Svelte built-ins only (`svelte/transition`, `svelte/animate`, `Spring` / `Tween`, `prefersReducedMotion`) and CSS.
+- **Fonts** (self-hosted through Fontsource): **Big Shoulders Display** for headings, **Manrope** for the interface and reading, **Fira Code** for clocks, logs and IDs.
+- **Copy date:** written as of late 2025. Every time-sensitive value is computed at runtime from one clock helper (§12).
 
 ---
 
-## 0. The shift chart: how the console is laid out
+## 1. Why v3
 
-**§0 is the current layout and component system.** Where §3, §5, §6, §7, §10 or §16 describe the earlier tiled console (a clock bar on top, 1–4 tiles, a mono status line, Geist type), §0 wins; those sections still hold the metaphor, the palette, the status language, the clock rules, the baton, Hold to authorise and the copy voice.
+v2 fixed the skeleton (the night became the x-axis) but kept the old surface: blue-black with mint teal, small mono labels on every rule, hairline tiles, and a top strip plus a bottom strip on every screen. Next to the other products, the type read like everyone else's: a sentence-case grotesk heading over a neutral body. Strangers saw the same product as v1.
 
-### 0.1 Why the night is the x-axis
+v3 starts from the room instead of the chart: **an operations room on night watch, lit red so the people in it keep their night vision.** Ships' bridges, observatories and control rooms dim to red at night. The IMO display standard asks for "light foreground information on a dark non-reflecting background" at night, and the IHO notes that under red bridge light some colours become hard to tell apart. That last point is a design rule here: **state is carried by shape, words and brightness, never by hue alone.**
 
-A night-shift analyst works one sequence: **intake → triage → investigation → containment approval → handover**, and every decision in it is anchored in time (when it started, how long it sat, which regulator clock it started, what the next shift inherits). The established tools show the same structure: queue-first homes (Splunk ES Mission Control's analyst queue, the Defender XDR incident queue, the Google SecOps case queue, Panther's alert list), phased response (Splunk ES response plans, SOAR workbooks, Google SecOps stages, the kill-chain view in Defender's incident summary), time drawn as lanes (Splunk's Asset & Identity Investigator swim lanes, Sentinel's parallel timeline), the incident as a log of time + responder + action (Google SecOps' Case Wall, Defender's Activities, the Google SRE incident document), and handover as a structured turnover (the SRE book's explicit hand-off; community SOC SOPs: active incidents, pending investigations, system health, notable events, compliance deadlines). NIST SP 800-61r3 keeps high-impact response actions with people.
+Three objects from real night watches give the product its parts:
 
-So the console is built on three ideas:
-
-1. **One shift axis across the top of every signed-in screen**: a time ruler from the 18:00 before the last night (or 12 hours back) to now. Night hours are shaded, the 08:00 and 20:00 shift changes are ruled, incidents (▲), approvals (‖) and notices (✉) sit where they happened, and a now line advances each minute. Past now, the axis folds into a **deadline gutter**: one flag per running regulator clock, with rolling digits. A new clock **drops onto the axis**.
-2. **Response stages as lanes** (Intake · Triage · Investigate · Contain · Report), read left to right in time. **Each incident is one line that steps down the lanes** at the times its log records, like a train on a railway dispatcher's timetable graph (Charles Ibry's chart, popularised by Marey for Paris–Lyon: time across, stations down, one line per train). A regulator clock marks the line (✉) without moving it, because a clock can start while containment is still waiting. Lines only ever step down.
-3. **The home is the turnover**: the handover sheet written live, in numbered sections, so the next shift never works from "I assumed you did it".
-
-### 0.2 The layout system: axis · bands · watch bar
-
-```
-┌───────────────┬────────────────────────────────────────────────────┬──────────────────────────────┐
-│ ◉ nightjar soc│ 18 · 20 ░░░ night ░░░ 00 · 02 · 04 · 06 ░│08 handover · 10 ┃now│▸ NIS2 16:48:35 ▸ SOCI 42:26 │ SHIFT AXIS 64
-├───────────────┴────────────────────────────────────────────────────┴──────────────────────────────┤
-│ ── the shift · 18:00 to now · 4 open incidents ───────────────────────────────── legend ─────────│
-│ intake        ▁▂▂▃▂▁▁▁▂▅█▃▂▁▁▂▂▁▁▂▂▃▂                               │ 1,240 events this hour      │ BAND 1
-│ triage            ●──┐        ●──┐                                  │                             │ the shift
-│ investigate          └──●        └─●──┐                             │ △ NJ-1039                   │ chart
-│ contain                 └────‖────────┼──────────────────────────── │ ‖ NJ-1038  ▲ NJ-1037        │
-│ report                                └──────────────────────────── │ ▲ NJ-1036                   │
-│ ── turnover · what the next person needs ────────────────────────────────────────────────────────│
-│ 1 waiting on you   │ 2 clocks to watch   │ 3 intake, live        │ 4 since you last looked       │ BAND 2
-├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 1 watch │2 hunt│3 behaviour│4 rules│5 assets│6 people│7 log│8 brief│ ● normal │ ⌘K │ (MB) you   │ WATCH BAR 44
-└──────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-- **Columns are shared.** The axis and every chart use one grid: lane labels (`--gut`, 132 px) · the night · the deadline gutter (`--dl`), so an incident's tick on the axis sits directly above its line.
-- **Bands.** Every page is a stack of full-width, hard-edged bands. Each opens with a terminal-style rule `── n · title · context ────── actions ─` in lowercase mono. Bands never sit side by side as cards; parallel sections (the turnover) are ruled columns inside one band, and they stack on narrow screens.
-- **Watch bar.** Docked full width at the bottom, tmux style: numbered windows `1 watch · 2 hunt · 3 behaviour · 4 rules · 5 assets · 6 people · 7 log · 8 brief` (Alt+1 … Alt+8), the intake health in plain words, ⌘K, and you (avatar → role, day watch, confirm-by-typing, settings, sign out). There is no sidebar and no top navigation; ⌘K stays the fastest way anywhere.
-- **Detail never opens as a side column.** A step's evidence, an asset, a decision or ⌘K open as Skeleton modals: a **bottom sheet** that rises over the bands, or a **dialog** that drops from the axis.
-
-| Screen | Layout |
-|---|---|
-| Watch `/watch` | Band 1: the shift chart (intake bars by hour; each incident's stepped line; open incidents as chips in the now column). Band 2: the turnover. Responders and admins: 1 waiting on you (approvals with Hold to authorise, the draft notice) · 2 clocks to watch · 3 intake, live (the event river) · 4 since you last looked. Analysts get *worth a hunt* first, auditors *the activity chain* and *evidence*. Phones: the lanes and the turnover as accordions |
-| Incident `/incidents/[id]` | Header band (severity, title, people and machines, ATT&CK chain, the stage rail with times) → **waiting on you** band directly under it (approval columns, each with Hold; open regulator assessments) → tabs: *what happened, and why* (the baton replay) · *clocks and notices* · *actions decided* · *service desk* · *evidence*. A step opens as a bottom sheet; the materiality decision as a dialog |
-| Notice | Readiness band (a progress meter, "4 of 5 required fields filled", missing fields as chips that jump to the field) → the draft band → the evidence band it cites (`[E-xx]` scrolls to and lights the item) |
-| Hunt, saved searches, rules, behaviour, assets, people, activity, settings | One band each. Registers are Skeleton tables; filters are segmented controls; an asset's detail is a bottom sheet; the activity log is paginated; settings switch between members and regulator contacts; deleting a saved search asks in a dialog |
-| Landing `/` | The product's own grammar replaying the night: the axis fills toward 03:13, intake bars rise, Joy's line steps down the lanes, the NIS2 flag drops into the gutter; under it the night log types left-aligned beneath a rolling clock and ends on "Someone is always on watch.", with the Hold box ("Turn off Joy's account?") in the gutter column. Then the shift log as one four-column ruled band (22:00 · 01:30 · 03:12 · 08:00 at dawn) and the clocks it keeps as a table |
-| Sign-in | The idle axis, then a left-aligned **sign-on** band: "You take the watch at 10:24 · Thursday 20 November", the demo roles as a segmented control, then your own account |
-| Brief `/brief` | The axis and the watch bar in dawn tones; dawn bands: the headline → the decision → **the night the watch saw** (the same shift chart, compact and read only) → one ruled band of clocks · approved overnight · on watch now and posture → overnight in plain words · seven nights |
-
-### 0.3 Component system: Skeleton
-
-Skeleton v3 (`@skeletonlabs/skeleton` 3.2.2 for the Tailwind 4 theme, presets and utilities; `@skeletonlabs/skeleton-svelte` 1.5.3 for the Svelte 5 components on Zag.js), with a custom **`nightjar`** theme (`src/lib/theme/nightjar.css`) generated from the palette in §8:
-
-| Skeleton scale | From | Use |
+| Object | Where it comes from | What it becomes |
 |---|---|---|
-| `surface` 50–950 | the day and night neutrals (`#F6F8F9` … `#070B10`) | surfaces, rules (`surface-200-800` hairline, `300-700` strong) |
-| `primary` | mint teal: 300 = night `#3CE6C8`, 700 = day `#087565` (refined from `#0A7F6D`, which measured 4.2 : 1 on the day background) | live, focus, the teammates, on track (`preset-filled-primary-700-300`) |
-| `secondary` | lavender `#B6A8FF` / `#5B45C9` | waiting for a person, ◆ decisions |
-| `warning` · `error` · `success` | amber · red · teal-green | due soon · overdue, critical · contained, sent |
-| `tertiary` | steel | routine lines |
+| **The annunciator** | Back-lit, engraved alarm windows on a control-room panel; ISA-18.1 sequences make a new alarm flash until it is acknowledged | The shell: a **station plate** with the page name in tall stencil capitals, beside a **lamp panel** of windows that are the navigation. A window lights when you are there and flashes once, then glows, when something there needs a person |
+| **The watchman's dial** | The Detex Newman watchclock (1927): a paper dial turned by the clock; each station a guard visited printed a mark, so a complete round read as a continuous band and a missed station showed as a gap | The home and the landing: **the watch dial**, a 24-hour face. The shift is the lit sector, the hand is now, each incident is a line that moves round its stage ring and steps inward as it progresses, and the regulator clocks sit on the rim ahead of the hand |
+| **The strip bay** | Air-traffic flight progress strips: one strip per flight in a holder, racked in bays; where a strip sits is information | Every register and list: **strips** with a coloured holder edge, boxed fields and stencil column heads, racked in bays |
 
-Tailwind's `dark` variant follows `<html data-theme>`, so the light/dark pairings pick the day or night value. Radius: 3 px on controls, 0 on bands and sheets.
-
-| Was | Now |
-|---|---|
-| hand-rolled `.btn` / `.chip` / `.input` / `.ledger` | Skeleton `btn` + presets, `badge` / `chip`, `input` / `select` / `textarea` / `label`, `table` (with a thin Nightjar skin) |
-| segmented toggles | **Segment** (`Choice.svelte`) |
-| tiles (`Pane`) | `Band.svelte` |
-| clock bar, status line | the shift axis (**Tooltip** on marks, **Popover** of clocks on phones) and the watch bar (**Navigation** bar, **Avatar**, **Popover**, **Switch**) |
-| palette overlay, step drawer, decision sheet, asset pane, `window.confirm` | **Modal** (`Sheet.svelte`: bottom sheet or dialog) |
-| toast stack | **Toaster** + `createToaster` |
-| incident side column | **Tabs** |
-| phone tile swiping | **Accordion** |
-| hold ring SVG | **ProgressRing** driven by the hold state machine |
-| notice "missing fields" list | **Progress** + badges |
-| activity "more" | **Pagination** |
-
-### 0.4 Type: Recursive on its MONO axis
-
-One variable family, **Recursive** (Arrow Type; OFL), self-hosted from `@fontsource-variable/recursive` (the `mono` file: weight 300–1000 + the MONO axis, 72 KB for Latin). Recursive is "a variable font family for code & UI"; its Sans "borrows glyphs from its parent mono but adjusts the widths of many key glyphs for comfortable readability".
-
-- **Sans Linear** (MONO 0) for what a person reads or decides: titles, sentences, buttons.
-- **Mono Linear** (MONO 1) for what a machine wrote or a clock counts: log lines, IOCs, timestamps, clocks, lane and band labels. Fixed width keeps columns of times and addresses aligned; `0/O` and `1/l/I` stay distinct in an indicator.
-- No casual (CASL) styles anywhere. Labels stay lowercase mono, never tracked caps.
-
-### 0.5 Motion additions
-
-- **Drop** lands a deadline flag on the axis gutter (620 ms, back-out).
-- **Step:** incident lines grow rightward from where they opened (a clip, 900 ms) and step down a lane when the log records the next stage.
-- **Resolve:** a raw log line (MONO 1) eases into plain words (MONO 0) when it joins an incident, 600 ms.
-- **Now line:** advances each minute with a 2.4 s pulse.
-- **Bands** settle 6 px on arrival; sheets rise 24 px, dialogs drop 12 px from the axis, toasts slide 8 px.
-- `prefers-reduced-motion`: digits swap, lines appear whole, no Resolve, the hold ring shows a percentage, and modals and toasts appear without travel.
+And one document: the **night orders** a captain leaves for the officer of the watch, answered in the morning by the watch's report. The CISO's brief is that report.
 
 ---
 
-## 1. References
+## 2. References
 
-Every reference was re-checked in this design round. Vendor marketing pages were used only where documentation was thin, and the table says so.
+Re-checked for v3. Domain references first, then the SOC tools the workflows are built on (unchanged from v2), then type and gallery references.
 
 | # | Reference | What we take |
 |---|---|---|
-| 1 | Google SecOps (Chronicle) case graph and playback: https://cloud.google.com/chronicle/docs/soar/investigate/working-with-cases/explore-entities-and-alerts-investigation | A **play control that steps through a case's alerts in order**, highlighting what each step touched and dimming the rest. → Our **Replay**: the baton timeline steps through the teammates' work. The current step is lit and future steps sit at 35%. We use no graph canvas: the investigation is told in time, not as a network. |
-| 2 | Microsoft Defender / Sentinel attack story: https://learn.microsoft.com/en-us/defender-xdr/investigate-incidents | **One queue and one attack story** per incident instead of separate alerts, with alerts replayed in time order. → Alerts coalesce into one incident strip, and the incident page tells one story from top to bottom. |
-| 3 | Datadog Bits Security Analyst: https://docs.datadoghq.com/bits_ai/bits_security_analyst and signal investigation: https://docs.datadoghq.com/security/cloud_siem/triage_and_investigate/investigate_security_signals/ | An automated investigation ends in a **plain verdict with the evidence underneath**, an "Investigating" state until then, and next actions (declare an incident, suppress) on the same panel. → The Triage step shows "Likely real: 94 in 100", then "why …" and "looked at …". |
-| 4 | CrowdStrike Charlotte AI agentic SOC (press, April 2025): https://www.businesswire.com/news/home/20250428067495/en | **Bounded autonomy**: the customer decides what runs on its own and what waits for analyst approval. → In Nightjar SOC nothing destructive runs on its own. Every response action is gated, and the gate is a visible, physical gesture (Hold). |
-| 5 | Torq Socrates / HyperSOC (vendor): https://torq.io/blog/socrates | An orchestrator with specialised agents and an **auditable record of reasoning**, available from the case. → Teammates hand off to each other, and every step records what it looked at and why it decided. |
-| 6 | SentinelOne Purple AI (vendor): https://www.sentinelone.com/platform/purple/ | **Storyline** gathers atomic events into one narrative. **Quick Starts** are pre-written hunting questions, and **notebooks** keep hunts as reusable work. → Plain-language hunting suggestions and saved searches kept as named, shareable hunts. |
-| 7 | Wiz Defend incident timeline (vendor): https://www.wiz.io/blog/wiz-defend-general-availability and a third-party UX teardown: https://sv0-docs.pages.dev/docs/architecture/research/2026-04-03-wiz-cloud-demo-ux-analysis | Colour encodes **what kind of thing** something is, not severity. A **Table/Graph toggle** sits over the same query. → Colour marks the role (teal = teammate, lavender = a person is needed); severity is a bar glyph. Hunting has a **List / Timeline** toggle over one search. |
-| 8 | Panther detections and simple builder: https://docs.panther.com/detections/rules/simple-detection-builder | Detections-as-code with a form view that keeps the code's testability, and search across events without writing a query language. → The rules view shows each rule as a **readable sentence** (form) with the Sigma source one keystroke away, and tests on replayed events. |
-| 9 | Tines Workbench, May 2025 changes: https://www.tines.com/blog/what-s-new-in-tines-may-2025-edition/ | A case status change **previews unmet requirements** before you commit, plus a cleaner case activity timeline. → "Submit notice" first lists any required field still missing (◐) and links each one to its evidence. |
-| 10 | Splunk ES Mission Control response plans: https://help.splunk.com/en/splunk-enterprise-security-8/user-guide/8.7/mission-control/respond-to-investigations-with-response-plans-in-splunk-enterprise-security | Phased response plans (NIST 800-61 style) with tasks per phase. → The **stage rail** on each incident: Triage → Investigate → Contain → Report, with the waiting item named. |
-| 11 | incident.io timeline curation: https://incident.io/changelog/tell-the-full-story-with-your-incident-timeline | The default timeline holds only meaningful updates, the full activity sits behind "View all activity", and timeline entries are editable. → The replay shows **key steps**, and "all activity" is a toggle. The curated replay becomes the post-incident report. |
-| 12 | Grafana IRM incident timeline: https://grafana.com/docs/grafana-cloud/alerting-and-irm/irm/manage-incidents/incident-timeline/ | The timeline is the incident record and turns into a post-incident review document. → The weekly report is assembled from curated replays, not typed from scratch. |
-| 13 | PagerDuty Status Dashboard: https://support.pagerduty.com/docs/status-dashboard | Stakeholders see **business services** as impacted or not, not technical noise. → The brief speaks in business systems ("the Melbourne booking system", "payments"), never host names first. |
-| 14 | Warp blocks: https://docs.warp.dev/terminal/appearance/blocks-behavior | Output grouped into discrete blocks with dividers and a compact mode. → The event river is grouped **per minute**, with routine events folded into a dashed "+1,257 routine events folded" block. |
-| 15 | Linear contextual command menu: https://linear.app/changelog/2019-10-07-contextual-command-menu, and cmdk (Linear/Vercel/Raycast pattern): https://github.com/pacocoursey/cmdk | A **context-aware ⌘K** as the primary navigation, with results ranked by the current view and grouped (do / go to / switch). → ⌘K is scoped to the open incident first (`INC-0412` chip), and Tab widens it to everything. |
-| 16 | Raycast's visual language (third-party extraction): https://design.hagicode.com/designs/raycast/ | A near-black canvas, **monospaced shortcut keycaps** and a single accent for selection. → Keycaps with a 2 px bottom border, and the selected palette row in a teal wash. |
-| 17 | Vercel Geist: https://vercel.com/geist/font and https://vercel.com/design/geist | Geist + Geist Mono, high-contrast greys and tabular figures for numbers. → Clocks and IDs in Geist Mono with `tnum`; UI and reading text in Geist. |
-| 18 | Linear Pulse (daily/weekly summary, audio): https://linear.app/changelog/2025-04-16-pulse | A personal **digest** delivered daily or weekly that can be read or listened to. → The morning brief arrives at 08:00 local time, and the weekly report on Monday. A "listen" option is a later idea. |
-| 19 | The Economist Espresso (finishable daily briefing): https://www.campaignasia.com/article/with-espresso-economist-delivers-daily-dose-of-intelligence/391888 | A brief you can **finish**, readable without clicking anything. → The CISO brief is one column with a "2-minute read" dateline. Every fact needed for the decision is on the page. |
-| 20 | Hold-to-confirm pattern: https://motion.dev/tutorials/js-hold-to-confirm, and why holding beats dialogs: https://dev.to/tomj/why-holding-buttons-is-superior-to-confirmation-dialogs-in-ux-design-1fic | Holding avoids confirmation fatigue. Announce "press and hold" to screen readers, and releasing early cancels. → **Hold to authorise**, 1.2 s, with pointer, Space or Enter (§11). |
-| 21 | NASA Open MCT: https://nasa.github.io/openmct/about-open-mct | Composable tiled telemetry layouts and the calm density of mission control. → Tiles in the style of tmux with hairline gutters and an active-tile top rule, not cards. |
-| 22 | Hyperping status page refresh: https://hyperping.com/blog/product-update-status-page-calendar-and-new-design | A **calm grey scale in both themes** so the one accent and the incidents stand out. → Teal is rationed to live, focus, the teammates and "on track". |
-| 23 | Gallery pieces with console, ops or night themes: Awwwards "Darknode" (SOTD, stealth/mission minimalism) https://www.awwwards.com/sites/darknode · Awwwards mission-control inspiration https://www.awwwards.com/inspiration/desktop-mission-control-1 · Order's interactive-console launch page (One Page Love) https://onepagelove.com/?p=49097 · "Orbital Reach" flight-director terminal landing (Kombai gallery) https://kombai.com/gallery/inspirations/orbital/ | A landing that **is** a working console rather than a picture of one, with minimal chrome and a single live element carrying the story. → The landing is the console replaying a night, and the headline arrives as the last log entry. **Avoided:** neon on black, glowing world maps (the Dribbble "security dashboard" cliché), scanlines and fake-hacker green. *Note: godly.website now redirects to recent.design; this was checked, and no Godly entry matched better than the pieces above.* |
-| 24 | Svelte motion API: https://svelte.dev/docs/svelte/svelte-motion | The `Spring`/`Tween` classes (`Tween.of`, `preserveMomentum`) and `prefersReducedMotion`. These drive Tick, Drop and Hold, plus `crossfade` + `flip` for Coalesce. |
-| 25 | Splunk ES 8 Mission Control and response plans: https://help.splunk.com/en/splunk-enterprise-security-8/user-guide/8.4/mission-control/respond-to-investigations-with-response-plans-in-splunk-enterprise-security | A **queue-first home** with a timeline toggle, and response as **phases of tasks**. → The turnover is home; the stage lanes are the phases. |
-| 26 | Splunk Asset & Identity Investigator: https://help-preview.splunk.com/en/splunk-enterprise-security-8/user-guide/8.0/analytics/asset-and-identity-investigator-dashboards | **Swim lanes over time**, one per event category. → Response stages as lanes on the shift axis. |
-| 27 | Google SRE, managing incidents and the incident document: https://sre.google/sre-book/managing-incidents/ · https://sre.google/sre-book/incident-document/ | An **explicit, acknowledged hand-off** and a living document whose timeline is time + responder + action. → The turnover band and the shift log. |
-| 28 | SecOps shift handoffs: https://cloud.google.com/blog/products/identity-security/how-to-nail-smooth-shift-handoffs-in-secops | Shifts fail through **incomplete details, wrong assumptions and dropped tasks**; use a standard handoff template. → The turnover's fixed, numbered sections. |
-| 29 | NIST SP 800-61r3: https://csrc.nist.gov/pubs/sp/800/61/r3/final | Leadership may hold authority over **high-impact response actions**; handlers should be able to choose containment manually. → Waiting on you sits directly under every incident header. |
-| 30 | Charles Ibry's timetable chart: https://en.wikipedia.org/wiki/Charles_Ibry | **One line per train, time across, stations down.** → One line per incident, the night across, the response stages down. |
-| 31 | Skeleton v3: https://v3.skeleton.dev/docs/get-started/installation/sveltekit · Recursive: https://github.com/arrowtype/recursive | The component system and its theme presets; one type family whose MONO axis separates what a person reads from what a machine wrote. |
+| 1 | IMO MSC.191(79), performance standards for navigational displays: https://wwwcdn.imo.org/localresources/en/KnowledgeCentre/IndexofIMOResolutions/MSCResolutions/MSC.191(79).pdf | Day, dusk and night presentations; at night, light foreground on a dark, non-reflecting background. → Dark is the default "night" theme; the light theme is the day presentation, not an inverted night |
+| 2 | IHO CSPCWG, colours under bridge lights: https://docs.iho.int/mtg_docs/com_wg/CSPCWG/CSPCWG7/CSPCWG7-09.2A_Colours_under_bridge_lights.pdf | Under red light, colours become hard to tell apart. → Status by glyph, word and luminance; colour only reinforces |
+| 3 | Watchclock (Wikipedia) and the Detex history: https://en.wikipedia.org/wiki/Watchclock · https://www.watchclocks.org/Types/Collection/history/history.html | The dial turned by the clock, stations registered as marks, gaps show a missed round. → The watch dial: the shift as a lit sector, incidents registered where they happened |
+| 4 | Annunciator panel: https://en.wikipedia.org/wiki/Annunciator_panel · ISA-18.1 sequences as described in vendor manuals (e.g. GE UR front panel: https://www.manualslib.com/manual/1337027/Ge-C70.html?page=150) | Engraved windows in a grid; a new alarm flashes until acknowledged, then glows steady. → The lamp panel: navigation windows that light and flash once |
+| 5 | Flight progress strips: https://en.wikipedia.org/wiki/Flight_progress_strip · SKYbrary: https://skybrary.aero/index.php/Flight_Progress_Strips | One strip per flight, boxed fields, holders racked in bays; the position is information. → Strip bays for every register; the incident header is one long strip |
+| 6 | ISA-101 high-performance HMI ("Going gray"): https://control.com/technical-articles/going-gray/ | A calm, mostly neutral display where colour is reserved for what is abnormal. → Warm neutrals for routine; red only for now, focus and the one action; the brightest lamp is what needs a person |
+| 7 | Big Shoulders (Patric King for the Chicago Design System): https://fontsource.org/fonts/big-shoulders-display/about | Condensed American Gothic capitals; the stencil cut of the family draws on railway and transport lettering. → Tall, tracked stencil-board labels for every heading |
+| 8 | Google SecOps case playback: https://cloud.google.com/chronicle/docs/soar/investigate/working-with-cases/explore-entities-and-alerts-investigation | Step through a case's alerts in order. → Replay on the incident page |
+| 9 | Microsoft Defender attack story: https://learn.microsoft.com/en-us/defender-xdr/investigate-incidents | One incident, one story, alerts in time order. → The incident strip and its log |
+| 10 | Splunk ES response plans: https://help.splunk.com/en/splunk-enterprise-security-8/user-guide/8.7/mission-control/respond-to-investigations-with-response-plans-in-splunk-enterprise-security | Phased response. → The stage rings of the dial and the stage boxes on the strip |
+| 11 | Google SRE, managing incidents and handover: https://sre.google/sre-book/managing-incidents/ · SecOps shift handoffs: https://cloud.google.com/blog/products/identity-security/how-to-nail-smooth-shift-handoffs-in-secops | An explicit hand-off in fixed sections. → The four numbered readouts around the dial |
+| 12 | NIST SP 800-61r3: https://csrc.nist.gov/pubs/sp/800/61/r3/final | People keep high-impact response actions. → Hold to authorise, and "waiting on you" first on every incident |
+| 13 | Datadog Bits Security Analyst: https://docs.datadoghq.com/bits_ai/bits_security_analyst | A plain verdict with the evidence under it. → "Likely real: 94 in 100", then why and looked at |
+| 14 | Panther simple detection builder: https://docs.panther.com/detections/rules/simple-detection-builder | Detections readable as forms. → Rules as sentences |
+| 15 | Tines case requirements: https://www.tines.com/blog/what-s-new-in-tines-may-2025-edition/ | Preview unmet requirements before you commit. → The notice's pre-send checklist |
+| 16 | Hold to confirm: https://motion.dev/tutorials/js-hold-to-confirm | A held press beats a dialog. → Hold to authorise, 1.2 s |
+| 17 | Military message forms (the Joint Message Form, DD 173) and the date-time group: https://navyadvancement.tpub.com/14145/css/Filing-Procedures-78.htm · https://informationtechniciantraining.tpub.com/14222/css/Common-Message-Elements-57.htm | A boxed header (to, from, precedence, date-time group) above numbered text. → The notice draft as a signal form |
+| 18 | Awwwards colour filter for dark reds: https://www.awwwards.com/websites/%23BF2615/ | Dark sites that let one saturated red carry the page, with condensed display type. → One red, used as light, on warm black |
+
+**Avoided:** neon on black, glowing world maps, scanlines, glitch, fake-hacker green, the radar "sonar ping" cliché as decoration (the dial's hand moves only with real time or the replay), and every shell in `DESIGN_DIRECTIONS.md`.
 
 ---
 
-## 2. Metaphor and mental model
+## 3. The shell: station plate + lamp panel
 
-**The night watch.** A mission-control floor at night: someone is always on watch, and the watch keeps a log. The user thinks in **time**:
+```
+┌──────────────────────────────┬──────────────────────────────────────────────────┬─────────────────────────┐
+│ ◗ NIGHTJAR SOC · HALDEN      │ ┌─────────┐┌─────────┐┌───────────┐┌─────────┐    │ 10:30:12  CET          │
+│                              │ │ WATCH  2││  HUNT   ││ BEHAVIOUR ││  RULES  │    │ THU 20 NOV · FORENOON  │
+│ THE WATCH                    │ └─────────┘└─────────┘└───────────┘└─────────┘    │ ○ NIS2 · NJ-1036 16:48 │
+│ 4 open · 1 waiting on you    │ ┌─────────┐┌─────────┐┌───────────┐┌─────────┐    │   +3 clocks            │
+│                              │ │ ASSETS  ││ PEOPLE  ││    LOG    ││  BRIEF  │    │ [⌘K find]   (MB)       │
+└──────────────────────────────┴──────────────────────────────────────────────────┴─────────────────────────┘
+  page skeleton below (varies by screen type, §4); the page scrolls, the head scrolls with it
+```
 
-- **What is happening now?** The event river.
-- **Which clock is running?** The regulator clocks, always in the top bar.
-- **What needs me?** "Awaiting you".
-- **What happened while I was away?** The replay and the morning brief.
+- **Station plate (left).** The brand line, then the page name as the page's `h1` in Big Shoulders Display at 64 px, in capitals, tracked, followed by a one-line summary in Manrope. The plate is the heading; pages do not repeat it.
+- **Lamp panel (centre).** Eight engraved windows in a 4 × 2 grid, not a tab row: Watch, Hunt, Behaviour, Rules, Assets, People, Log, Brief (Alt+1 … Alt+8 as before; windows a role cannot open are not drawn). States:
+  - *off*: engraved label, dim;
+  - *lit*: you are here; the window glows red from inside and the label is bright, with `aria-current="page"`;
+  - *alarm*: something there needs a person (Watch: approvals waiting; Rules: noisy rules). A count in Fira Code sits in the window's corner with a ▲; a new alarm flashes twice, then glows (ISA-18.1 style). Reduced motion: no flash.
+- **Chronometer (right).** The org's local time (Fira Code, rolling seconds), the date and the **watch** it falls in (First 20–00, Middle 00–04, Morning 04–08, Forenoon 08–12, Afternoon 12–16, Dog 16–20). Under it the most urgent regulator clock in glyph + words; "+3 clocks" opens all of them in a popover. A new clock **drops** into this slot. Then ⌘K ("Find") and you (Avatar → role, day/night presentation, confirm-by-typing, settings, sign out).
+- **No bar on the bottom, no side rail, no right panel.** Nothing is pinned to an edge; the whole page, head included, scrolls as one sheet.
+- **Phone (390 px):** one row: brand mark, chronometer, **Panel** button; then the station name at 40 px. Panel drops the lamp windows (2 × 4), the clocks and you from the top as a Skeleton modal.
+- **Detail** opens as Skeleton modals: a **sheet** that rises from the bottom (a step's evidence, an asset, a person) or a **dialog** that drops from the head (⌘K, a decision, a delete).
 
-Incidents are **operations with countdowns**. The three AI teammates are colleagues on shift (**Triage**, **Enrichment**, **Response**) who pass the work along like a **baton**. You can replay every hand-off and see what each teammate looked at and why it decided. People sit in their own lane: the baton always stops at the **people** lane before anything is switched off.
+The public pages (landing, sign-in, invitation) use the same plate with a reduced panel.
 
-Executives don't get the floor in white. They get **the morning after**: a calm, single-column brief written as a hand-over note at first light (§6.11). Night is the analyst's console; dawn is the CISO's brief. The two themes are two times of day, not two colour schemes of one screen.
+---
 
-### Primary workflows by role
+## 4. Page skeletons, per screen type
 
-| Role | Comes to Nightjar SOC to… | Main path |
+No screen uses "top bar + centre + right panel" or a card grid. Each skeleton comes from how that screen is used.
+
+| Screen | Skeleton | Layout |
 |---|---|---|
-| **Analyst** (security analyst, often the IT manager in a mid-size company) | confirm or overturn the teammates' verdicts, hunt for what else was touched, and tune noisy rules | The watch (river · incident · hunt layout) → incident replay → "Hunt: laptops that opened the same link" → save the search → rules: lower the noise on a rule |
-| **Responder** (on call) | authorise or decline response actions, fast, with the reasons in front of them | Notification → the watch (river · incident · awaiting you) → read *does / why / undo* → **Hold to authorise** → next item |
-| **CISO / executive** | know whether anything is reportable, which clocks run, and what decision is theirs | Morning brief (light) → "Your decision" → review the draft notice → submit (mock) → weekly report |
-| **Auditor** (read only) | check that every response action had a person behind it, every notice went out on time, and the log is intact | Activity log → "Verify the log" → open any incident's replay at any step → export the evidence pack |
+| **The watch** `/watch` | **Scope with four readouts** | The watch dial in the centre (up to 600 px). The turnover's four numbered readouts sit at its corners, like the data blocks around a radar scope: 1 top-left, 2 top-right, 3 bottom-left, 4 bottom-right. Responders and admins: 1 waiting on you · 2 clocks to watch · 3 intake, live · 4 since you last looked. Analysts: 1 worth a hunt. Auditors: 1 the activity chain, 3 evidence. Under 1180 px the dial goes on top and the readouts sit 2 × 2; on phones they stack as an accordion |
+| **Incident** `/incidents/[id]` | **Strip, orders, log** | One long **flight strip** across the page: a holder edge for severity, the reference in Fira Code, the title, then boxed fields (stage rail · people · machines · clocks · ATT&CK). Under it, **orders**: "waiting on you" as lit plates side by side, each with Hold to authorise, plus open regulator assessments. Then the record as an engraved index (Skeleton Tabs): *what happened, and why* (the replay as a watch log with the four teammate/person columns) · clocks and notices · actions decided · service desk · evidence |
+| **Notice draft** | **Signal form** | A boxed header like a naval signal form (TO · FROM · PRECEDENCE · DUE · REF), then numbered paragraphs that are the notice's fields. A **pre-send checklist** runs down the left: each required field ✓ or ◐ with "confirm …", linking to its paragraph. The evidence it cites is a strip bay below; `[E-xx]` scrolls to and lights its strip |
+| **Morning brief** `/brief` | **The morning report** | Light by default, under a "first light" horizon (a band that runs from the night's red into bone). A stencil headline across the full width, then a three-column report: the decision plate (the one boxed thing on the page) · the night (a compact, read-only watch dial) · clocks, approved overnight, on watch now. Then "overnight in plain words" and seven nights |
+| **Weekly report** | **Report sheets** | The same report grammar for a week: a headline, the week as seven narrow dial-less columns (one per night), then numbered sections |
+| **Registers**: assets, people, rules, activity, saved searches, members | **Strip bay** | Strips racked in a bay: holder edge (state), boxed fields, stencil column heads, a filter rail of lamp-style segments above. A strip opens as a bottom sheet (asset, person) or a page (rule). The activity log is a **log book**: strips joined by a chain mark, verified as a whole |
+| **Hunt** | **Plot** | A wide command line ("Ask in plain words") with the filters as chips beneath; then a bar plot of the hours and a strip bay of what matched. Save as a named search |
+| **Behaviour** | **Tapes** | One tape per person or machine: their normal week as a rhythm strip, with the unusual hours punched through and marked ◇ |
+| **Rule** `/rules/[id]` | **Rule plate** | The rule as a sentence on an engraved plate (When … Unless …), then its noise over 14 nights as a tape, then the source one keystroke away |
+| **Settings** | **Plates** | Regulator contacts and members as labelled plates with strips inside |
+| **Sign-in** | **The watch bill** | Left: the idle dial showing the time. Right: "YOU TAKE THE WATCH AT 10:30" and the watch bill: the demo roles as rows of a roster (role, who, what they do, **Take**), then your own account |
+| **Landing** `/` | **Red-light replay** | The dial replays one night at Halden Logistics, large, beside the night log and the chronometer; the hold box arrives in the log; the stencil headline lands last. Below: **the round** (22:00 · 01:30 · 03:12 · 08:00 as four engraved stations), the clocks it keeps as a strip bay, and a first-light footer |
 
 ---
 
-## 3. Navigation model and app shell
+## 5. Type
 
-**⌘K-first tiled console. No sidebar, no tabs, no menus.** Three pieces of chrome:
-
-```
-┌─────────────┬──────────────────────┬──────────────────────┬─────────────────────┬──────────────────────┬────────────────┐
-│ ◉ nightjar  │ NIS2 · BE · early    │ NIS2 · BE · full     │ SOCI · AU · 72 h    │ SEC 8-K · US         │ Go to anything │  ← CLOCK BAR 56 px
-│   soc       │ 17:53:38 ○ Draft ready│ 65:53:38 ○ On track │ 61:21:34 ○ On track │ not started ◆ decide │ ⌘ K   ☼        │    one cell per running clock
-├─────────────┴──────────────────────┴──────────────────────┴─────────────────────┴──────────────────────┴────────────────┤    2 px elapsed rule under each cell
-│                                                                                                                          │
-│   TILES: 1–4 panes with 1 px hairline gutters, no radius, active pane = 2 px teal top rule                               │
-│                                                                                                                          │
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ● Taking in events normally │ Triage · Enrichment · Response on shift │ Priya Nair · responder │ layout ⌘[ ] │ ⌘K go anywhere │  ← STATUS LINE 28 px, mono
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-- **Clock bar (top, always).** One cell per running regulator clock, across all open reportable incidents, ordered by time left. Each cell has a label (regime · country · stage), rolling digits and a status. Clicking a cell opens the notice draft beside its evidence (§6.6). The SEC cell exists before its clock starts, with the label "not started · ◆ Materiality decision". With no clocks running, the bar reads "No regulator clocks running" in a quiet tone.
-- **Tiles.** The workspace splits into 1 to 4 panes in the style of tmux. Keys: `⌘\` splits, `⌘[` / `⌘]` move focus, `⌘W` closes, `⌘⇧↵` zooms one tile. Each pane header is a lowercase mono title ("events", "incident", "awaiting you", "hunt"), and the title is itself a ⌘K target: click it to swap what the tile shows.
-- **Layouts per role** are presets saved per person:
-  - Analyst: events | incident | hunt
-  - Responder: events | incident | awaiting you
-  - Auditor: activity | incident (read only) | evidence
-  - Executive: lands on the brief instead of tiles.
-- **Status line (bottom).** Health in plain words ("Taking in events normally", or "Catching up: 4 minutes behind" in amber), who is on shift, your name and role, the layout and the ⌘K hint. It never shows engineering metrics.
-- **⌘K / Ctrl K** is the navigation. Groups: **do** (approve, decline, isolate, release, submit notice), **go to** (incidents, hunts, saved searches, assets, people, clocks, rules, settings, activity) and **switch** (layout, theme, morning brief `⌘B`). It is scoped to the focused incident first (an `INC-0412` chip); Tab widens it to everything. Typing `?` asks the watch a question in plain language ("which laptops opened the link?"), and the answer comes back as a hunt tile. Clicking the brand mark opens ⌘K in "go to" mode for mouse-only users. `g` chords also work: `g w` the watch, `g h` hunt, `g b` brief, `g r` rules, `g a` assets, `g l` activity log, `g s` settings.
-- **Routes** (deep links, all rendering inside the shell):
-  - `/` landing · `/sign-in`
-  - `/watch` (home) · `/incidents/[id]` · `/incidents/[id]/notice/[regime]`
-  - `/hunt` · `/hunt/saved` · `/behaviour` · `/rules` · `/rules/[id]`
-  - `/assets` · `/identities`
-  - `/brief` · `/brief/week/[isoWeek]`
-  - `/settings/regimes` · `/settings/members` · `/activity`
-- **Mobile (390 px).** One tile at a time; swiping or the tile dots switch tiles. The clock bar collapses to a sticky chip showing the most urgent clock ("NIS2 17:53 · +2"); tapping it expands a sheet. ⌘K becomes a floating search button at the bottom right. Hold to authorise is full-width and gives a 10 ms vibration when it completes.
-
----
-
-## 4. Landing story (public, `/`): "Replay the night"
-
-The landing **is the console**, replaying one night at Halden Logistics. It is time-driven, not scroll-driven. There is no hero image, no product card and no stat strip. It has three columns, like the app:
-
-- **Left, "events":** the river streams routine events in plain words, and the three suspicious rows appear with ◇ in amber.
-- **Centre, the night log:**
-  - a mono eyebrow ("● replay · Halden Logistics · the night of Wednesday to Thursday");
-  - a large rolling clock (Geist Mono 250 weight, 112 px, seconds in teal);
-  - below it, **log lines** that each arrive large (24 px) and settle into the log (16 px) when the next one comes.
-- **Right, "incident":** "Nothing needs a person. The watch is quiet." until the alerts **coalesce** into an incident strip. Inside the strip a mini baton graph grows (T → E → R → P), then the **Hold to authorise** button appears. Visitors can hold it themselves; otherwise "Priya, on call" does at 15 s.
-
-**Beats** (about 16 s, replay clock at 6×; the virtual night starts at 03:11:50):
-
-| t | Beat | Log line |
+| Role | Face | Setting |
 |---|---|---|
-| 0 s | river streams routine events | "It is quiet at Halden Logistics. Events arrive by the thousand, nearly all of them routine." |
-| 1.7 s | ◇ new-country sign-in | "Marta in accounts payable signs in from a country she has never signed in from." |
-| 3.0–3.6 s | ◇ inbox rule, ◇ password reset | (river only) |
-| 4.8 s | **Coalesce** into INC-0412 | "Three alerts become one incident." |
-| 6.2–8.4 s | **Baton** T → E → R | "Triage says it is likely real and shows why. Enrichment checks who is behind it. Response drafts a plan." |
-| 9.8 s | **Drop**: two NIS2 clock cells drop into the top bar and start counting down from 24:00:00 and 72:00:00 | "Reportable under NIS2. The 24-hour clock starts, and the early warning is already drafted." |
-| 12 s | the Hold button appears; replay slows to 2× | "Disable Marta's account? Nothing happens until a person holds to authorise." |
-| 15.2 s | auto-hold if the visitor hasn't held | "Priya, on call, held to authorise. Account disabled, two minutes after the first sign." |
-| 17.8 s | **Final**: the clock shrinks to 64 px and turns muted, the log lines settle, a rule appears and the headline lands | — |
+| Display | Big Shoulders Display 800 | 120–168 px landing, 0.9 line height, capitals, +0.02em |
+| Station name (h1) | Big Shoulders Display 800 | 64 px (40 px on phones), 0.92, capitals, +0.03em |
+| Plate heading (h2) | Big Shoulders Display 700 | 22–28 px, capitals, +0.08em |
+| Label / engraving | Big Shoulders Display 700 | 13–15 px, capitals, +0.16em (lamp windows, column heads, buttons) |
+| Body | Manrope 400–600 | 15 px / 1.5 console, 17–19 px / 1.6 brief |
+| Strong UI | Manrope 700 | titles of strips, approval titles |
+| Clocks, logs, IDs | Fira Code 400–500, `tnum` | 11.5–14 px; 40–96 px chronometer and replay clock |
 
-**Final state** (the shot): the centre column reads as a finished night log, then the headline **"Someone is always / on watch."**. The sub-line follows: *"Nightjar SOC watches your company's security through the night, separates real threats from noise, investigates with three AI teammates, starts the regulator's clock and drafts the notice. Nothing is switched off or locked out until a person says so."* The CTAs are **Take the watch →** (sign in to the Halden demo) and **↺ Replay the night**. The fine print, in mono, reads: "For mid-size companies with operations in the EU, US and Australia · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting".
-
-**The status line is the landing's navigation.** Its cells are `22:00 takes in everything · 01:30 sorts real from noise · 03:12 starts the regulator's clock · 08:00 briefs the CISO · sign in`. Each one jumps to a **shift-log section** below the fold. The left margin of each section holds a large Geist Mono timestamp, sticky while you read:
-
-- **22:00:** "Every sign-in, email, laptop and cloud account, all night." A one-minute strip of 120 cells, two of them amber.
-- **01:30:** "212 alerts from one broken backup job. One note, not 212 pages."
-- **03:12:** "When an incident is reportable, the clock starts on its own." A three-row regime ledger: NIS2 24 h · 72 h · final report within a month; SEC 8-K four business days from the materiality decision; SOCI 12 h · 72 h.
-- **08:00 "first light":** the page background turns from night to **dawn** (#0F2830 → #CFE7E1), and a white brief card previews §6.11.
-
-The footer is on the dawn colour: "Take the watch at Halden Logistics." It includes the sample-data note and "does not submit anything without a person".
-
-`skip replay →` (bottom right of the centre) and `prefers-reduced-motion` both jump to the final state. With reduced motion the clock still ticks once a second without rolling.
+**The heading treatment:** headings are never sentence case and never a light weight. They are tall, condensed capitals, tracked out like letters painted through a stencil onto a bulkhead or a lamp window. A short red **index bar** (4 × 18 px) sits before plate headings; numbered sections put their number in a boxed lamp. Fira Code appears only where a machine wrote it or a clock counts it (times, references, hosts, hashes, event lines); everything a person reads is Manrope.
 
 ---
 
-## 5. Home: "the Watch" (`/watch`)
+## 6. Palette
 
-The home is the **live console** in the person's role layout. There is no greeting and there are no KPI cards. The responder layout:
+Night-vision red, hue ≈ 5°, is the only accent. Teal and lavender are retired.
 
-- **events** (300 px): the live river, grouped by minute. Each minute header reads like "09:18 · 1,262 in · 2 to look at".
-  - Unusual-behaviour rows: ◇ with an amber left rule.
-  - Incident-related rows: ▸ with a teal rule.
-  - Routine rows are folded into a dashed block.
-- **incident** (flexible): the incident with the most urgent clock or the oldest item waiting for you. It shows the header, ATT&CK chain, stage rail, replay controls and the **baton timeline** (§6.4).
-- **awaiting you** (344 px):
-  - the approval card (does / why / undo, Hold, "Decline with a reason", "Ask Response why");
-  - the draft notice for the most urgent clock, with its required-fields checklist;
-  - the actions already authorised in this incident.
+### Night (default)
 
-When nothing is open, the incident tile reads "Nothing needs a person. The watch is quiet." and suggests a saved hunt. The status line reports what changed since you last looked ("Since 18:40: 2 incidents, 1 contained, 1 waiting for you").
-
----
-
-## 6. Screens and wireframes
-
-Screens marked **[P]** were prototyped at the design stage. Every wireframe sits inside the clock bar + tiles + status line shell unless it says otherwise.
-
-### 6.1 Landing (`/`) [P]: `index.html`
-
-```
-┌ ◉ nightjar soc │ NIS2·BE early warning 23:59:27 ○ │ NIS2·BE full 71:59:27 ○ │            [↺ Replay the night] [Take the watch →] ┐
-├────────────────────┬──────────────────────────────────────────────────────────────────────┬───────────────────────────────┤
-│ events  Halden     │  ● replay · Halden Logistics · the night of Wednesday to Thursday    │ incident  INC-0412            │
-│ 03:12:06 Laptop …  │  03:14:13                         ← Geist Mono 250, rolls (Tick)     │ ┌───────────────────────────┐ │
-│ 03:11:53 Backup …  │  03:12:04  Marta in accounts payable signs in from a new country.    │ │▮▮▮▯ High INC-0412 contained│ │
-│ ◇ 03:12:04 Marta…  │  03:12:31  Three alerts become one incident.                         │ │Account takeover after a … │ │
-│ 03:11:40 Payment…  │  03:12:58  Triage: likely real, 94 in 100. Enrichment: domain 2 d.  │ │ T  E  R  P                │ │
-│ …                  │  03:13:40  Reportable under NIS2. The 24-hour clock starts …         │ │ ○╮          Likely real   │ │
-│ (mask fades out    │  03:14:12  Priya, on call, held to authorise. Account disabled.     │ │  ╰○╮        Sender domain │ │
-│  toward the floor) │  ─────────────────────────────────────────────────                   │ │    ╰○╮      Disable acct? │ │
-│                    │  Someone is always                                                    │ │      ╰○     Priya held ✓  │ │
-│                    │  on watch.                       ← Geist 600, 60 px                  │ └───────────────────────────┘ │
-│                    │  sub-line (17.5 px)                                                   │ Disable Marta's account …     │
-│                    │  [Take the watch →]  [↺ Replay the night]                             │ [✓ Authorised · 03:14:12    ] │
-│                    │  For mid-size companies … designed to support NIS2, SEC 8-K, SOCI     │  Logged with who, when, why.  │
-├────────────────────┴──────────────────────────────────────────────────────────────────────┴───────────────────────────────┤
-│ ● replay │ 22:00 takes in everything │ 01:30 sorts real from noise │ 03:12 starts the regulator's clock │ 08:00 briefs … │ sign in │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-  ↓ shift log: [22:00 │ every sign-in…] [01:30 │ 212 alerts…] [03:12 │ regime ledger] [08:00 first light │ white brief card on dawn]
-```
-
-### 6.2 Sign-in (`/sign-in`)
-
-A single centred tile on the night background. The clock bar idles above it ("No regulator clocks running") and the status line below reads "● Taking in events normally · Halden Logistics demo". The demo account picker uses roles, not names.
-
-```
-┌ ◉ nightjar soc │ No regulator clocks running                                                              ┐
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                         ┌────────────── take the watch ──────────────┐                                       │
-│                         │ Work email   [ priya.nair@halden.example ] │                                       │
-│                         │ Password     [ ••••••••••••             ] │                                       │
-│                         │ [ Take the watch → ]                       │                                       │
-│                         │ ── or try the Halden Logistics demo as ── │                                       │
-│                         │ ( Analyst ) ( Responder ) ( CISO ) ( Auditor ) │  ← mono chips; CISO lands on brief │
-│                         │ Forgot password · Sample company and data  │                                       │
-│                         └────────────────────────────────────────────┘                                       │
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ● Taking in events normally · Halden Logistics demo                                          ⌘K after sign-in │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### 6.3 Live console home (`/watch`) [P]: `console.html`
-
-```
-┌ ◉ nightjar soc │ NIS2·BE early 17:53:38 ○ Draft ready │ NIS2·BE full 65:53:38 ○ │ SOCI·AU 72 h 61:21:34 ○ │ SEC 8-K not started ◆ │ ⌘K ☼ ┐
-├──────────────────────────┬───────────────────────────────────────────────────────────────┬─────────────────────────────┤
-│ events  live  1,284/min  │ incident INC-0412                     opened 03:12:31  ⌘\      │ awaiting you 1   Priya Nair │
-│ 09:18 1,262 in · 2 to …  │ ▮▮▮▯ High · Reportable: NIS2 (Belgium) · 3 alerts grouped       │ [‖ Awaiting your approval]  │
-│ ◇ Shuo Chen downloaded … │ Account takeover after a phishing email                        │ Isolate Marta's laptop      │
-│ · Dirk Verbeek signed in │ Marta Lindqvist · accounts payable, Antwerp · HL-ANT-LT-044     │ does  Cuts it off …         │
-│ ▸ Response asked you to… │ ATT&CK [T1566.002] → [T1078] → [T1114.003]                      │ why   Opened the link …     │
-│ ┆+1,257 routine folded┆  │ ✓Triage ── ✓Investigate ── ‖Contain 1 waiting ── ○Report 2 clk │ undo  Release any time      │
-│ 09:17 1,301 in · 1 to …  │ [⏮][▶ Replay][⏭] [1×][4×] ▬▬▬▬▬▬▬▬▬  step 9 of 9 · 09:02:40   │ [◔ Hold to authorise   64%] │
-│ ◇ Kenji Ito failed …     │ (baton timeline, §6.4)                                          │ Decline · Ask Response why  │
-│ …                        │                                                                 │ notice · draft 2  due Fri…  │
-│                          │                                                                 │ NIS2 early warning → CCB    │
-│                          │                                                                 │ ✓ ✓ ✓ ◐ Contact person      │
-│                          │                                                                 │ [Open the draft][Compare]   │
-├──────────────────────────┴───────────────────────────────────────────────────────────────┴─────────────────────────────┤
-│ ● Taking in events normally │ Triage · Enrichment · Response on shift │ Priya Nair · responder │ layout ⌘[ ] │ ⌘K go anywhere │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### 6.4 Incident detail with the replayable investigation timeline (`/incidents/[id]`) [P]
-
-The incident tile, zoomed (`⌘⇧↵`) or deep-linked. The **baton timeline** is the signature. It has four narrow **lane tracks** (T triage · E enrichment · R response · P people, 62 px each), one dot per step on its lane, and S-curve hand-off lines between consecutive steps. To the right sits a wide "what happened, and why" column. Each row shows:
-
-- a title in Geist 13.5/500;
-- a mono line: `Lane · looked at … / why …`.
-
-The current step is lit; a step waiting for a person is a lavender band with `‖` and a dashed line into the people lane. **Replay** puts a playhead row on step 1 and plays at 1 step per 1.2 s (or 4×). The baton bead travels along each hand-off, rows after the playhead dim to 35%, and `←/→` step. "All activity" (toggle) expands every tool lookup between key steps, in the style of incident.io's "View all activity".
-
-```
-│ [⏮][▶ Replay][⏭] [1×][4×] ▬▬▬▬▬▬▬▬▬ step 9 of 9 · 09:02:40          [all activity ○] [export replay]│
-│          (T)   (E)   (R)   (P)    what happened, and why                                               │
-│ 03:12:31  ○     ┆     ┆     ┆     Grouped 3 alerts into one incident                                   │
-│           │                       Triage · new-country sign-in · inbox rule · reset                    │
-│ 03:12:58  ○     ┆     ┆     ┆     Likely real: 94 in 100                                               │
-│           ╰──╮                    Triage · why new device + rule 4 min later                           │
-│ 03:13:10     ○  ┆     ┆           Sender domain is 2 days old                                          │
-│ 03:13:24     ○  ┆     ┆           Laptop has 1 exploited weakness · looked at asset list, CISA KEV     │
-│              ╰──╮                                                                                      │
-│ 03:13:40        ○     ┆           Plan: disable, sign out, isolate · 3 actions · each needs a person   │
-│                 ╰──╮                                                                                   │
-│ 03:14:12           ○              ✓ Priya held to authorise · account disabled · signed out            │
-│        ╭───────────╯                                                                                   │
-│ 03:14:30  ○                       Reportable under NIS2 · 2 clocks started · notices drafted           │
-│ 03:15:02     ○                    No payments left Halden · looked at the payments log                 │
-│ ▌09:02:40       ○┄┄┄┄◉            Asks to isolate the laptop · ‖ handed to people · awaiting           │ ← lavender band
-```
-
-Selecting a row opens a **step drawer** inside the tile. It shows the evidence the step cited (event lines and enrichment facts, each with its source), the reasons with their weights in plain words ("New device: strong · Inbox rule soon after sign-in: strong · Same sender as 2 confirmed cases: medium"), and **"Disagree"**. Disagreeing records a person's verdict, which also feeds the triage evaluation set. Text that came from log fields is shown as **quoted evidence** in mono, never as instructions, under the label "from the event, as received".
-
-### 6.5 Approval flow: hold to authorise [P]
-
-Every response action (isolate a laptop, disable an account, sign out everywhere, block a sender, revoke a key) arrives as an **approval card**:
-
-```
-┌ [‖ Awaiting your approval] ───────────────────────────── 1 of 2 ┐
-│ Isolate Marta's laptop                                            │
-│ HL-ANT-LT-044 · proposed by Response at 09:02 · INC-0412          │
-│ does  Cuts the laptop off from the network, except Nightjar SOC.  │
-│ why   It opened the phishing link at 03:09 and has one weakness   │
-│       that is being exploited in the wild.               [why ↗] │
-│ undo  Release from isolation at any time. Logged either way.      │
-│ who   Marta Lindqvist will see: "Your laptop is offline for a     │
-│       security check. IT will contact you." (editable)            │
-│ [ ◔  Hold to authorise · or hold Space for 1.2 s          64% ] │  ← fill sweeps left→right, ring arc fills
-│ Decline with a reason                          Ask Response why   │
-└───────────────────────────────────────────────────────────────────┘
-   after: [ ✓  Authorised · 09:21:07 · by Priya Nair             ]  ← stamp, teal fill
-          baton row "✓ Priya held to authorise" appends to the replay
-```
-
-- **Release early cancels** (the ring springs back to 0 in 240 ms). The button is a real `<button>` with `aria-describedby` "Press and hold for 1.2 seconds, or hold Space or Enter."
-- **Decline** needs a reason chosen from a short list (wrong host, business-critical now, false positive, other with text). The reason goes back to Response, which may propose something else.
-- **Least privilege:** a person can only authorise actions their role permits. The responder can isolate and disable; the analyst can block a sender; the auditor sees cards greyed out with "Read only".
-- **Two-person rule** (setting): actions on executives' accounts or servers need two holds from different people. The card shows "1 of 2 held · waiting for a second person".
-- **Accessibility alternative** (personal setting): "Confirm by typing the device name" replaces the hold for people who cannot hold.
-
-### 6.6 Incident clock, notice drafting and submission (mock) (`/incidents/[id]/notice/[regime]`)
-
-You reach it by clicking a clock cell or "Open the draft". The tile splits into **draft | evidence**:
-
-```
-┌ notice · NIS2 early warning · Belgium ─────────────── due Fri 21 Nov 03:12 · 17 h 53 m ○ On track ┐
-│ To   CCB, Centre for Cybersecurity Belgium (from Settings › Regime contacts)    draft 2 · saved 09:14 │
-├──────────────────────────────────────────────────┬──────────────────────────────────────────────────┤
-│ REQUIRED FOR AN EARLY WARNING                     │ evidence                                          │
-│ ✓ When Halden became aware   today 03:12 [E-03]  │ E-03 03:12:04 sign-in, new country (as received) │
-│ ✓ Suspected unlawful act     yes          [E-07] │ E-07 03:13:10 sender domain registered 2 days ago │
-│ ✓ Cross-border impact        possibly NL, DE [E-11]│ E-11 customers on shared invoicing in NL, DE     │
-│ ◐ Contact person             [ Henrik Dahl ▾ ]  │                                                  │
-│ ── narrative (editable, plain language) ──────── │ (click an [E-xx] to scroll and highlight here)   │
-│ On 20 November 2025 at 03:12 CET Halden Logistics │                                                  │
-│ became aware of unauthorised access to one        │                                                  │
-│ employee mailbox following a phishing email …     │                                                  │
-│ ── what comes next ──                              │                                                  │
-│ ○ Incident notification   due Sun 23 Nov 03:12   │                                                  │
-│ ○ Final report            within one month of it  │                                                  │
-├──────────────────────────────────────────────────┴──────────────────────────────────────────────────┤
-│ [Review and submit]  → preview lists any ◐ still missing  →  [Hold to submit (mock)]                 │
-│ after: ✓ Submitted 09:31 by Henrik Dahl · reference CCB-mock-2025-1120-01 · clock stops, cell turns  │
-│        "✓ Sent" for 10 min, then leaves the bar; the next stage's clock stays                       │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-- **Regime determination** runs from the company profile (sectors, countries, listing) and the incident facts. Each clock cell explains why it applies ("Transport sector, Belgium, significant incident test: met").
-- **Timing rules** are computed at runtime:
-  - **NIS2:** early warning 24 h, incident notification 72 h, final report one month after the notification, intermediate reports on request.
-  - **SEC 8-K Item 1.05:** four business days *from the materiality determination*, so it shows "not started" until a person records it. The business-day count uses the US federal holiday calendar.
-  - **SOCI Part 2B:** 12 h when significant impact is suspected, 72 h for relevant impact, with a written report after any verbal one.
-- **Submission is mocked:** it records who, when, what was sent and a mock reference. The UI says **"Recorded as submitted (demo)"**. Nothing is ever sent without a person holding to submit.
-
-### 6.7 Event stream and hunting (`/hunt`)
-
-The hunt tile opens beside the incident (analyst layout). The search bar takes plain words or field filters. Field names display as friendly labels, and the underlying query is never called a query language in the UI.
-
-```
-│ hunt                                                         [List | Timeline]  [Save as…] [▶ Run] │
-│ [ laptops that opened links from halden-logistlcs.com in the last 7 days            ] ⏎            │
-│ filters: (domain = halden-logistlcs.com ×) (event = link opened ×) (last 7 days ▾) + add           │
-│ suggestions: ▸ Who else got mail from this sender?  ▸ Sign-ins from new countries this week         │
-│ 4 matches · 3 laptops · 2 people                                         searched 18.2 m events     │
-│ time        who               device          what                                    incident     │
-│ 03:09:12    Marta Lindqvist   HL-ANT-LT-044   opened link in "Invoice 4471 overdue"   INC-0412     │
-│ 03:09:40    Marta Lindqvist   HL-ANT-LT-044   entered password on look-alike page     INC-0412     │
-│ Tue 14:02   Jonas Peeters     HL-ANT-LT-019   opened link, page blocked by browser    — [open +]   │
-│ Mon 10:31   Sara Vos          HL-RTM-LT-007   opened link, no password entered        — [open +]   │
-```
-
-**Timeline** mode draws the same rows as a vertical **minute ladder** (time down the left, one row per match). It is never a horizontal scrubber. "Open +" adds a match to an incident.
-
-### 6.8 Saved searches (`/hunt/saved`)
-
-```
-│ saved searches                                                   [New search] (⌘K › "saved")       │
-│ name                                       owner        runs          last result     alert me     │
-│ ▸ Laptops that opened the same link        Priya Nair   on demand     4 · today 09:20   —          │
-│ ▸ Sign-ins from new countries (finance)    Ana Ruiz     every hour    1 · 03:12 ◇       ● on       │
-│ ▸ Mail forwarding rules to outside domains  Ana Ruiz     every 15 min  0 · 09:15         ● on       │
-│ ▸ Keys or tokens pushed to public code     shared       every hour    0 · 09:00         ● on       │
-```
-
-Each saved search keeps a short note ("why we watch this"). "Alert me" turns it into a detection with an owner, which then appears in Rules.
-
-### 6.9 Unusual behaviour (`/behaviour`)
-
-Each person or device is a **rhythm strip**: 24 h × 14 days of small cells, toned by how far from their own normal. ◇ marks the outliers, and the reasons appear in plain words. There is no world map, and no score without reasons.
-
-```
-│ unusual behaviour  ·  last 14 days  ·  [people | devices]               sorted by: most unusual ▾   │
-│ Shuo Chen · finance, Rotterdam        ◇ 9× her usual download volume, 09:18 today                   │
-│   00 ░░░░░░▒▒▓▓▓▓▒▒░░░░  … 14 rows of 24 cells …  ◇ ← today 09:00                                   │
-│   reasons: volume far above her 14-day normal · new share · within working hours (lowers concern)   │
-│   [Open as incident] [Ask her manager (draft message)] [Mark as expected: month-end]               │
-│ Kenji Ito · ops, Melbourne            ◇ 3 failed sign-ins then success from a new device, 09:17     │
-│ HL-ANT-SRV-03 · file server           ◇ outbound connections at 02:00, first time in 14 days       │
-```
-
-"Mark as expected" asks how long, and the change is logged.
-
-### 6.10 Detection rules (`/rules`, `/rules/[id]`)
-
-```
-│ rules · 214 on · 6 noisy this week                                    [Import Sigma] [New rule]   │
-│ rule                                         ATT&CK         last 7 days        likely real   state │
-│ New inbox rule forwards outside Halden       T1114.003      12 · ▁▂▁▁▃▁▂       71 in 100     ● on  │
-│ Sign-in from a never-seen country            T1078          31 · ▂▃▂▂▅▂▃       38 in 100     ● on  │
-│ Backup job failure storm                     —              212 · ▁▁▁▁▁█▁     2 in 100 ◐   ● noisy│
-│ ── /rules/[id] ──────────────────────────────────────────────────────────────────────────────────── │
-│ When   a mailbox rule is created  and  it forwards to a domain outside Halden                       │
-│ Group  alerts for the same person within 30 minutes into one incident                               │
-│ [Readable | Source (Sigma)]    Test on last 7 days ▶  → 12 matches · 9 confirmed · 3 noise         │
-│ Owner Ana Ruiz · Changed 3 Nov by Ana Ruiz · version 4 · [Lower the noise…] [Turn off (with reason)]│
-```
-
-The noisy state uses ◐ + the word "noisy", never colour alone. "Likely real" shows the triage score's calibrated average for that rule.
-
-### 6.11 Executive morning brief, light (`/brief`) [P]: `brief.html`
-
-A different reading experience: **one column, editorial, dawn-washed, finishable in two minutes.** It has no tiles, no river, no KPI cards and no greeting. The clocks appear as quiet ledger rows, not a bar. A pale mint "first light" wash sits at the top, with faint sun rings behind the right margin. On the right is a 300 px margin column.
-
-```
-┌ ◉ nightjar soc │ morning brief · Halden Logistics                 Weekly report  Open the watch  [⌘K] ┐
-│                                                                                                         │
-│  Thursday, 20 November 2025 · prepared 07:58 for Henrik Dahl, CISO · a 2-minute read │ posture        │
-│                                                                                       │ Steady — same  │
-│  One incident from overnight is                ← Geist 500, 46 px                     │ ╱╲__╱‾‾‾‾‾‾•   │
-│  reportable. It is contained, and                                                      │ Patching in …  │
-│  one decision is yours today.                  ← teal phrase                          │───────────────│
-│                                                                                       │ approved       │
-│  At 03:12 someone took over Marta Lindqvist's mailbox … No payments left Halden. …   │ overnight · by │
-│                                                                                       │ a person       │
-│  ▌◆ Needs your decision · SEC Form 8-K, Item 1.05                                      │ ✓ Revoke key   │
-│  ▌Is the Antwerp account takeover material to Halden Logistics?                        │ ✓ Disable acct │
-│  ▌Halden's shares are listed in the US … decision belongs to you and the committee.    │ ✓ Sign out     │
-│  ▌┌ the watch's view · 3 reasons ─────────────────────────────┐                        │ ‖ Isolate …    │
-│  ▌│ Probably not material: one mailbox, no money moved …       │                        │───────────────│
-│  ▌└─────────────────────────────────────────────────────────────┘                        │ on watch now  │
-│  ▌[Record the decision] [Ask the watch lead]  If material: 8-K due Wed 26 Nov          │ Priya Nair …  │
-│                                                                                       │               │
-│  Clocks running  3 · all on track                                                     │               │
-│  NIS2 early warning · Belgium        due tomorrow 03:12        17 h 53 m  ○ On track  │               │
-│  ▬▬▬▬▬▬▬ (elapsed rule)                                                               │               │
-│  NIS2 incident notification · BE     due Sun 23 Nov 03:12      65 h 53 m  ○ On track  │               │
-│  SOCI 72-hour report · Australia     due Sat 22 Nov 22:40      61 h 21 m  ○ On track  │               │
-│                                                                                       │               │
-│  Overnight, in plain words                                                            │               │
-│  22:40  A cloud access key for the Melbourne booking system appeared in public code … │               │
-│  01:30  A failed backup job set off 212 alerts … No one was woken.                    │               │
-│  03:12  The Antwerp account takeover above …                                          │               │
-│  06:10  Shuo Chen … looks like month-end work; nothing is blocked.                    │               │
-│  — the night watch: Triage, Enrichment and Response, with Priya Nair on call         │               │
-│                                                                                       │               │
-│  Seven nights   18:00 to 08:00 · ◆ incident · ● worth a look                          │               │
-│  Thu night ·──·──·────◆──────·────── …   (7 rows, last night labelled)                │               │
-│  This week the watch took in 1.9 million events … Every one of the 7 response actions │               │
-│  was authorised by a person.                                                          │               │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-- **The decision** opens a sheet with three outcomes: *Material* (starts the SEC clock with a Drop into the analyst's bar and a draft Item 1.05), *Not material, with reasons* and *Not yet: decide by…*. Each outcome is recorded with a timestamp.
-- The **dark "night edition"** of the brief uses the same layout on #0A1016 with a dusk wash, for executives who read late.
-- **Mobile:** a single column, with the margin column moved under the decision.
-
-### 6.12 Weekly report (`/brief/week/[isoWeek]`)
-
-It continues the brief's language: a document, not a dashboard. It is printable and exportable as PDF.
-
-```
-│ Week 47 · 14–20 November 2025 · Halden Logistics · prepared for the board                         │
-│ The week in one paragraph (Geist 500, 28 px)                                                       │
-│ Seven nights (as in the brief, 7 rows) ─────────────────────────────────────────────────────────── │
-│ Incidents, as told by their replays                                                                 │
-│  ◆ INC-0412 Account takeover, Antwerp · reportable NIS2 · contained in 2 min · 3 actions approved  │
-│     "What happened / what we did / what we changed" (from the curated replay)                      │
-│  ◆ INC-0409 Cloud key leak, Melbourne · reportable SOCI · …                                        │
-│ Clocks this week: 4 notices, all sent on time (✓ 4 of 4) · median 6 h 10 m before the deadline     │
-│ Noise: 3 rules turned down · triage closed 1,212 alerts as noise · people overturned 2 verdicts    │
-│ Time to triage · time to contain after approval (median, p90) as one sentence + a small dot plot   │
-│ Next week: SOCI written report due · 2 laptops in Antwerp behind on patches                        │
-```
-
-### 6.13 Assets and identities (`/assets`, `/identities`)
-
-A ledger table with a detail tile, not a card grid. Each row leads with the business role ("Payments laptop", "Booking system").
-
-```
-│ assets · 41 · [laptops | servers | cloud | all]   filter: Antwerp ▾ · behind on patches ◐          │
-│ name              what it does            where       owner            patch       known weakness   │
-│ HL-ANT-LT-044     Payments laptop         Antwerp     Marta Lindqvist  ◐ 12 d      ▲ 1 exploited    │
-│ HL-MEL-APP-02     Booking system (cloud)  Melbourne   Ops AU           ✓ current   —               │
-│ ── selected: HL-ANT-LT-044 ── incidents (1) · events today (212) · isolation: ‖ requested           │
-│ identities · 186 people · 23 service accounts                                                       │
-│ person            team / site             sign-in normal          unusual (14 d)   access           │
-│ Marta Lindqvist   AP · Antwerp            BE · 07–18 h · 1 device ◇ 1 today        disabled 03:14   │
-```
-
-### 6.14 Settings (`/settings/regimes`, `/settings/members`)
-
-A two-column form page inside one zoomed tile. Sections are reached through ⌘K or the section list at the top of the tile (a list, not a sidebar).
-
-```
-│ settings › regime contacts                                                                          │
-│ Which rules apply to Halden Logistics?   (from your company profile; change in Company)             │
-│ ● NIS2 · Belgium        transport sector · essential entity      authority: CCB                     │
-│     primary contact [Henrik Dahl ▾]  backup [Priya Nair ▾]  submit as [Henrik Dahl ▾]  ✓ verified   │
-│ ● SEC Form 8-K · US     listed company · disclosure committee [3 people ▾]                          │
-│ ● SOCI · Australia      critical freight services asset · authority: ASD's ACSC                     │
-│     primary [Kenji Ito ▾]  backup [Ops AU ▾]   12 h phone line [+61 …]                              │
-│ ○ Add a regime                                                                                      │
-│ settings › members                                                [Invite someone]                  │
-│ name            role                 can authorise                         last seen                │
-│ Priya Nair      Responder            isolate · disable · sign out          now                      │
-│ Ana Ruiz        Analyst              block sender                          08:40                    │
-│ Henrik Dahl     CISO / executive     submit notices · materiality decision 07:58                    │
-│ Lotte Maes      Auditor (read only)  —                                     Mon                      │
-│ two-person rule for executives' accounts and servers   [● on]                                       │
-```
-
-### 6.15 Activity log (`/activity`)
-
-Every sensitive action, newest first. Each row ends with a short seal so the auditor can check the chain. The auditor's layout pairs it with the incident replay.
-
-```
-│ activity · 18,402 entries · [Verify the log]  → "Chain intact · checked 18,402 entries · 09:31"    │
-│ time       who                 did                                          about         seal      │
-│ 09:31:07   Henrik Dahl         submitted NIS2 early warning (demo)          INC-0412      ·a91f     │
-│ 09:21:07   Priya Nair          held to authorise: isolate HL-ANT-LT-044     INC-0412      ·77c2     │
-│ 09:02:40   Response (teammate) proposed: isolate HL-ANT-LT-044              INC-0412      ·0be4     │
-│ 03:14:12   Priya Nair          held to authorise: disable m.lindqvist       INC-0412      ·5d10     │
-│ filters: (people | teammates | system) (approvals) (notices) (settings)        [Export evidence pack]│
-```
-
-Teammates appear as "Response (teammate)", never by internal names. A teammate's row can open the replay step it came from.
-
-### 6.16 Mobile (390 px)
-
-```
-┌ ◉  NIS2 17:53 · +2 ▾ ┐   one tile per screen
-│ incident INC-0412    │   swipe ← → between tiles
-│ ▮▮▮▯ Account takeover│   baton tracks shrink to 4 × 18 px
-│ T E R P  what…       │
-│ ○        Grouped …   │
-│ ...                  │
-│ [◔ Hold to authorise]│   full width, vibrates once when done
-│ ● ● ○                │   tile dots
-└──────────── (⌕) ─────┘   floating ⌘K button
-```
-
----
-
-## 7. Type
-
-> Superseded by §0.4: the console is set in **Recursive** (Sans Linear for reading, Mono Linear for time, IDs, labels and keycaps). The roles and sizes below still apply with Recursive in place of Geist / Geist Mono.
-
-**Recursive Sans** for UI and reading, **Recursive Mono** for time, IDs, labels and keycaps. There is **no serif** anywhere. Labels are **lowercase mono** ("events", "awaiting you", "notice · draft 2"), never uppercase-tracked mono.
-
-| Token | Face / weight | Size / line | Use |
+| Token | Hex | Use | Contrast |
 |---|---|---|---|
-| `display-clock` | Geist Mono 250 | 112 / 1 (landing), 64 settled | the replay clock, rolling digits |
-| `display` | Geist 600, −0.035em | 60 / 1.02 | landing headline |
-| `brief-h1` | Geist 500, −0.03em | 46 / 1.12 | brief headline (`text-wrap: balance`) |
-| `h1` | Geist 600, −0.015em | 23 / 1.2 | incident title |
-| `h2` | Geist 600 | 18–19 / 1.25 | approval title, decision question (23 in brief) |
-| `clock` | Geist Mono 500, `tnum` | 19 / 1 | clock bar digits |
-| `brief-clock` | Geist Mono 300 | 34 / 1 | time left in the brief ("17 h 53 m") |
-| `body` | Geist 400 | 13–14 / 1.45 (console), 16–19 / 1.6 (brief) | text |
-| `meta` | Geist Mono 400 | 11–12.5 / 1.3 | timestamps, "looked at", pane titles, keycaps |
+| `bg` | `#120A08` | the room | |
+| `plate` | `#1A100D` | plates, strips, readouts | |
+| `raised` | `#231512` | hover, chips, lamp windows | |
+| `sunk` | `#0C0605` | inputs, the dial face | |
+| `rule` / `rule-2` | `#33201B` / `#553630` | hairlines / control borders | |
+| `ink` | `#F6E9E3` | text | 15.7 : 1 on plate |
+| `ink-2` | `#D9C3BA` | secondary text | 11.1 : 1 |
+| `dim` | `#B39A91` | meta | 7.1 : 1 |
+| `faint` | `#A1857C` | timestamps, quiet labels | 5.5 : 1 |
+| `acc` | `#FF5340` | now, live, focus, lit lamps, the primary action | 5.9 : 1 |
+| `acc-hi` | `#FF8270` | accent text on raised surfaces | 7.3 : 1 |
+| `acc-ink` | `#1A0805` | text on red fills | 6.3 : 1 |
+| `person` | `#FFE4DA` | ‖ waiting for a person, ◆ decisions (the brightest lamp) | 14.3 : 1 |
+| `soon` | `#F2B04A` | ◐ due soon, ◇ unusual, missing fields, noisy | 9.9 : 1 |
+| `ok` | `#86CFA2` | ✓ contained, sent, authorised | 10.2 : 1 |
 
-Numbers in mono always use `tnum` and the slashed zero (`zero`): it is part of the console's identity and avoids O/0 confusion in IDs.
+### Day (light)
+
+| Token | Hex | Contrast |
+|---|---|---|
+| `bg` / `plate` / `raised` / `sunk` | `#F3EEE8` / `#FBF8F4` / `#ECE5DE` / `#E9E2DA` | |
+| `rule` / `rule-2` | `#E0D6CD` / `#C2B2A6` | |
+| `ink` / `ink-2` / `dim` / `faint` | `#1D1311` / `#47362F` / `#6A5750` / `#705B53` | 17.2 / 10.8 / 6.4 / 5.6 on plate |
+| `acc` | `#B3241A` | 6.2 : 1 on plate, 5.7 on bg |
+| `person` | `#1D1311` (heaviest weight + ‖ / ◆) | |
+| `soon` / `ok` | `#8A5200` / `#1E6A44` | 6.0 / 6.2 |
+
+The brief uses the day tokens by default ("first light"), with the night tokens as the night edition. Its horizon band runs `#2A0E09 → #8E2A1C → #E9B49C → #F3EEE8`.
+
+### Status: never colour alone
+
+| State | Shape + words | Luminance / colour |
+|---|---|---|
+| Clock on track | `○ On track` | ink-2 |
+| Due soon | `◐ Due soon` | soon |
+| Overdue | `● OVERDUE` in an inverted block | acc fill, acc-ink text |
+| Not started, needs a decision | `◆ Materiality decision` + dashed underline | person |
+| Sent | `✓ Sent` | ok |
+| Waiting for a person | `‖ Awaiting your approval` in a lit lamp window | person |
+| Authorised | `✓ Authorised · time · by name` stamp | ok |
+| Declined | `✕ Declined · reason` | dim |
+| Severity | `▮▮▮▮ CRITICAL` inverted block · `▮▮▮▯ HIGH` · `▮▮▯▯ MEDIUM` · `▮▯▯▯ LOW` | block / acc / soon / dim |
+| Unusual behaviour | `◇` + words | soon |
+| Missing field | `◐ confirm …` | soon |
+
+Every pair is checked to WCAG AA in both themes by the crawl (§12).
 
 ---
 
-## 8. Palette (tokens)
+## 7. Components: Skeleton, rebuilt
 
-Mint teal (hue ≈170°) is the only accent. It is used for **light and line** (live dots, the baton, focus, "on track", the active-tile rule), almost never as a large fill. The two exceptions are the primary landing CTA and the "Authorised" stamp.
+The `nightjar` Skeleton theme is regenerated from §6: `primary` is the red (300 = night `#FF8270`, 500 = `#FF5340`, 700 = day `#B3241A`), `secondary` the lamp neutrals, `tertiary` warm greys, `success` / `warning` / `error` the status set, `surface` from bone `#FBF8F4` to `#0C0605`.
 
-### Console: night (default)
-
-| Token | Hex | Use |
-|---|---|---|
-| `bg` | `#070B10` | page, gutters |
-| `pane` | `#0C1219` | tiles |
-| `raised` | `#121A23` | hover, chips, ATT&CK tags |
-| `sunk` | `#090E14` | keycap fill |
-| `line` | `#1A2430` | hairlines |
-| `line-strong` | `#283646` | control borders |
-| `ink` / `ink-2` | `#E3EBF1` / `#B9C6D0` | text (15.6 / 10.8 : 1 on pane) |
-| `muted` | `#8191A0` | secondary text (5.8 : 1) |
-| `faint` | `#75879A` | meta and timestamps (5.1 : 1 on pane, 4.75 on raised) |
-| `teal` | `#3CE6C8` | accent, live, teammates, on track (12.5 : 1) |
-| `teal-ink` | `#062A24` | text on teal fills (9.8 : 1) |
-| `teal-wash` / `teal-line` | `rgba(60,230,200,.10)` / `.38` | selection, hold track |
-| `amber` | `#F2B84B` | unusual behaviour ◇, due soon ◐ |
-| `red` | `#FF6B5E` | severity bars, overdue ● |
-| `lav` | `#B6A8FF` | needs a person ‖ / ◆ |
-
-### Console: day watch (light)
-
-| Token | Hex |
+| Part | Shape |
 |---|---|
-| `bg` / `pane` / `raised` | `#E9EEF0` / `#FFFFFF` / `#F3F6F7` |
-| `line` / `line-strong` | `#DCE3E7` / `#C4CED4` |
-| `ink` / `ink-2` / `muted` / `faint` | `#0B141B` / `#2B3943` / `#53626E` / `#5F6E78` (faint is 4.85 : 1 on white) |
-| `teal` | `#087565` (5.6 : 1 on white, 4.8 : 1 on the day background; was `#0A7F6D`, 4.2 : 1 on the background) |
-| `amber` / `red` / `lav` | `#8A5D00` / `#B42318` / `#5B45C9` |
+| Radius | 2 px on controls, 0 on plates, strips and sheets; the dial and the hold ring are the only circles |
+| Borders | 1 px rules; plates have a 2 px top edge in `rule-2`; the lit state is an inner red glow, not a border |
+| Density | 40 px strips, 36 px controls, 44 px lamp windows |
+| Buttons (`btn`) | Big Shoulders 700 capitals, +0.12em. Primary = a lit lamp (red fill, dark text); secondary = engraved (rule border, ink text); quiet = text with an underline |
+| Segment (`Choice`) | A row of small lamp windows; the selected one is lit |
+| Tabs | An engraved index: capitals, the active tab lit from below with a red bar |
+| Badges / chips | Engraved tags with a 1 px rule and a Fira Code count |
+| Tables (`table`) | Strip bays: each row a strip with a 4 px holder edge |
+| Modal (`Sheet`) | Sheets rise from the bottom with a red top edge; dialogs drop from the head |
+| Focus | 2 px `acc` outline, 2 px offset, always visible on keyboard focus |
+| Corner ticks | The dial, the hold box and the decision plate carry four L-shaped corner ticks, like a bezel |
+| Logo | The nightjar's eye inside a dial ring: an arc, a dot and one tick at the top |
 
-### Brief: dawn (light, default) and night edition (dark)
-
-| Token | Dawn | Night edition |
-|---|---|---|
-| `page` | `#F7F9F8` | `#0A1016` |
-| `wash-a → wash-b` (top 760 px, masked out by 55%) | `#CBE5DE → #E4F0EC` | `#142A30 → #0E1A20` |
-| `ink` / `ink-2` | `#0D1A20` / `#33444C` | `#E6EDF1` / `#BAC7CE` |
-| `muted` / `faint` | `#4C5B63` (5.3 : 1 on the wash) / `#5E6D74` | `#8F9EA8` / `#8392A0` |
-| `rule` / `rule-2` | `#DCE4E2` / `#C9D4D1` | `#1B2731` / `#283643` |
-| `teal` / `lav` | `#087565` / `#5B45C9` | `#3CE6C8` / `#B6A8FF` |
-| sun rings | `rgba(10,127,109,.16)` | `rgba(60,230,200,.14)` |
-
-Landing dawn transition (08:00 section): `#070B10 → #0F2830 (30%) → #CFE7E1 (75%) → #EEF5F2`.
+Components used: Modal, Tabs, Segment, Accordion, Popover, Tooltip, Toaster, Avatar, Switch, Progress, ProgressRing (the hold ring) and Pagination, plus the `btn`, `badge`, `chip`, `input` and `table` utilities with presets.
 
 ---
 
-## 9. Status language (never colour alone)
+## 8. The watch dial
 
-Every state has a glyph and a word. Colour only reinforces them.
-
-| State | Glyph + words | Colour |
-|---|---|---|
-| Clock on track | `○ On track` | teal |
-| Clock due soon (under 25% of the window left) | `◐ Due soon` | amber |
-| Clock overdue | `● Overdue` | red |
-| Clock not started, needs a decision | `◆ Materiality decision` + dashed underline | lavender |
-| Clock done | `✓ Sent` | teal |
-| Awaiting a person | `‖ Awaiting your approval` | lavender |
-| Authorised | `✓ Authorised · time · by name` | teal fill (stamp) |
-| Declined | `✕ Declined · reason` | muted |
-| Severity | bar glyph `▮▮▮▯ High` · `▮▮▯▯ Medium` · `▮▯▯▯ Low` · `▮▮▮▮ Critical` | red / amber / muted |
-| Unusual behaviour | `◇` + "unusual behaviour" | amber rule |
-| Incident-related event | `▸` | teal rule |
-| Required field missing | `◐` + "confirm …" | amber |
-| Rule noisy | `◐ noisy` | amber |
-| Teammate lane | `T` `E` `R` in teal rings · `P` (people) in a lavender ring | — |
-| Stage rail | `✓ Triage — ✓ Investigate — ‖ Contain — ○ Report` | teal / lavender / muted |
+- A 24-hour face, midnight at the top, read clockwise. The six watches are labelled on the rim (FIRST, MIDDLE, MORNING, FORENOON, AFTERNOON, DOG) with the hours between.
+- **The shift** (the 18:00 before the last night, or 12 hours back, to now) is the lit sector; the rest of the day is unlit. Night hours (20:00–07:00) are shaded on the face; the 08:00 and 20:00 handovers are ruled.
+- **Rings**, from the rim inward: intake (hourly bars standing out from the ring), triage, investigate, contain, report. **Each incident is one line**: it runs clockwise along its stage ring and steps inward when its log records the next stage, the polar form of the dispatcher's timetable graph. Regulator notices mark the line (✉) without moving it.
+- **The hand** is now. A soft wedge of persistence trails it. Open incidents end at the hand.
+- **The rim ahead of the hand** carries the regulator deadlines due in the next 24 hours as ▼ ticks with their names.
+- **The centre** holds the time (Fira Code), the watch name and "4 open · 1 waiting".
+- Every line is a link with a spoken label ("NJ-1038 …: opened 02:16, now in contain, waiting for a person"); the figure's label summarises the rings. On phones the dial is drawn at the screen's width and the lines are also listed by stage in an accordion.
 
 ---
 
-## 10. Component shape language
+## 9. Motion: "red light"
 
-- **Tiles** have radius 0, 1 px hairline gutters and no shadows. The active tile has a 2 px teal top rule.
-- The **clock bar and status line** have radius 0 and are divided by 1 px vertical rules.
-- **Controls** have a 6 px radius. Chips and keycaps have a 4 px radius; keycaps have a 2 px bottom border.
-- The **hold button** has an 8 px radius and a 56 px height. It is a teal wash with a teal line, plus a ring with the progress arc.
-- **Popovers** (⌘K, step drawer) have a 10 px radius and the only shadow in the system.
-- **Density:** console rows are 28–50 px. The river and pane titles are mono. Emphasis comes from a 2 px left rule (◇ amber, ▸ teal, ‖ lavender), never from filled cards.
-- **Data idioms:** streams (the river), strips (the incident strip, the stage rail), lane tracks (the baton), ledgers (assets, rules, activity, the brief's clocks) and rhythm strips (unusual behaviour). There are no KPI cards, no donut charts and no world maps.
-- **Brief:**
-  - paper-quiet with ledger rules;
-  - the only box is "Your decision", with a 3 px lavender left rule and a 4 px radius;
-  - the CTA is ink-filled, not teal.
-- **Logo:** a nightjar's eye (an upper arc, a fainter lower arc and a dot) in teal, with "nightjar" in Geist Mono 500 lowercase and "soc" in muted.
+Svelte built-ins and CSS only; transform and opacity, except the hold ring.
 
----
-
-## 11. Motion: "Live ticks"
-
-Svelte built-ins only. Everything animates transform or opacity, except the hold fill (scaleX) and the SVG ring (`stroke-dashoffset` on a **progress ring**, which is a gauge, not a self-drawing outline).
-
-| Name | What moves | Duration / easing (Svelte) | Reduced motion |
+| Name | What moves | Timing | Reduced motion |
 |---|---|---|---|
-| **Tick** | each digit is a vertical 0–9 strip and rolls to its value (`translateY(-n em)`); only changed digits move | 420 ms `cubic-bezier(.2,.9,.1,1)` at 1×; 140 ms during accelerated replay. Implemented as a `Digit.svelte` with `Tween` (`easing: cubicOut`) | digits swap with no roll |
-| **Coalesce** | three alert rows fly from the river into the incident strip; the strip scales .94 → 1 | `crossfade` (`send`/`receive` keyed by alert id), 560 ms `cubicInOut`, 70 ms stagger; strip `Spring({stiffness: .15, damping: .55})` | rows fade out (120 ms), strip appears |
-| **Baton** | an 18 × 6 px teal bead travels along the hand-off curve (`offset-path`); the receiving dot pulses 1 → 1.35 → 1; the line fades in behind the bead | bead 900 ms `cubic-bezier(.65,0,.35,1)`; pulse 280 ms; line opacity 360 ms after a 380 ms delay | no bead; lines and dots present |
-| **Hold** | while held: fill sweeps `scaleX(0 → 1)` and the ring arc fills, linearly, with a % readout; release: springs back; complete: a stamp | 1200 ms linear; release 240 ms `Spring`; stamp 420 ms `cubic-bezier(.2,1.4,.3,1)` scale 1.12 → 1 | no sweep, numeric % only; **the 1.2 s hold still applies** (it is the safety, not decoration) |
-| **Drop** | a new clock cell drops into the top bar from −56 px with a small overshoot; neighbours make room | 620 ms `cubic-bezier(.2,1.3,.35,1)`; neighbours `animate:flip` 300 ms; second cell delayed 120 ms | appears in place; status line announces "NIS2 clock started" |
-| **River** | new rows enter from 6 px above with a fade; at most 4 rows/s are drawn, the rest fold into "+n" | 320 ms `cubic-bezier(.2,.9,.1,1)` | no movement; a "12 new · show" counter |
-| **Log settle** (landing) | the newest log line arrives at 24 px, then settles to 16 px when the next arrives; at the end the clock shrinks 112 → 64 px and mutes | line enter 420 ms; settle 400–500 ms `cubic-bezier(.2,.9,.1,1)` (scale transform in the Svelte build) | final state rendered at once |
-| **Replay step** | the playhead row highlight moves to the next row; later rows dim to 35% | 240 ms ease-out per step; play = 1 step / 1.2 s (1×) or 0.3 s (4×) | instant step changes |
-| **Palette** | ⌘K opens with a fade and scale .985 → 1; results reorder with `animate:flip` | 160 ms / 180 ms | fade only |
-| **Dawn** (watch → brief) | page transition: a horizon wipe, with the brief revealed by `clip-path: inset(100% 0 0 0 → 0)` from the bottom, as dawn rises | 700 ms `cubic-bezier(.3,.7,0,1)` via SvelteKit `onNavigate` + View Transitions | 150 ms crossfade |
-| **Live pulse** | the status line's live dot pulses a 7 px ring | 2.4 s ease-out loop | static dot |
+| **Sweep** | the dial's hand rotates to now; the persistence wedge follows | each minute, 900 ms ease-out; the landing's replay runs it continuously | the hand jumps |
+| **Register** | a new mark on the dial punches in (scale 1.8 → 1, opacity) with one ring | 420 ms `cubic-bezier(.2,1.3,.35,1)` | appears |
+| **Lamp** | an alarm window flashes twice, then glows steady | 2 × 160 ms, then steady | steady glow |
+| **Rack** | strips slide into a bay 8 px from the left, 24 ms apart (first 12) | 260 ms | appear |
+| **Tick** | rolling digits on the chronometer and the clocks | 420 ms; 140 ms during replay | swap |
+| **Drop** | a new clock drops into the chronometer slot | 620 ms back-out | appears; announced |
+| **Hold** | the ring fills for 1.2 s; release springs back; completion stamps | 1200 ms linear; 420 ms stamp | numeric %, the 1.2 s still applies |
+| **Step** | an incident line grows along its ring from where it opened | 900 ms | drawn whole |
+| **First light** | watch → brief: the brief rises behind a horizon wipe | 700 ms via View Transitions | 150 ms fade |
 
-What Nightjar SOC **never** uses:
-- self-drawing outlines with `stroke-dashoffset`;
-- time-ruler scrubbing;
-- string, thread or stitch metaphors and unfold springs;
-- short page fades as the only motion;
-- parallax, scroll-jacking, glitch effects or typing-cursor gimmicks.
-
-`prefersReducedMotion.current` (from `svelte/motion`) switches every row of the table to its right-hand column.
+Never: scanlines, glitch, parallax, scroll-jacking, decorative radar pings, typing cursors.
 
 ---
 
-## 12. Signature interactions
+## 10. Signature interactions
 
-1. **Replay the night / Replay an incident.** Any incident can be replayed step by step through the baton tracks. The landing is the same replay, staged.
-2. **Hold to authorise.** It is the visible proof that nothing is switched off without a person: pointer, Space or Enter, 1.2 s, and an early release cancels.
-3. **The clock drops in.** When an incident is judged reportable, its clocks drop into the top bar and start counting. Click one to open the notice draft beside its evidence.
+1. **Replay the night / an incident.** The landing replays a night on the dial; any incident replays step by step through its watch log.
+2. **Hold to authorise.** Pointer, Space or Enter for 1.2 s; early release cancels; or confirm by typing the name.
+3. **The lamp panel answers.** A window lights where you are and flashes once when something there needs a person, so the navigation is also the alarm panel.
 
 ---
 
-## 13. Copy voice
+## 11. Copy voice
 
-Terse, operational, time-stamped, calm. Write short declaratives with a time in front of them. Use sentence case: no exclamation marks, no emoji and no "Oops". Name the person and the thing ("Isolate Marta's laptop"), then why, then how to undo it.
+Terse, operational, time-stamped and calm. Sentence case in body text; capitals only in the stencil headings and labels. No exclamation marks, no emoji.
 
-- **CTAs and verbs:**
-  - landing and sign-in: Take the watch · Replay the night;
-  - approvals: Hold to authorise · Decline with a reason · Ask Response why · Release from isolation;
-  - notices: Open the draft · Compare with evidence · Review and submit · Hold to submit (demo);
-  - decisions: Record the decision · Ask the watch lead · Mark as expected;
-  - rules and hunting: Lower the noise · Save as… · Open as incident;
-  - activity: Verify the log · Export evidence pack.
-- **Microcopy examples:**
-  - "Contained."
-  - "Awaiting your approval."
-  - "Nothing needs a person. The watch is quiet."
-  - "Taking in events normally."
-  - "Catching up: 4 minutes behind."
-  - "No one was woken."
-- **Teammates** are "Triage", "Enrichment" and "Response". Collectively they are "the watch" or "three AI teammates". What they do is "looked at…", "why…" and "handed to people". Scores read "94 in 100" or "likely real" / "likely noise".
-- **Compliance claims:** "designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting", "aligned with". Never "compliant", "certified", "guarantees", "approved by" or "files for you". Submissions in the demo read "Recorded as submitted (demo)".
-- **As-of date (late November 2025):** the docs and copy in the repo are written as of late November 2025, and nothing hard-coded refers to later events.
-  - Every time-sensitive value is computed at runtime from one clock helper (`NIGHTJAR_DEMO_TODAY`, with Playwright `clock.setFixedTime` for shots): countdowns, due dates, "today/tomorrow", the "night of Wednesday to Thursday" eyebrow, the SEC business-day count, the brief's dateline and the seven-nights labels.
-  - Seeded incidents are placed relative to today (the reportable one became known at 03:12 local time today).
-  - Screenshots are taken with the clock fixed inside late November 2025 (for example **Thu 20 Nov 2025 09:18 Europe/Brussels**).
+- CTAs: Take the watch · Replay the night · Hold to authorise · Decline with a reason · Ask Response why · Open the draft · Review and submit · Record the decision · Save as… · Verify the log.
+- Teammates are Triage, Enrichment and Response; together "the watch" or "three AI teammates".
+- Compliance: "designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting". Never "compliant", "certified" or "files for you". Demo submissions read "Recorded as submitted (demo)".
+- Forbidden in rendered text: RAG, retrieval, embeddings, vector, rerank, LLM, model or provider names, LiteLLM, prompt, tokens, SQL, architecture, pipeline, agent internals, A2A, MCP, latency, fallback, cache; also "agent", "agentic", "AI-powered", "autonomous", "smart", "magic", "algorithm", "SOAR". Analyst screens may show ATT&CK IDs, Sigma, host names and event fields.
 
-## 14. Forbidden words (rendered UI text)
+---
 
-Engineering vocabulary never appears in rendered text: RAG, retrieval, embeddings, vector, rerank, **LLM**, model or provider names (GPT, Gemini, Groq, Llama…), LiteLLM, prompt, tokens, SQL, architecture, **pipeline**, **agent internals**, **A2A**, **MCP**, latency, fallback, cache.
+## 12. Build and checks
 
-For this product, also avoid "agent" and "agentic" (say teammate, Triage, Enrichment, Response, "the watch"), "AI-powered", "autonomous", "smart", "magic", "algorithm", "playbook run", "SOAR", "SIEM" in executive copy, "query language", and host or IP jargon in the brief. Analyst screens may show ATT&CK IDs, Sigma, host names and event fields, because those are the analyst's own vocabulary. Rendered pages are scanned for all of the above.
+- **Tokens:** `src/app.css` (§6 as CSS variables, night and day) and `src/lib/theme/nightjar.css` (the Skeleton theme from the same values).
+- **Shell:** `StationHead` (plate, lamp panel, chronometer, you), `LampPanel`, `Chronometer`, `CommandPalette`, `Logo`, `Tick` / `Digit`.
+- **Primitives:** `Plate` (titled section, numbered or not, corner ticks optional), `Choice` (Segment), `Sheet` (Modal), `Strip` helpers in CSS (`.bay`, `.strip`).
+- **Console:** `WatchDial` (polar layout from `util/shift.ts`: `dialAngle`, `dialPath`), `Turnover` (the four readouts around a centre snippet), `IncidentStrip`, `BatonTimeline` (the watch log), `ApprovalCard`, `HoldButton`, `ClockList`, `EventRiver`, `HuntPanel`, `BehaviourPanel`, `ActivityPanel`, `EvidenceTile`, `StepDrawer`, `DecisionSheet`.
+- **Clock:** one `src/lib/time/clock.ts` (`NIGHTJAR_DEMO_TODAY` on the server; the browser's `Date` is shifted to Thursday 20 November 2025 for screenshots by an init script that replaces only `Date`).
+- **Checks:** svelte-check, ESLint, Vitest, the production build, and a browser crawl of every route for every role in both themes at 1440 px and 390 px (overflow, WCAG AA text contrast, forbidden words, console errors).
 
-## 15. Design principles
-
-| Dimension | Nightjar SOC | Why |
-|---|---|---|
-| Metaphor | **The night watch: a log, clocks and a baton passed between teammates** | Security operations is a shift; the questions are "what happened overnight, what is running, who holds it now" |
-| App shell | **⌘K-first tiled console: regulator clock bar on top, hairline tiles, mono status line; no sidebar, tabs or menus** | Analysts live on the keyboard; the deadlines that matter most are always in view |
-| Landing | **The console replays a night (time-driven); a left-aligned night log; the headline lands as the last entry; the status line leads to the shift log** | The product is shown working rather than described |
-| Home | **The Watch: event river · incident with baton tracks · "awaiting you", in a role layout** | Each role opens on the work only they can do |
-| Executive view | **A separate reading mode: a dawn-washed, one-column morning brief with one decision box** | Executives read once a day and decide; they should not have to operate a console |
-| Data idiom | **Streams, lane tracks, clocks, ledgers, rhythm strips** | Everything in a SOC is time-ordered |
-| Type | **Geist + Geist Mono; lowercase mono labels; no serif** | Mono for time, IDs and keycaps keeps numbers aligned and unambiguous |
-| Palette / theme | **Blue-black night #070B10 + mint teal #3CE6C8, dark-first; dawn #CBE5DE → #F7F9F8 for the brief** | Dark for night shifts and wall screens, light for the morning read |
-| Shape | **Radius-0 tiles with hairline gutters, keycaps, 2 px left rules, one 8 px hold button** | Density without clutter; the one rounded control is the one that matters |
-| Motion | **Rolling digits, coalesce, baton bead, hold fill + stamp, clock drop, dawn wipe** | Motion shows time passing and work changing hands, never decoration |
-| Signature | **Replay · Hold to authorise · The clock drops in** | Each one makes a promise visible: replayable decisions, a person in charge, deadlines tracked |
-| CTAs | **Take the watch / Replay the night** | Operational verbs in the product's own voice |
-| Logo | **Nightjar eye (two arcs + dot) + lowercase mono wordmark** | A night bird that watches |
-
-Nightjar SOC is dark-first, time-first, and its landing is a live console. One composition risk was found and fixed during iteration: a centred giant clock over a centred tagline read as a poster rather than a console, so the landing's centre became a **left-aligned night log**. The mini baton graph first used line drawing; the bead now carries the motion and the lines fade in.
-
-## 16. Build notes
-
-**Svelte components (as built):**
-- ui (on Skeleton): `Band`, `Choice` (Segment), `Sheet` (Modal: bottom sheet or dialog);
-- shell: `ShiftAxis` (time ruler, marks with Tooltips, deadline gutter with Tick + Drop), `WatchBar` (Navigation bar, Avatar, Popover, Switch), `Tick` / `Digit`, `CommandPalette` (in a Modal), `SettingsNav`, `Logo`;
-- console: `ShiftChart` (lanes, stepped incident lines, intake bars, now column; Accordion on phones), `Turnover`, `ClockList`, `EventRiver` (minute groups + fold + Resolve), `IncidentHeader`, `BatonTimeline` (lane tracks, SVG links, bead, Replay controller), `StepDrawer`, `ApprovalCard`, `HoldButton` (ProgressRing), `DecisionSheet`, `AwaitingTile`, `EvidenceTile`, `HuntPanel`, `BehaviourPanel` (rhythm strips), `ActivityPanel` (Pagination), `Untrusted`;
-- brief: the `(read)/brief` routes and `SevenNights`.
-
-The shift chart's layout (the window, the scale, each incident's path, the intake bars and the axis marks) is pure TypeScript in `src/lib/util/shift.ts`, fed by one store (`src/lib/stores/shift.svelte.ts`) that reads the shift log since the window opened. Clock maths lives in one `src/lib/time/clock.ts` (regime windows, business days with a US federal holiday list, timezone per regime). The UI never computes deadlines inline. Recursive is bundled (`@fontsource-variable/recursive`), so the app has no external runtime dependency.
-
-**Regulatory facts used (designed to support, not legal advice):**
-- **NIS2 Art. 23:** early warning within 24 h of becoming aware, incident notification within 72 h, final report within one month of the notification.
-- **SEC Form 8-K Item 1.05:** four business days after the registrant determines the incident is material.
-- **SOCI Act Part 2B** (report to ASD's ACSC): 12 h for a critical incident with significant impact, 72 h for one with relevant impact.
-- **Belgium's CSIRT/authority for NIS2:** CCB.
+**Regulatory facts used (designed to support, not legal advice):** NIS2 Art. 23 early warning within 24 h of becoming aware, notification within 72 h, final report within a month; SEC Form 8-K Item 1.05 four business days after the materiality determination; SOCI Part 2B 12 h (significant impact) and 72 h (relevant impact) to ASD's ACSC; Belgium's NIS2 authority is the CCB.
