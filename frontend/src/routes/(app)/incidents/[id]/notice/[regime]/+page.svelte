@@ -1,9 +1,11 @@
 <script lang="ts">
-	// Notice drafting and (mock) submission (DESIGN.md §6.6): draft | evidence. "Review and submit" first lists any
-	// required field still missing (◐) and links each one to its field; only then can a person hold to submit.
+	// Notice drafting and (mock) submission (DESIGN.md §4): the signal form. A pre-send checklist runs down the left
+	// (each required field ✓ or ◐, jumping to its paragraph); the draft is a boxed form header (to, from, precedence,
+	// due, reference) above numbered paragraphs; the evidence it cites is a strip bay below. "Review and submit" first
+	// lists any required field still missing; only then can a person hold to submit.
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
-	import Band from '$lib/components/ui/Band.svelte';
+	import Plate from '$lib/components/ui/Plate.svelte';
 	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import HoldButton from '$lib/components/console/HoldButton.svelte';
 	import Untrusted from '$lib/components/console/Untrusted.svelte';
@@ -128,42 +130,49 @@
 		setTimeout(() => (lit = ''), 2400);
 	}
 	const finalDue = $derived(notice && notice.type === 'nis2.incident_notification' ? nis2.finalReportDue(new Date(notice.dueAt ?? live.now)) : null);
+	$effect(() => {
+		ui.setStation(page.url.pathname, 'Notice draft', notice ? `${notice.typeLabel} · ${page.params.id}` : `${regimeShort(regime)} · ${page.params.id}`);
+	});
 </script>
 
 <svelte:head><title>{notice?.typeLabel ?? 'Notice'} · {page.params.id} · Nightjar SOC</title></svelte:head>
 
-<h1 class="sr">{notice?.typeLabel ?? 'Notice'}</h1>
-<div class="tiles">
+<div class="signal rack">
 	{#if notice}
-		<section class="ready band-in" aria-label="Readiness">
+		<aside class="check" aria-label="Pre-send checklist">
+			<p class="eng ch">Pre-send checklist</p>
 			<div class="rd">
-				<span class="mono">{filledCount} of {required.length} required fields filled</span>
-				<Progress value={filledCount} max={Math.max(1, required.length)} height="h-1.5" meterBg={missing.length ? 'bg-[var(--amber)]' : 'bg-[var(--teal)]'} trackBg="bg-[var(--line-strong)]" rounded="rounded-[1px]" />
+				<span class="mono">{filledCount} of {required.length}</span><span>required fields filled</span>
+				<Progress value={filledCount} max={Math.max(1, required.length)} height="h-2" meterBg={missing.length ? 'bg-[var(--soon)]' : 'bg-[var(--ok)]'} trackBg="bg-[var(--rule-2)]" rounded="rounded-[0px]" />
 			</div>
-			<div class="miss">
-				{#each missing as m (m.key)}<button type="button" class="chip preset-tonal-warning" onclick={() => goField(m.key)}>◐ {m.title}</button>{:else}<span class="badge preset-tonal-success">✓ ready to review</span>{/each}
-			</div>
-		</section>
+			<ol class="items">
+				{#each required as s, i (s.key)}
+					{@const has = !unfilled(bodies[s.key])}
+					<li class:todo={!has}><button type="button" onclick={() => goField(s.key)}><span class="k mono" aria-hidden="true">{has ? '✓' : '◐'}</span><span class="nn mono">{i + 1}</span><span>{has ? s.title : `Confirm ${s.title.toLowerCase()}`}</span><span class="sr">{has ? ' (filled)' : ' (missing)'}</span></button></li>
+				{/each}
+			</ol>
+			{#if !missing.length}<p class="okb">✓ Ready to review</p>{/if}
+		</aside>
 	{/if}
-	<Band title="notice" sub={deadline ? `${clockLongLabel(deadline)} · ${deadline.incidentReference}` : ''} label="Notice draft">
-		{#snippet actions()}
-			{#if deadline?.dueAt}<span class="mono due st-{st}">due {dueBoth(deadline.dueAt, live.now, REGIME_TZ[deadline.regime])} · {hm(secondsLeft(deadline.dueAt, live.now))} <span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</span>{/if}
-		{/snippet}
+	<section class="form" aria-label="Notice draft">
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		{#if !notice && !err}
-			<div class="pad mono faint">{deadline?.state === 'not_started' ? 'No clock yet: this notice waits for the materiality decision.' : 'Opening the draft…'}</div>
+			<div class="pad faint">{deadline?.state === 'not_started' ? 'No clock yet: this notice waits for the materiality decision.' : 'Opening the draft…'}</div>
 		{:else if notice}
-			<div class="to">
-				<span>To <b>{notice.recipient.name}</b> <span class="faint">(from Settings › Regime contacts)</span></span>
-				<span class="mono faint">{notice.status === 'submitted' ? 'submitted' : `draft ${notice.version}`}{savedAt ? ` · saved ${whenShort(savedAt)}` : ''}{notice.approvedBy ? ` · approved by ${notice.approvedBy.fullName}` : ''}</span>
+			<div class="hdr">
+				<div class="f to"><span class="eng">To</span><b>{notice.recipient.name}</b><small>from Settings › Regulator contacts</small></div>
+				<div class="f"><span class="eng">From</span><b>{session.org?.name ?? 'Halden Logistics'}</b><small>{session.name}</small></div>
+				<div class="f prec"><span class="eng">Precedence</span><b>{notice.typeLabel}</b><small>{deadline ? clockLongLabel(deadline) : regimeShort(regime)}</small></div>
+				<div class="f due st-{st}"><span class="eng">Due</span>{#if deadline?.dueAt}<b class="mono">{hm(secondsLeft(deadline.dueAt, live.now))}</b><small>{dueBoth(deadline.dueAt, live.now, REGIME_TZ[deadline.regime])} · <span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small>{:else}<b>—</b>{/if}</div>
+				<div class="f"><span class="eng">Ref</span><b class="mono">{page.params.id}</b><small>{notice.status === 'submitted' ? 'submitted' : `draft ${notice.version}`}{savedAt ? ` · saved ${whenShort(savedAt)}` : ''}{notice.approvedBy ? ` · approved by ${notice.approvedBy.fullName}` : ''}</small></div>
 			</div>
 			<form class="draft" onsubmit={(e) => (e.preventDefault(), save())}>
-				<h3 class="mono">required for {notice.typeLabel.toLowerCase().replace(/^(nis2|soci|sec)\s/i, (m) => m.toUpperCase())}</h3>
-				{#each required as s (s.key)}
+				<h2 class="eng sec">Required for {notice.typeLabel.toLowerCase().replace(/^(nis2|soci|sec)\s/i, (m) => m.toUpperCase())}</h2>
+				{#each required as s, i (s.key)}
 					{@const has = !unfilled(bodies[s.key])}
 					<div class="req" class:todo={!has}>
-						<span class="k mono" aria-hidden="true">{has ? '✓' : '◐'}</span>
-						<label class="lbl" for="f-{s.key}">{s.title}{#if !has}<span class="sr"> (missing)</span>{/if}</label>
+						<span class="k mono" aria-hidden="true">{i + 1}</span>
+						<label class="lbl" for="f-{s.key}">{s.title}{#if !has}<span class="miss1"> ◐ confirm</span><span class="sr"> (missing)</span>{/if}</label>
 						<div class="val">
 							{#if s.key === 'contact' && regimeContacts.length && canEdit}
 								<select id="f-{s.key}" class="select" bind:value={bodies[s.key]}>
@@ -181,15 +190,15 @@
 					</div>
 				{/each}
 				{#each optional as s (s.key)}
-					<h3 class="mono sec">── {s.title.toLowerCase()} (editable, plain language) ──</h3>
-					<textarea id="f-{s.key}" class="textarea narr" rows="6" bind:value={bodies[s.key]} readonly={!canEdit}></textarea>
+					<h2 class="eng sec">{s.title} <span>editable, plain language</span></h2>
+					<textarea id="f-{s.key}" class="textarea narr" rows="6" bind:value={bodies[s.key]} readonly={!canEdit} aria-label={s.title}></textarea>
 					<span class="refs">{#each s.evidence ?? [] as r (r)}<button type="button" class="ref mono" onclick={() => cite(r)}>[{r}]</button>{/each}</span>
 				{/each}
 				{#if next.length || finalDue}
-					<h3 class="mono sec">── what comes next ──</h3>
-					<ul class="next mono">
-						{#each next as d (d.id)}<li>○ {d.noticeLabel} · {d.dueAt ? `due ${dueLabel(d.dueAt, live.now, REGIME_TZ[d.regime])}` : 'not started'}</li>{/each}
-						{#if finalDue}<li>○ final report · within one month of this notification</li>{/if}
+					<h2 class="eng sec">What comes next</h2>
+					<ul class="next">
+						{#each next as d (d.id)}<li><span class="mono">○</span> {d.noticeLabel} · {d.dueAt ? `due ${dueLabel(d.dueAt, live.now, REGIME_TZ[d.regime])}` : 'not started'}</li>{/each}
+						{#if finalDue}<li><span class="mono">○</span> Final report · within one month of this notification</li>{/if}
 					</ul>
 				{/if}
 				{#if canEdit}<div class="row"><button class="btn preset-outlined-surface-300-700" type="submit" disabled={!dirty || saving}>{saving ? 'Saving…' : dirty ? 'Save draft' : 'Saved'}</button></div>{/if}
@@ -197,12 +206,12 @@
 
 			<div class="submit">
 				{#if notice.status === 'submitted' && notice.submission}
-					<p class="done mono">✓ Recorded as submitted (demo) {whenShort(notice.submission.submittedAt)} by {notice.submission.submittedBy.fullName} · reference {notice.submission.receipt} · the clock stopped</p>
+					<p class="done">✓ Recorded as submitted (demo) {whenShort(notice.submission.submittedAt)} by {notice.submission.submittedBy.fullName} · reference <span class="mono">{notice.submission.receipt}</span> · the clock stopped</p>
 				{:else if !reviewing}
-					<button class="btn preset-filled-surface-950-50" type="button" onclick={() => (reviewing = true)}>Review and submit</button>
-					<span class="mono faint">{missing.length ? `◐ ${missing.length} required ${missing.length === 1 ? 'field' : 'fields'} missing` : '✓ every required field is filled'}</span>
+					<button class="btn preset-filled-primary-500" type="button" onclick={() => (reviewing = true)}>Review and submit</button>
+					<span class="state">{missing.length ? `◐ ${missing.length} required ${missing.length === 1 ? 'field' : 'fields'} missing` : '✓ every required field is filled'}</span>
 				{:else}
-					<div class="review" role="region" aria-label="Review before submitting">
+					<div class="review ticks" role="region" aria-label="Review before submitting">
 						{#if missing.length}
 							<p class="miss"><span class="mono">◐</span> Before this can go to {notice.recipient.name}, confirm:</p>
 							<ul>{#each missing as m (m.key)}<li><button type="button" class="lnk" onclick={() => goField(m.key)}>{m.title} →</button></li>{/each}</ul>
@@ -211,245 +220,355 @@
 							{#if canSubmit}
 								<div class="holdw"><HoldButton label="Hold to submit (demo)" hint="or hold Space for 1.2 s · recorded, not sent" glyph="↗" onconfirm={submit} /></div>
 							{:else}
-								<p class="mono faint">Only the CISO can submit notices. Your draft is saved for Ingrid Vos.</p>
+								<p class="faint">Only the CISO can submit notices. Your draft is saved for Ingrid Vos.</p>
 							{/if}
 						{/if}
-						<button class="lnk" type="button" onclick={() => (reviewing = false)}>back to the draft</button>
+						<button class="lnk" type="button" onclick={() => (reviewing = false)}>Back to the draft</button>
 					</div>
 				{/if}
 			</div>
 		{/if}
-	</Band>
-	<Band title="evidence the draft cites" sub={String(evidence.length)} label="Evidence">
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<ol class="ev" id="evidence" tabindex="0" aria-label="Evidence cited by the draft">
-			{#each evidence as e, i (e.eventId + i)}
-				{@const ref = e.ref ?? `E-${String(i + 1).padStart(2, '0')}`}
-				<li id="ev-{ref}" class:lit={lit === ref}>
-					<span class="mono head"><b>{ref}</b> {timeOf(e.timestamp, undefined, true)} · {e.dataset}{e.host ? ` · ${e.host}` : ''}</span>
-					<Untrusted value={e.summary} label={summarised ? null : undefined} />
-				</li>
-			{:else}
-				<li class="mono faint">Click an [E-xx] in the draft to highlight it here.</li>
-			{/each}
-		</ol>
-		<p class="foot mono faint">{regimeShort(regime)} facts are designed to support the notice, not legal advice.</p>
-	</Band>
+	</section>
 </div>
+<Plate title="Evidence the draft cites" sub={String(evidence.length)} label="Evidence" bare>
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+	<ol class="ev" id="evidence" tabindex="0" aria-label="Evidence cited by the draft">
+		{#each evidence as e, i (e.eventId + i)}
+			{@const ref = e.ref ?? `E-${String(i + 1).padStart(2, '0')}`}
+			<li id="ev-{ref}" class:lit={lit === ref}>
+				<span class="head"><b class="mono">{ref}</b><span class="mono">{timeOf(e.timestamp, undefined, true)}</span><span>{e.dataset}{e.host ? ` · ${e.host}` : ''}</span></span>
+				<Untrusted value={e.summary} label={summarised ? null : undefined} />
+			</li>
+		{:else}
+			<li class="faint">Click an [E-xx] in the draft to highlight it here.</li>
+		{/each}
+	</ol>
+	<p class="foot faint">{regimeShort(regime)} facts are designed to support the notice, not legal advice.</p>
+</Plate>
 
 <style>
-	.tiles {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
+	.signal {
+		display: grid;
+		grid-template-columns: 290px minmax(0, 1fr);
+		gap: 22px;
+		margin: 24px var(--gut) 0;
+		align-items: start;
 	}
-	.ready {
-		display: flex;
-		align-items: center;
-		gap: 24px;
-		flex-wrap: wrap;
-		padding: 12px 22px;
-		background: var(--bg);
-		border-bottom: 1px solid var(--line);
+	.check {
+		position: sticky;
+		top: 16px;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-top: 2px solid var(--soon);
+		padding: 16px;
+	}
+	.ch {
+		margin: 0 0 12px;
+		font-size: 15px;
+		color: var(--ink);
 	}
 	.rd {
 		display: grid;
-		gap: 7px;
-		width: min(320px, 100%);
-		font-size: 12px;
+		grid-template-columns: auto 1fr;
+		gap: 8px 8px;
+		align-items: baseline;
+		font-size: 13.5px;
+		color: var(--dim);
+		margin-bottom: 12px;
+	}
+	.rd .mono {
+		font-size: 20px;
+		color: var(--ink);
+	}
+	.rd :global([data-scope='progress']) {
+		grid-column: 1 / -1;
+	}
+	.items {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.items li button {
+		display: grid;
+		grid-template-columns: 18px 18px minmax(0, 1fr);
+		gap: 8px;
+		width: 100%;
+		text-align: left;
+		padding: 8px 0;
+		border-top: 1px solid var(--rule);
+		font-size: 14px;
 		color: var(--ink-2);
 	}
-	.ready .miss {
-		display: flex;
-		gap: 6px;
-		flex-wrap: wrap;
+	.items .k {
+		color: var(--ok);
+	}
+	.items .nn {
+		font-size: 12px;
+		color: var(--faint);
+		padding-top: 1px;
+	}
+	.items li.todo button {
+		color: var(--ink);
+		font-weight: 700;
+	}
+	.items li.todo .k {
+		color: var(--soon);
+	}
+	.items li button:hover span:last-of-type {
+		text-decoration: underline;
+	}
+	.okb {
+		margin: 12px 0 0;
+		font-weight: 700;
+		color: var(--ok);
+	}
+	.form {
+		background: var(--plate);
+		border: 1px solid var(--rule-2);
+		min-width: 0;
 	}
 	.pad {
 		padding: 22px;
 	}
-	.due {
-		font-size: 11.5px;
+	.hdr {
+		display: grid;
+		grid-template-columns: 1.3fr 1fr 1.2fr 1fr 1fr;
+		border-bottom: 2px solid var(--rule-2);
 	}
-	.due .g {
-		color: var(--teal);
+	.f {
+		display: grid;
+		gap: 6px;
+		align-content: start;
+		padding: 14px 16px;
+		border-left: 1px solid var(--rule);
+		min-width: 0;
 	}
-	.st-due_soon,
+	.f:first-child {
+		border-left: 0;
+	}
+	.f .eng {
+		font-size: 12px;
+		color: var(--faint);
+	}
+	.f b {
+		font-size: 15.5px;
+		font-weight: 700;
+		color: var(--ink);
+		overflow-wrap: anywhere;
+	}
+	.f b.mono {
+		font-weight: 500;
+		font-size: 17px;
+	}
+	.f small {
+		font-size: 12.5px;
+		color: var(--dim);
+	}
+	.due b {
+		font-size: 24px !important;
+	}
+	.st-due_soon b,
 	.st-due_soon .g {
-		color: var(--amber);
+		color: var(--soon);
 	}
-	.st-overdue,
-	.st-overdue .g {
-		color: var(--red);
-	}
-	.to {
-		display: flex;
-		justify-content: space-between;
-		gap: 12px;
-		flex-wrap: wrap;
-		padding: 12px 22px;
-		border-bottom: 1px solid var(--line);
-		font-size: 13px;
-	}
-	.to .mono {
-		font-size: 11.5px;
+	.st-overdue b {
+		background: var(--acc);
+		color: var(--acc-ink);
+		padding: 0 4px;
 	}
 	.draft {
-		padding: 14px 22px 8px;
-		display: grid;
-		gap: 2px;
-		max-width: 1120px;
+		padding: 6px 22px 18px;
 	}
-	h3 {
-		margin: 6px 0 8px;
-		font-size: 11.5px;
-		font-weight: 500;
-		color: var(--faint);
+	.sec {
+		margin: 22px 0 10px;
+		font-size: 15px;
+		color: var(--ink);
+		display: flex;
+		gap: 10px;
+		align-items: baseline;
+	}
+	.sec span {
+		font: 600 12.5px/1 var(--ui);
+		letter-spacing: 0;
 		text-transform: none;
-	}
-	h3.sec {
-		margin-top: 18px;
-		font-weight: 400;
+		color: var(--dim);
 	}
 	.req {
 		display: grid;
-		grid-template-columns: 18px 250px minmax(0, 1fr) 112px;
-		gap: 10px;
+		grid-template-columns: 30px minmax(160px, 230px) minmax(0, 1fr) auto;
+		gap: 12px;
 		align-items: center;
-		padding: 6px 0;
-		font-size: 13px;
+		padding: 10px 0;
+		border-top: 1px solid var(--rule);
 	}
 	.req .k {
-		color: var(--teal);
+		width: 24px;
+		height: 24px;
+		display: grid;
+		place-items: center;
+		font-size: 12px;
+		color: var(--ink-2);
+		box-shadow: inset 0 0 0 1px var(--rule-2);
 	}
 	.req.todo .k {
-		color: var(--amber);
-	}
-	.req.todo .lbl {
-		color: var(--ink);
-		font-weight: 500;
+		color: var(--bg);
+		background: var(--soon);
+		box-shadow: none;
 	}
 	.lbl {
-		color: var(--ink-2);
+		font-size: 14.5px;
+		font-weight: 700;
+		color: var(--ink);
+	}
+	.miss1 {
+		font-weight: 700;
+		color: var(--soon);
 	}
 	.val :global(.input),
 	.val :global(.select) {
-		height: 32px;
-		font-size: 13px;
+		width: 100%;
 	}
 	.refs {
-		display: inline-flex;
+		display: flex;
 		gap: 4px;
-		flex-wrap: wrap;
 	}
 	.ref {
-		font-size: 11px;
-		color: var(--teal);
+		font-size: 12.5px;
+		color: var(--acc-hi);
 	}
 	.ref:hover {
 		text-decoration: underline;
 	}
 	.narr {
-		font-size: 13.5px;
+		width: 100%;
 	}
 	.next {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		font-size: 12px;
-		color: var(--ink-2);
 		display: grid;
 		gap: 6px;
+		font-size: 14px;
+		color: var(--ink-2);
 	}
 	.row {
-		margin-top: 12px;
+		margin-top: 16px;
 	}
 	.submit {
 		display: flex;
-		gap: 14px;
-		align-items: center;
 		flex-wrap: wrap;
-		margin: 14px 22px 22px;
-		padding-top: 16px;
-		border-top: 1px solid var(--line);
+		align-items: center;
+		gap: 14px;
+		padding: 16px 22px 20px;
+		border-top: 2px solid var(--rule-2);
+		background: var(--sunk);
 	}
-	.submit .mono {
-		font-size: 11.5px;
+	.state {
+		font-weight: 600;
+		font-size: 14px;
+		color: var(--soon);
 	}
 	.review {
-		display: grid;
-		gap: 10px;
 		width: 100%;
-		max-width: 560px;
+		max-width: 620px;
+		padding: 16px;
+		display: grid;
+		gap: 12px;
+		justify-items: start;
+		--tk: var(--acc);
 	}
 	.miss {
 		margin: 0;
-		color: var(--amber);
-		font-size: 13.5px;
+		font-weight: 700;
+		color: var(--soon);
 	}
 	.review ul {
 		margin: 0;
-		padding-left: 22px;
+		padding-left: 18px;
 	}
 	.ok {
 		margin: 0;
-		font-size: 13.5px;
 		color: var(--ink-2);
 	}
 	.ok .mono {
-		color: var(--teal);
+		color: var(--ok);
+	}
+	.holdw {
+		width: 100%;
 	}
 	.done {
 		margin: 0;
-		color: var(--teal);
-		font-size: 12px !important;
+		font-weight: 600;
+		color: var(--ok);
 	}
 	.ev {
 		list-style: none;
 		margin: 0;
-		padding: 14px 22px;
+		padding: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
-		gap: 14px 28px;
+		gap: 4px;
 		outline: none;
 	}
 	.ev li {
 		display: grid;
-		gap: 5px;
-		padding: 6px;
-		margin: -6px;
-		border-radius: 3px;
-		transition: background 300ms;
+		gap: 6px;
+		padding: 10px 14px;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-left: 4px solid var(--rule-2);
+		scroll-margin-top: 20px;
 	}
 	.ev li.lit {
+		border-left-color: var(--acc);
 		background: var(--sel);
 	}
 	.head {
-		font-size: 11.5px;
-		color: var(--faint);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 12px;
+		align-items: baseline;
+		font-size: 13px;
+		color: var(--dim);
 	}
 	.head b {
-		color: var(--teal);
-		font-weight: 500;
+		color: var(--acc-hi);
+		font-weight: 600;
 	}
 	.foot {
-		padding: 0 16px 16px;
-		font-size: 11px;
+		margin: 12px 0 0;
+		font-size: 13px;
 	}
-	@media (max-width: 1000px) {
+	@media (max-width: 1100px) {
+		.signal {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.check {
+			position: static;
+		}
+		.hdr {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.f:nth-child(odd) {
+			border-left: 0;
+		}
+		.f:nth-child(n + 3) {
+			border-top: 1px solid var(--rule);
+		}
+		.to {
+			grid-column: 1 / -1;
+		}
+	}
+	@media (max-width: 760px) {
 		.req {
-			grid-template-columns: 18px minmax(0, 1fr);
+			grid-template-columns: 28px minmax(0, 1fr);
 		}
 		.req .val,
 		.req .refs {
 			grid-column: 2;
 		}
-		.to,
-		.draft {
-			padding-left: 14px;
-			padding-right: 14px;
-		}
+		.draft,
 		.submit {
-			margin: 14px;
+			padding-inline: 14px;
 		}
 	}
 </style>

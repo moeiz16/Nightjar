@@ -1,7 +1,7 @@
 <script lang="ts">
 	// One rule as a readable sentence, with the Sigma source a keystroke away (press S).
 	import { page } from '$app/state';
-	import Band from '$lib/components/ui/Band.svelte';
+	import Plate from '$lib/components/ui/Plate.svelte';
 	import Choice from '$lib/components/ui/Choice.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { RuleException, RuleInfo } from '$lib/api/types';
@@ -95,14 +95,14 @@
 <svelte:window onkeydown={key} />
 <svelte:head><title>{rule?.title ?? 'Rule'} · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Band title="rule" sub={rule?.attack.map((a) => a.techniqueId).join(' · ') ?? ''} fill>
-		{#snippet actions()}<a class="lnk" href="/rules">all rules</a>{/snippet}
+	<Plate title="The rule plate" sub={rule?.attack.map((a) => a.techniqueId).join(' · ') ?? ''} ticks>
+		{#snippet actions()}<a class="lnk" href="/rules">All rules</a>{/snippet}
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		{#if rule && s}
 			<div class="body">
-				<h1>{rule.title}</h1>
+				<h2 class="rt">{rule.title}</h2>
 				<Choice label="View" size="md" bind:value={view} options={[{ value: 'readable', label: 'Readable' }, { value: 'source', label: 'Source (Sigma)' }]} />
-				<span class="mono faint kb">press <kbd>S</kbd> to switch</span>
+				<span class="faint kb">Press <kbd>S</kbd> to switch</span>
 				{#if view === 'readable'}
 					<dl class="sentence">
 						<div><dt>When</dt><dd>{s.when}{#each s.clauses as c, i (i)}<span class="and">and</span><b>{c}</b>{/each}</dd></div>
@@ -119,14 +119,14 @@
 					<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={test}>Test on last 7 days ▶</button>
 					{#if tested}<span class="mono" role="status">→ {tested.matches} matches · {tested.confirmed} confirmed · {tested.noise} noise</span>{/if}
 				</div>
-				<p class="meta mono">{rule.hits7d.toLocaleString('en-GB')} {rule.hits7d === 1 ? 'alert' : 'alerts'} in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
+				<p class="meta">{rule.hits7d.toLocaleString('en-GB')} {rule.hits7d === 1 ? 'alert' : 'alerts'} in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
 				{#if exceptions.length}
 					<ul class="excs" aria-label="Exceptions">
 						{#each exceptions as x (x.id)}
 							<li>
 								<span><b>{FIELD_WORDS[x.field]} {x.value}</b> · {x.reason}</span>
 								<span class="mono faint">{x.createdBy} · {whenShort(x.createdAt)}{x.expiresAt ? ` · until ${whenShort(x.expiresAt)}` : ''}</span>
-								{#if canManage}<button class="lnk" type="button" onclick={() => removeException(x)}>remove</button>{/if}
+								{#if canManage}<button class="lnk" type="button" onclick={() => removeException(x)}>Remove</button>{/if}
 							</li>
 						{/each}
 					</ul>
@@ -138,11 +138,11 @@
 					{:else}
 						<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => setEnabled(true)} disabled={!canManage}>Turn on</button>
 					{/if}
-					{#if !canManage}<span class="mono faint">Analysts manage rules.</span>{/if}
+					{#if !canManage}<span class="faint">Analysts manage rules.</span>{/if}
 				</div>
 				{#if lowering}
 					<form class="inline" onsubmit={lower}>
-						<label class="label"><span>stop alerting for this</span>
+						<label class="label"><span>Stop alerting for this</span>
 							<select class="select" bind:value={exField}>
 								<option value="user">person or service account</option>
 								<option value="host">device</option>
@@ -150,8 +150,8 @@
 							</select>
 						</label>
 						<label class="label"><span>{FIELD_WORDS[exField]}</span><input class="input" bind:value={exValue} required placeholder={exField === 'user' ? 'e.g. svc-backup' : exField === 'host' ? 'e.g. ant-backup-01' : 'e.g. 192.0.2.10'} /></label>
-						<label class="label wide"><span>why (kept with the exception)</span><input class="input" bind:value={exReason} required minlength="10" placeholder="e.g. nightly backup agent rollout" /></label>
-						<label class="label"><span>for</span>
+						<label class="label wide"><span>Why (kept with the exception)</span><input class="input" bind:value={exReason} required minlength="10" placeholder="e.g. nightly backup agent rollout" /></label>
+						<label class="label"><span>For</span>
 							<select class="select" bind:value={exDays}><option value="30">30 days</option><option value="90">90 days</option><option value="">until removed</option></select>
 						</label>
 						<button class="btn preset-filled-surface-950-50 btn-sm" type="submit" disabled={exBusy}>Add exception</button>
@@ -160,13 +160,13 @@
 				{/if}
 				{#if turningOff}
 					<form class="inline" onsubmit={(e) => (e.preventDefault(), setEnabled(false, offReason))}>
-						<label class="label"><span>why turn it off?</span><input class="input" bind:value={offReason} required placeholder="e.g. replaced by a better rule" /></label>
+						<label class="label"><span>Why turn it off?</span><input class="input" bind:value={offReason} required placeholder="e.g. replaced by a better rule" /></label>
 						<button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Turn off</button>
 					</form>
 				{/if}
 			</div>
 		{/if}
-	</Band>
+	</Plate>
 </div>
 
 <style>
@@ -177,23 +177,23 @@
 		min-height: 0;
 	}
 	.pad {
-		padding: 22px;
+		padding: 0;
 	}
 	.body {
-		padding: 22px 26px 30px;
-		max-width: 960px;
+		padding: 6px 6px 10px;
+		max-width: 980px;
 		display: grid;
 		gap: 16px;
 		justify-items: start;
 	}
-	h1 {
+	.rt {
 		margin: 0;
-		font: 600 23px/1.2 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.015em;
+		font: 800 44px/0.92 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
 	.kb {
-		font-size: 11.5px;
+		font-size: 12.5px;
 		margin-top: -8px;
 	}
 	.excs {
@@ -210,7 +210,7 @@
 		gap: 4px 12px;
 		align-items: baseline;
 		padding: 8px 0;
-		border-bottom: 1px solid var(--line);
+		border-bottom: 1px solid var(--rule);
 		font-size: 13.5px;
 		color: var(--ink-2);
 	}
@@ -218,50 +218,55 @@
 		color: var(--ink);
 		font-weight: 500;
 	}
+	/* the rule engraved on a plate: When … and … Unless … */
 	.sentence {
 		margin: 0;
 		display: grid;
-		gap: 0;
+		gap: 4px;
 		width: 100%;
-		border-top: 1px solid var(--line);
+		padding: 6px;
+		background: var(--sunk);
+		border: 1px solid var(--rule);
 	}
 	.sentence div {
 		display: grid;
-		grid-template-columns: 90px minmax(0, 1fr);
+		grid-template-columns: 110px minmax(0, 1fr);
 		gap: 16px;
-		padding: 14px 0;
-		border-bottom: 1px solid var(--line);
+		padding: 14px 16px;
+		background: var(--plate);
+		box-shadow: inset 0 0 0 1px var(--rule);
 	}
 	dt {
-		font: 400 12px/1.6 var(--mono);
-		font-variation-settings: 'MONO' 1;
-		color: var(--faint);
+		font: 800 20px/1.1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--acc-hi);
 	}
 	dd {
 		margin: 0;
-		font-size: 16px;
+		font-size: 17px;
 		line-height: 1.55;
 		color: var(--ink-2);
 	}
 	dd b {
 		color: var(--ink);
-		font-weight: 500;
+		font-weight: 700;
 	}
 	.and {
 		margin: 0 0.45em;
-		color: var(--teal);
-		font-family: var(--mono);
-		font-variation-settings: 'MONO' 1;
-		font-size: 13px;
+		font: 700 13px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--dim);
 	}
 	.src {
 		margin: 0;
 		width: 100%;
 		padding: 16px 18px;
 		background: var(--sunk);
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		font-size: 12.5px;
+		border: 1px solid var(--rule);
+		border-radius: 0;
+		font-size: 13px;
 		line-height: 1.6;
 		overflow-x: auto;
 		color: var(--ink-2);
@@ -275,8 +280,8 @@
 	}
 	.meta {
 		margin: 0;
-		font-size: 11.5px;
-		color: var(--muted);
+		font-size: 13.5px;
+		color: var(--dim);
 	}
 	.acts {
 		display: flex;
@@ -284,8 +289,8 @@
 		align-items: center;
 		flex-wrap: wrap;
 	}
-	.acts .mono {
-		font-size: 11.5px;
+	.acts .faint {
+		font-size: 13px;
 	}
 	.inline {
 		display: flex;

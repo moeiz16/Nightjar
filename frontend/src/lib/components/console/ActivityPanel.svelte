@@ -94,15 +94,15 @@
 	{#if err}<p class="ferr">{err}</p>{/if}
 	<div class="table-wrap">
 		<table class="table">
-			<thead><tr><th>time</th><th>who</th><th>did</th>{#if !compact}<th>about</th>{/if}<th>seal</th></tr></thead>
+			<thead><tr><th>Time</th><th>Who</th><th>Did</th>{#if !compact}<th>About</th>{/if}<th>Seal</th></tr></thead>
 			<tbody>
 				{#each paged as r (r.id)}
-					<tr>
+					<tr class={r.actorType === 'user' ? 'h-person' : r.actorType === 'agent' ? 'h-acc' : ''}>
 						<td class="m">{whenShort(r.createdAt)}<span class="sr"> {timeOf(r.createdAt, undefined, true)}</span></td>
 						<td class="who" class:tm={r.actorType === 'agent'}>{actor(r)}</td>
 						<td>{r.label}</td>
 						{#if !compact}<td class="m">{#if about(r)}<a href="/incidents/{about(r)}">{about(r)}</a>{:else}{TYPE_WORDS[r.resourceType ?? ''] ?? (r.resourceType ? r.resourceType.replace(/_/g, ' ') : '—')}{/if}</td>{/if}
-						<td class="m seal" title="Sealed to the entry before it; Verify the log checks every seal">·{r.hash.slice(0, 4)}</td>
+						<td class="m seal" title="Sealed to the entry before it; Verify the log checks every seal"><span aria-hidden="true">⛓</span> {r.hash.slice(0, 4)}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -111,7 +111,7 @@
 	{#if !compact && rows.length > PAGE}
 		<div class="pager">
 			<span class="mono faint">{(pageNo - 1) * PAGE + 1}–{Math.min(rows.length, pageNo * PAGE)} of the latest {rows.length}</span>
-			<Pagination data={rows} count={rows.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="preset-filled-primary-700-300" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
+			<Pagination data={rows} count={rows.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="bg-[var(--acc)] text-[var(--acc-ink)]" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
 		</div>
 	{/if}
 </div>
@@ -121,17 +121,23 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 12px 16px;
-		font-size: 12px;
+		padding: 0 0 12px;
+		font-size: 14px;
 		color: var(--ink-2);
 		flex-wrap: wrap;
 	}
+	.top > .mono {
+		font-size: 13px;
+	}
 	.res {
-		color: var(--teal);
-		font-size: 11.5px;
+		font: 600 13px/1.2 var(--ui);
+		color: var(--ok-ink);
+		background: var(--ok);
+		padding: 6px 10px;
 	}
 	.res.bad {
-		color: var(--red);
+		background: var(--acc);
+		color: var(--acc-ink);
 	}
 	.right {
 		margin-left: auto;
@@ -141,21 +147,28 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		padding: 12px 16px 16px;
+		padding: 14px 0 6px;
 		flex-wrap: wrap;
-		font-size: 11.5px;
+		font-size: 13px;
 	}
 	.pager :global(.pg button) {
-		height: 28px;
-		min-width: 28px;
-		font-size: 12px;
-		border-radius: 3px;
+		height: 30px;
+		min-width: 30px;
+		font: 500 12.5px/1 var(--code);
+		border-radius: 2px;
 	}
 	.filters {
 		display: flex;
 		gap: 10px;
-		padding: 0 16px 10px;
+		padding: 0 0 6px;
 		flex-wrap: wrap;
+	}
+	.compact .top,
+	.compact .filters {
+		padding: 12px 14px 8px;
+	}
+	.compact .table-wrap {
+		padding: 0 10px 10px;
 	}
 	.table-wrap {
 		overflow-x: auto;
@@ -163,18 +176,19 @@
 	.who {
 		white-space: nowrap;
 		color: var(--ink);
+		font-weight: 600;
 	}
 	.who.tm {
-		color: var(--teal);
+		color: var(--acc-hi);
 	}
 	.seal {
-		color: var(--muted);
+		color: var(--dim);
+		position: relative;
 	}
 	td a {
-		text-decoration: none;
 		color: var(--ink-2);
 	}
 	td a:hover {
-		color: var(--teal);
+		color: var(--ink);
 	}
 </style>

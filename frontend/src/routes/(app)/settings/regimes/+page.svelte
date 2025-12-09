@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Settings › regime contacts (DESIGN.md §6.14): which rules apply to Halden, who is the contact, who submits.
-	import Band from '$lib/components/ui/Band.svelte';
+	import Plate from '$lib/components/ui/Plate.svelte';
 	import SettingsNav from '$lib/components/shell/SettingsNav.svelte';
 	import { api, problemMessage } from '$lib/api';
 	import type { Member, OrgProfile, Regime, RegimeContacts } from '$lib/api/types';
@@ -54,40 +54,40 @@
 
 <svelte:head><title>Regime contacts · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Band title="settings" sub="regime contacts" fill>
+	<Plate title="Which rules apply" sub="From your company profile" bare>
 		{#snippet actions()}{#if can}<button class="btn preset-filled-surface-950-50 btn-sm" type="button" onclick={save} disabled={!dirty || busy}>{busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button>{:else}<span>read only</span>{/if}{/snippet}
 		<SettingsNav />
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		<div class="body">
-			<h1>Which rules apply to Halden Logistics?</h1>
-			<p class="mono faint sub">from your company profile · nothing here files anything; it decides who is asked and who submits</p>
+			<h2 class="q">Which rules apply to Halden Logistics?</h2>
+			<p class="faint sub">Nothing here files anything; it decides who is asked and who submits.</p>
 			{#each ORDER as r (r)}
 				{@const c = contacts[r]}
 				{#if c}
 					<section class="reg" aria-labelledby="r-{r}">
 						<div class="h">
-							<h2 id="r-{r}"><span class="teal mono">●</span> {title[r]} · {c.jurisdiction}</h2>
+							<h3 id="r-{r}"><span class="ok mono">●</span> {title[r]} · {c.jurisdiction}</h3>
 							<span class="why">{why(r)}</span>
-							<span class="mono faint auth">authority: {c.authorityName}</span>
+							<span class="faint auth">Authority: {c.authorityName}</span>
 						</div>
 						<div class="grid">
-							<label class="label"><span>owner (submits)</span>
+							<label class="label"><span>Owner (submits)</span>
 								<select class="select" disabled={!can} value={c.internalOwner.userId} onchange={(e) => { const m = members.find((x) => x.user.id === (e.currentTarget as HTMLSelectElement).value); if (m) { c.internalOwner = { userId: m.user.id, name: m.user.fullName }; dirty = true; } }}>
 									{#each members as m (m.id)}<option value={m.user.id}>{m.user.fullName} · {m.roleLabel}</option>{/each}
 								</select>
 							</label>
 							{#each c.contacts as ct, i (i)}
 								<label class="label"><span>{ct.role.toLowerCase()}</span><input class="input" bind:value={ct.name} oninput={() => (dirty = true)} disabled={!can} /></label>
-								<label class="label"><span>phone</span><input class="input mono" bind:value={ct.phone} oninput={() => (dirty = true)} disabled={!can} /></label>
+								<label class="label"><span>Phone</span><input class="input mono" bind:value={ct.phone} oninput={() => (dirty = true)} disabled={!can} /></label>
 							{/each}
 						</div>
-						<p class="mono ok">✓ verified · {c.contacts.length} {c.contacts.length === 1 ? 'contact' : 'contacts'}</p>
+						<p class="okv">✓ Verified · {c.contacts.length} {c.contacts.length === 1 ? 'contact' : 'contacts'}</p>
 					</section>
 				{/if}
 			{/each}
-			<p class="add mono faint">○ Add a regime · ask your administrator to extend the company profile</p>
+			<p class="add faint">○ Add a regime · ask your administrator to extend the company profile</p>
 		</div>
-	</Band>
+	</Plate>
 </div>
 
 <style>
@@ -101,22 +101,25 @@
 		padding: 22px;
 	}
 	.body {
-		padding: 20px 22px 30px;
-		max-width: 1080px;
+		padding: 0;
+		max-width: 1180px;
 	}
-	h1 {
+	.q {
 		margin: 0;
-		font: 600 21px/1.25 var(--sans);
-		font-variation-settings: 'MONO' 0;
-		letter-spacing: -0.01em;
+		font: 800 44px/0.92 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
 	.sub {
-		margin: 6px 0 18px;
-		font-size: 11.5px;
+		margin: 8px 0 20px;
+		font-size: 14px;
 	}
 	.reg {
-		padding: 16px 0;
-		border-top: 1px solid var(--line);
+		padding: 18px 20px 20px;
+		margin-bottom: 6px;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-left: 5px solid var(--acc);
 	}
 	.h {
 		display: flex;
@@ -125,17 +128,18 @@
 		flex-wrap: wrap;
 		margin-bottom: 12px;
 	}
-	h2 {
+	h3 {
 		margin: 0;
-		font: 600 15px/1.3 var(--sans);
-		font-variation-settings: 'MONO' 0;
+		font: 800 26px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
 	.why {
-		font-size: 13px;
+		font-size: 14px;
 		color: var(--ink-2);
 	}
 	.auth {
-		font-size: 11.5px;
+		font-size: 13px;
 		margin-left: auto;
 	}
 	.grid {
@@ -143,15 +147,15 @@
 		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 		gap: 12px;
 	}
-	.ok {
-		margin: 10px 0 0;
-		font-size: 11.5px;
-		color: var(--teal);
+	.okv {
+		margin: 12px 0 0;
+		font-size: 13px;
+		font-weight: 700;
+		color: var(--ok);
 	}
 	.add {
 		padding-top: 14px;
-		border-top: 1px solid var(--line);
-		font-size: 12px;
+		font-size: 13.5px;
 	}
 	@media (max-width: 760px) {
 		.body {

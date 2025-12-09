@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Settings › members (DESIGN.md §6.14): who can authorise what, invitations, and the two-person rule.
-	import Band from '$lib/components/ui/Band.svelte';
+	import Plate from '$lib/components/ui/Plate.svelte';
 	import SettingsNav from '$lib/components/shell/SettingsNav.svelte';
 	import { api, problemMessage, ApiError } from '$lib/api';
 	import type { Invitation, Member, Role } from '$lib/api/types';
@@ -75,24 +75,24 @@
 
 <svelte:head><title>Members · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Band title="settings" sub="members" fill>
+	<Plate title="The roster" sub="{members.length} members · {invites.length} invited" bare>
 		{#snippet actions()}{#if canManage}<button class="btn preset-filled-surface-950-50 btn-sm" type="button" onclick={() => (inviting = !inviting)}>Invite someone</button>{/if}{/snippet}
 		<SettingsNav />
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		{#if inviting}
 			<form class="inv" onsubmit={invite}>
-				<label class="label"><span>work email</span><input class="input" type="email" bind:value={email} required aria-invalid={!!fe.email} />{#if fe.email}<small class="ferr">{fe.email}</small>{/if}</label>
-				<label class="label"><span>role</span><select class="select" bind:value={role}>{#each ROLES as [r, l] (r)}<option value={r}>{l}</option>{/each}</select></label>
-				<button class="btn preset-filled-primary-700-300" type="submit">Send invitation</button>
+				<label class="label"><span>Work email</span><input class="input" type="email" bind:value={email} required aria-invalid={!!fe.email} />{#if fe.email}<small class="ferr">{fe.email}</small>{/if}</label>
+				<label class="label"><span>Role</span><select class="select" bind:value={role}>{#each ROLES as [r, l] (r)}<option value={r}>{l}</option>{/each}</select></label>
+				<button class="btn preset-filled-primary-500" type="submit">Send invitation</button>
 			</form>
 			{#if link}<p class="link mono">Copy this link now (shown once): <a href={link}>{location.origin}{link}</a></p>{/if}
 		{/if}
 		<div class="table-wrap">
 			<table class="table">
-				<thead><tr><th>name</th><th>role</th><th>can authorise</th><th>joined</th></tr></thead>
+				<thead><tr><th>Name</th><th>Role</th><th>Can authorise</th><th>Joined</th></tr></thead>
 				<tbody>
 					{#each members as m (m.id)}
-						<tr>
+						<tr class={m.role === 'executive' || m.role === 'responder' ? 'h-person' : ''}>
 							<td><b class="nm">{m.user.fullName}</b><small class="mono">{m.user.email}</small></td>
 							<td>
 								{#if canManage && m.user.id !== session.me?.user.id}
@@ -105,26 +105,26 @@
 						</tr>
 					{/each}
 					{#each invites as i (i.id)}
-						<tr>
-							<td><span class="faint">invited</span> <span class="mono">{i.email}</span></td>
+						<tr class="h-soon">
+							<td><span class="faint">Invited</span> <span class="mono">{i.email}</span></td>
 							<td>{i.roleLabel}</td>
 							<td class="m">expires {dueLabel(i.expiresAt)}</td>
-							<td class="m"><button class="lnk" type="button" onclick={() => revoke(i)}>revoke</button></td>
+							<td class="m"><button class="lnk" type="button" onclick={() => revoke(i)}>Revoke</button></td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 		</div>
 		<section class="rules">
-			<div class="r"><span>Two-person rule for crown jewels and privileged accounts</span><span class="mono teal" role="status">● on</span><small>a responder and the CISO, two different people</small></div>
-			<div class="r"><span>Nobody authorises their own request</span><span class="mono teal">● always</span><small>enforced on every action</small></div>
+			<div class="r"><span>Two-person rule for crown jewels and privileged accounts</span><span class="ok st" role="status">● on</span><small>a responder and the CISO, two different people</small></div>
+			<div class="r"><span>Nobody authorises their own request</span><span class="ok st">● always</span><small>enforced on every action</small></div>
 			<div class="r">
 				<span>Confirm actions by typing the name instead of holding</span>
-				<button class="tg mono" type="button" aria-pressed={ui.holdByTyping} onclick={() => ui.setHoldByTyping(!ui.holdByTyping)}>{ui.holdByTyping ? '● on' : '○ off'}</button>
+				<button class="tg" type="button" aria-pressed={ui.holdByTyping} onclick={() => ui.setHoldByTyping(!ui.holdByTyping)}>{ui.holdByTyping ? '● on' : '○ off'}</button>
 				<small>your personal setting · for people who cannot hold a key</small>
 			</div>
 		</section>
-	</Band>
+	</Plate>
 </div>
 
 <style>
@@ -135,21 +135,24 @@
 		min-height: 0;
 	}
 	.pad {
-		padding: 22px;
+		padding: 0;
 	}
 	.inv {
 		display: grid;
 		grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto;
 		gap: 12px;
 		align-items: end;
-		padding: 16px 22px;
-		border-bottom: 1px solid var(--line);
+		padding: 16px 18px;
+		margin-bottom: 10px;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-top: 2px solid var(--acc);
 	}
 	.link {
-		margin: 0;
-		padding: 10px 22px;
-		font-size: 12px;
-		border-bottom: 1px solid var(--line);
+		margin: 0 0 10px;
+		padding: 10px 14px;
+		font-size: 13px;
+		background: var(--sunk);
 		overflow-wrap: anywhere;
 	}
 	.table-wrap {
@@ -158,39 +161,51 @@
 	.nm {
 		display: block;
 		color: var(--ink);
-		font-weight: 500;
+		font-weight: 700;
 	}
 	small {
-		font-size: 11px;
+		font-size: 12px;
 		color: var(--faint);
 	}
 	.rs {
-		height: 28px;
-		font-size: 12.5px;
+		height: 30px;
+		min-height: 30px;
+		font-size: 13px;
 		width: auto;
 	}
 	.rules {
-		padding: 16px 22px 26px;
+		margin-top: 22px;
+		padding: 6px 18px 10px;
 		display: grid;
 		gap: 0;
+		background: var(--plate);
+		border: 1px solid var(--rule);
 	}
 	.rules .r {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 2px 16px;
 		padding: 12px 0;
-		border-top: 1px solid var(--line);
-		font-size: 13.5px;
+		border-top: 1px solid var(--rule);
+		font-size: 14.5px;
+	}
+	.rules .r:first-child {
+		border-top: 0;
+	}
+	.st {
+		font-weight: 700;
+		font-size: 13px;
 	}
 	.rules small {
 		grid-column: 1;
 	}
 	.tg {
-		color: var(--muted);
-		font-size: 12px;
+		color: var(--dim);
+		font-size: 13px;
+		font-weight: 700;
 	}
 	.tg[aria-pressed='true'] {
-		color: var(--teal);
+		color: var(--ok);
 	}
 	@media (max-width: 760px) {
 		.inv {

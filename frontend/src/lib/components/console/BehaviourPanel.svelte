@@ -79,9 +79,9 @@
 
 <div class="beh" class:compact>
 	<div class="top">
-		<span class="mono faint">last 14 days ·</span>
+		<span class="eng faint">Last 14 days</span>
 		<Choice label="Show" bind:value={kind} options={[{ value: 'user', label: 'people' }, { value: 'host', label: 'devices' }]} />
-		<span class="mono faint sort">sorted by: most unusual</span>
+		<span class="faint sort">Sorted by most unusual first</span>
 	</div>
 	{#if err}<p class="ferr">{err}</p>{/if}
 	{#each items as a (a.id)}
@@ -89,7 +89,7 @@
 		<article class="who" aria-labelledby="b-{a.id}">
 			<header>
 				<h3 id="b-{a.id}">{a.label ?? a.entityId}</h3>
-				<p class="head"><span class="g" aria-hidden="true">◇</span><span class="sr">unusual behaviour:</span> {a.headline}{#if expected[a.id]} <span class="badge preset-outlined-surface-300-700">expected · {expected[a.id]}</span>{/if}</p>
+				<p class="head"><span class="g" aria-hidden="true">◇</span><span class="sr">unusual behaviour:</span> {a.headline}{#if expected[a.id]} <span class="badge exp">expected · {expected[a.id]}</span>{/if}</p>
 			</header>
 			{#if a.rhythm}
 				<div class="strip" role="img" aria-label="Activity by hour for 14 days; the outlier is {a.headline}">
@@ -104,7 +104,7 @@
 				</div>
 			{/if}
 			<ul class="reasons">
-				<li class="mono faint">reasons:</li>
+				<li class="eng faint">Why</li>
 				{#each a.reasons as r, i (i)}<li class:lower={r.contribution < 0}>{r.text}{i < a.reasons.length - 1 ? ' ·' : ''}</li>{/each}
 			</ul>
 			<div class="acts">
@@ -115,17 +115,17 @@
 			</div>
 			{#if expecting === a.id}
 				<form class="inline" onsubmit={(e) => (e.preventDefault(), markExpected(a))}>
-					<label class="label"><span>expected for how long?</span>
+					<label class="label"><span>Expected for how long?</span>
 						<select class="select" bind:value={howLong}><option>for today</option><option>for this week</option><option>until the end of the month</option><option>from now on</option></select>
 					</label>
-					<label class="label wide"><span>why (kept with the exception)</span><input class="input" bind:value={expectWhy} required minlength="10" placeholder="e.g. quarter-end reporting, agreed with the manager" /></label>
+					<label class="label wide"><span>Why (kept with the exception)</span><input class="input" bind:value={expectWhy} required minlength="10" placeholder="e.g. quarter-end reporting, agreed with the manager" /></label>
 					<button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Mark as expected</button>
 				</form>
 			{/if}
 			{#if drafting === a.id}
 				<form class="inline col" onsubmit={(e) => (e.preventDefault(), send(a))}>
-					<label class="label"><span>draft message to the manager</span><textarea class="textarea" rows="3" bind:value={draft}></textarea></label>
-					<div class="row"><button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Record and send</button><button class="lnk" type="button" onclick={() => (drafting = null)}>cancel</button></div>
+					<label class="label"><span>Draft message to the manager</span><textarea class="textarea" rows="3" bind:value={draft}></textarea></label>
+					<div class="row"><button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Record and send</button><button class="lnk" type="button" onclick={() => (drafting = null)}>Cancel</button></div>
 				</form>
 			{/if}
 		</article>
@@ -139,46 +139,77 @@
 		display: flex;
 		gap: 12px;
 		align-items: center;
-		padding: 12px 18px;
-		border-bottom: 1px solid var(--line);
-		font-size: 12px;
+		padding: 0 0 12px;
+		font-size: 14px;
+	}
+	.top .eng {
+		font-size: 13px;
 	}
 	.sort {
 		margin-left: auto;
 	}
+	/* one tape per person or device: who and why on the left, their fortnight punched on the right */
 	.who {
-		padding: 16px 18px 18px;
-		border-bottom: 1px solid var(--line);
 		display: grid;
-		gap: 10px;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 600px);
+		grid-template-areas: 'h s' 'r s' 'a s' 'f f';
+		align-content: start;
+		gap: 10px 28px;
+		padding: 18px 20px 20px;
+		margin-bottom: 6px;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-left: 5px solid var(--soon);
+	}
+	.who > header {
+		grid-area: h;
+	}
+	.strip {
+		grid-area: s;
+	}
+	.reasons {
+		grid-area: r;
+	}
+	.acts {
+		grid-area: a;
+	}
+	.inline {
+		grid-area: f;
 	}
 	h3 {
 		margin: 0;
-		font: 600 14.5px/1.3 var(--sans);
-		font-variation-settings: 'MONO' 0;
+		font: 800 28px/0.95 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 	}
 	.head {
-		margin: 4px 0 0;
-		font-size: 13px;
+		margin: 8px 0 0;
+		font-size: 15px;
+		font-weight: 600;
 		color: var(--ink);
 	}
 	.head .g {
-		color: var(--amber);
-		font-family: var(--mono);
-		font-variation-settings: 'MONO' 1;
+		color: var(--soon);
+		font-family: var(--code);
 		margin-right: 4px;
+	}
+	.exp {
+		color: var(--ok);
+		box-shadow: inset 0 0 0 1px var(--ok);
 	}
 	.strip {
 		display: grid;
 		gap: 2px;
-		max-width: 640px;
+		padding: 10px;
+		background: var(--sunk);
+		align-self: start;
 	}
 	.hours {
 		display: flex;
 		justify-content: space-between;
 		margin-left: 44px;
 		margin-right: 18px;
-		font-size: 10px;
+		font-size: 10.5px;
 		color: var(--faint);
 	}
 	.day {
@@ -188,34 +219,34 @@
 		align-items: center;
 	}
 	.dl {
-		font-size: 10px;
+		font: 500 10.5px/1 var(--code);
 		color: var(--faint);
 	}
 	.day i {
-		height: 9px;
-		border-radius: 1px;
-		background: var(--raised);
+		height: 10px;
+		border-radius: 0;
+		background: color-mix(in srgb, var(--rule) 70%, transparent);
 	}
 	.day i.l1 {
-		background: color-mix(in srgb, var(--teal) 10%, var(--raised));
+		background: color-mix(in srgb, var(--acc) 22%, var(--sunk));
 	}
 	.day i.l2 {
-		background: color-mix(in srgb, var(--teal) 22%, var(--raised));
+		background: color-mix(in srgb, var(--acc) 42%, var(--sunk));
 	}
 	.day i.l3 {
-		background: color-mix(in srgb, var(--teal) 38%, var(--raised));
+		background: color-mix(in srgb, var(--acc) 66%, var(--sunk));
 	}
 	.day i.warm {
-		background: color-mix(in srgb, var(--amber) 55%, var(--raised));
+		background: color-mix(in srgb, var(--soon) 60%, var(--sunk));
 	}
 	.day i.hot {
-		background: var(--amber);
+		background: var(--soon);
+		box-shadow: 0 0 0 1px var(--soon);
 	}
 	.mk {
-		color: var(--amber);
-		font-size: 10px;
-		font-family: var(--mono);
-		font-variation-settings: 'MONO' 1;
+		color: var(--soon);
+		font-size: 10.5px;
+		font-family: var(--code);
 	}
 	.reasons {
 		list-style: none;
@@ -224,14 +255,16 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 4px 6px;
-		font-size: 12.5px;
+		font-size: 14px;
 		color: var(--ink-2);
+		align-items: baseline;
 	}
-	.reasons .mono {
-		font-size: 11.5px;
+	.reasons .eng {
+		font-size: 12px;
+		margin-right: 4px;
 	}
 	.reasons .lower {
-		color: var(--muted);
+		color: var(--dim);
 	}
 	.acts {
 		display: flex;
@@ -241,14 +274,14 @@
 	}
 	.win {
 		margin-left: auto;
-		font-size: 11.5px;
+		font-size: 12.5px;
 	}
 	.inline {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 10px;
 		align-items: end;
-		max-width: 720px;
+		max-width: 760px;
 	}
 	.inline .wide {
 		flex: 1 1 240px;
@@ -262,10 +295,28 @@
 		align-items: center;
 	}
 	.none {
-		padding: 18px;
-		color: var(--muted);
+		padding: 18px 0;
+		color: var(--dim);
+	}
+	.compact .who {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: 'h' 's' 'r' 'a' 'f';
+		margin: 0;
+		border-width: 0 0 1px 3px;
+	}
+	.compact .top {
+		padding: 12px 14px;
+	}
+	@media (max-width: 1100px) {
+		.who {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas: 'h' 's' 'r' 'a' 'f';
+		}
 	}
 	@media (max-width: 760px) {
+		.who {
+			padding: 14px;
+		}
 		.day {
 			grid-template-columns: 30px repeat(24, minmax(0, 1fr)) 10px;
 			gap: 1px;

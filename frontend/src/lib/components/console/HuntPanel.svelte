@@ -164,25 +164,26 @@
 <div class="hunt" class:compact>
 	<form class="bar" onsubmit={run} role="search">
 		<label class="sr" for="huntq">Search events in plain words</label>
+		<span class="ask eng" aria-hidden="true">Ask</span>
 		<input id="huntq" class="q" bind:value={text} placeholder="devices that uploaded to upload.files-sync.example in the last 7 days" autocomplete="off" />
 		<span class="kb mono" aria-hidden="true">⏎</span>
 		<div class="acts">
 			<Choice label="View" bind:value={view} options={[{ value: 'list', label: 'List' }, { value: 'timeline', label: 'Timeline' }]} />
 			{#if session.can('hunting:write')}<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => ((saving = !saving), (saveName ||= text.slice(0, 60)))} disabled={!text.trim()}>Save as…</button>{/if}
-			<button class="btn preset-filled-primary-700-300 btn-sm" type="submit" disabled={busy}>▶ Run</button>
+			<button class="btn preset-filled-primary-500 btn-sm" type="submit" disabled={busy}>▶ Run</button>
 		</div>
 	</form>
 
 	{#if saving}
 		<form class="save" onsubmit={save}>
-			<label class="label"><span>name</span><input class="input" bind:value={saveName} required /></label>
-			<label class="label"><span>why we watch this (a short note)</span><input class="input" bind:value={saveNote} /></label>
+			<label class="label"><span>Name</span><input class="input" bind:value={saveName} required /></label>
+			<label class="label"><span>Why we watch this (a short note)</span><input class="input" bind:value={saveNote} /></label>
 			<div class="row"><button class="btn preset-filled-surface-950-50 btn-sm" type="submit">Save search</button><button class="lnk" type="button" onclick={() => (saving = false)}>cancel</button></div>
 		</form>
 	{/if}
 
 	<div class="filters mono" aria-label="Filters">
-		<span class="faint">filters:</span>
+		<span class="eng faint fl">Filters</span>
 		{#each chips as c, i (c.label)}
 			<span class="fchip">{c.label}<button type="button" aria-label="Remove {c.label}" onclick={() => removeChip(i)}>×</button></span>
 		{/each}
@@ -192,7 +193,7 @@
 
 	{#if suggestions.length}
 		<div class="sugg">
-			<span class="mono faint">suggestions:</span>
+			<span class="eng faint fl">Worth a look</span>
 			{#each suggestions.slice(0, compact ? 2 : 3) as s (s.id)}
 				<button type="button" class="sg" title={s.why} onclick={() => useSuggestion(s)}>▸ {s.title}</button>
 			{/each}
@@ -220,10 +221,10 @@
 		{:else if view === 'list'}
 			<div class="table-wrap">
 				<table class="table">
-					<thead><tr><th>time</th><th>who</th><th>device</th><th>what</th><th>incident</th></tr></thead>
+					<thead><tr><th>Time</th><th>Who</th><th>Device</th><th>What</th><th>Incident</th></tr></thead>
 					<tbody>
 						{#each rows as r (r.eventId + r.at)}
-							<tr>
+							<tr class={r.incident ? 'h-acc' : ''}>
 								<td class="m">{whenShort(r.at)}</td>
 								<td>{r.who}</td>
 								<td class="m">{r.device}</td>
@@ -260,22 +261,34 @@
 	}
 	.bar {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
-		gap: 10px;
+		grid-template-columns: auto minmax(0, 1fr) auto auto;
+		gap: 0 12px;
 		align-items: center;
-		padding: 14px 18px 10px;
+		padding: 18px 18px 12px;
+	}
+	.ask {
+		height: 56px;
+		display: grid;
+		place-items: center;
+		padding: 0 16px;
+		font-size: 17px;
+		background: var(--acc);
+		color: var(--acc-ink);
+		margin-right: -12px;
+		z-index: 1;
 	}
 	.q {
-		height: 40px;
-		padding: 0 12px;
-		border-radius: 6px;
-		border: 1px solid var(--line-strong);
+		height: 56px;
+		padding: 0 16px;
+		border-radius: 0;
+		border: 1px solid var(--rule-2);
 		background: var(--sunk);
-		font-size: 14.5px;
+		font-size: 18px;
+		font-weight: 500;
 		min-width: 0;
 	}
 	.q:focus {
-		outline: 2px solid var(--teal);
+		outline: 2px solid var(--acc);
 		outline-offset: -1px;
 	}
 	.kb {
@@ -305,23 +318,27 @@
 		flex-wrap: wrap;
 		gap: 6px;
 		align-items: center;
-		padding: 0 18px 8px;
-		font-size: 11.5px;
+		padding: 0 18px 10px;
+		font: 500 12.5px/1 var(--code);
+	}
+	.fl {
+		font-size: 12.5px;
+		margin-right: 4px;
 	}
 	.fchip {
 		display: inline-flex;
 		gap: 6px;
 		align-items: center;
-		height: 22px;
-		padding: 0 4px 0 8px;
-		border-radius: 4px;
+		height: 26px;
+		padding: 0 4px 0 9px;
+		border-radius: 1px;
 		background: var(--raised);
-		border: 1px solid var(--line-strong);
+		border: 1px solid var(--rule-2);
 		color: var(--ink-2);
 	}
 	.fchip.dim {
 		padding-right: 8px;
-		color: var(--muted);
+		color: var(--dim);
 	}
 	.fchip button {
 		color: var(--faint);
@@ -338,11 +355,9 @@
 		font-size: 12.5px;
 		align-items: center;
 	}
-	.sugg .mono {
-		font-size: 11.5px;
-	}
 	.sg {
-		color: var(--teal);
+		color: var(--acc-hi);
+		font-weight: 600;
 		text-align: left;
 	}
 	.sg:hover {
@@ -353,10 +368,11 @@
 		justify-content: space-between;
 		gap: 12px;
 		padding: 10px 18px;
-		border-top: 1px solid var(--line);
-		border-bottom: 1px solid var(--line);
-		font-size: 12px;
+		border-top: 1px solid var(--rule);
+		border-bottom: 1px solid var(--rule);
+		font: 500 13px/1.3 var(--code);
 		color: var(--ink-2);
+		background: var(--sunk);
 	}
 	.sum b {
 		color: var(--ink);
@@ -380,7 +396,7 @@
 		top: 0;
 		bottom: 0;
 		width: 1px;
-		background: var(--line-strong);
+		background: var(--rule-2);
 	}
 	.ladder li {
 		display: grid;
@@ -402,13 +418,13 @@
 		width: 9px;
 		height: 9px;
 		border-radius: 50%;
-		border: 1.6px solid var(--muted);
-		background: var(--pane);
+		border: 1.6px solid var(--dim);
+		background: var(--plate);
 		margin: 4px 0 0 9px;
 		position: relative;
 	}
 	.ladder li.inc .dot {
-		border-color: var(--teal);
+		border-color: var(--acc);
 	}
 	.ladder li div {
 		display: flex;
@@ -418,11 +434,11 @@
 	}
 	.ladder a.inc {
 		font-size: 11.5px;
-		color: var(--teal);
+		color: var(--acc);
 	}
 	.none {
 		padding: 18px;
-		color: var(--muted);
+		color: var(--dim);
 		font-size: 13px;
 		margin: 0;
 	}
