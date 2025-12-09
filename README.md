@@ -38,7 +38,7 @@ regime has its own trigger, its own clock and its own recipient. Missing an earl
 | A night of pages for a backup-software update | A **calibrated triage model** that scores every alert with plain reasons, so 146 alerts become one likely-benign incident |
 | An analyst stitching together logs at 3 a.m. | **Three AI teammates** (Triage, Enrichment, Response) that investigate over an open agent protocol, with every step recorded and replayable |
 | Automation with the keys to production | **Hold to authorise**: no host is isolated and no account disabled without a signed, single-use human approval. Crown-jewel systems need the CISO as well |
-| Deadlines tracked in a spreadsheet | **Regulator clocks on the shift axis** for NIS2, SEC 8-K, SOCI and GDPR, with countdowns in each regulator's time zone and business days for the SEC |
+| Deadlines tracked in a spreadsheet | **Regulator clocks in every page's chronometer and on the watch dial** for NIS2, SEC 8-K, SOCI and GDPR, with countdowns in each regulator's time zone and business days for the SEC |
 | Notices written from scratch under pressure | **Drafted notices** with a missing-fields check, approval by the CISO and a recorded (simulated) submission |
 | A Monday slide deck | A **morning brief** for the CISO and a weekly report, in plain language |
 
@@ -48,15 +48,15 @@ The seeded roles match how a small security team and its executives work.
 
 | Role | What they get |
 |---|---|
-| **Security analyst** | The Watch: the night as a shift chart (every incident's path through triage, investigation, containment and reporting, on one time axis) and the turnover, the handover sheet written live; a live event river, incidents with the teammates' work laid out as a baton timeline, and Replay to step through any investigation. Each step shows what was looked at and why. Triage scores read "94 in 100" with the top three reasons. Plain-words hunting with saved and suggested searches, unusual-behaviour rhythm strips per person and computer, and detection rules as readable sentences with the Sigma source a keystroke away (turn rules on or off). Analysts can propose actions and draft notices |
+| **Security analyst** | The Watch: the night on a 24-hour watch dial (every incident's path through triage, investigation, containment and reporting as a line moving round the face and inward through the stages) with the turnover, the handover written live, in four readouts around it; a live event river, incidents with the teammates' work laid out as a baton timeline, and Replay to step through any investigation. Each step shows what was looked at and why. Triage scores read "94 in 100" with the top three reasons. Plain-words hunting with saved and suggested searches, unusual-behaviour rhythm strips per person and computer, and detection rules as readable sentences with the Sigma source a keystroke away (turn rules on or off). Analysts can propose actions and draft notices |
 | **Incident responder** | Approval cards that show what will happen, why, the least-privilege tool that will do it and how to undo it. **Hold to authorise** (1.2 s, pointer, Space or Enter) or decline with a reason. Reversals (release a host, re-enable an account) also need approval. Built-in tickets |
-| **CISO / executive** | The regulator clocks on the shift axis, applicability proposals with reasons, and the determination: significant, material or relevant impact. Notice drafting, approval and submission (simulated), with a recorded Attorney General delay for Form 8-K. Second approval on crown-jewel systems and privileged accounts. The **morning brief** (a separate dawn reading mode with one decision box and the last seven nights), the weekly report, regulator contacts and model promotion |
+| **CISO / executive** | The regulator clocks in the chronometer of every page, applicability proposals with reasons, and the determination: significant, material or relevant impact. Notice drafting, approval and submission (simulated), with a recorded Attorney General delay for Form 8-K. Second approval on crown-jewel systems and privileged accounts. The **morning brief** (a separate morning-report reading mode under a first-light horizon, with one decision box and the last seven nights), the weekly report, regulator contacts and model promotion |
 | **Auditor** | Read-only access to incidents, every agent step (with its A2A task id and input hash), approvals and notices, plus the activity log with a one-click check that the hash chain is intact and a CSV export |
 | **Administrator** | Members, invitations, ingest keys for event sources, and organisation settings |
 
 Across all of them:
 
-- **One grammar.** A shift axis across the top of every screen (regulator deadlines folded at its end), full-width bands, and a numbered watch bar at the bottom (Alt+1…8). ⌘K finds anything (do · go to · switch), scoped to the open incident first.
+- **One room, lit red.** Every page opens with a station head: the page name in tall stencil capitals, a lamp panel that is the navigation (a window lights where you are and flashes when something there needs a person; Alt+1…8), and a chronometer with the most urgent regulator clock. Registers are strips racked in bays, an incident is one flight strip, a notice is a signal form. ⌘K finds anything (do · go to · switch), scoped to the open incident first.
 - **Live.** Clocks tick, incidents coalesce and approvals land over Server-Sent Events.
 - **Separation of duties.** Nobody can be the only approver of an action they requested; pending approvals expire
   after 24 hours.
@@ -219,7 +219,7 @@ flowchart LR
 | Classical ML | scikit-learn (Isolation Forest, logistic regression, random forest), LightGBM, Optuna, isotonic calibration, SHAP (TreeSHAP), MLflow (local tracking), PSI drift |
 | Agents and tools | `a2a-sdk` 1.3 (A2A protocol, JSON-RPC), `mcp` 2.3 (Streamable HTTP, bearer-token scopes), LiteLLM (optional) with a deterministic offline fake |
 | Hunting | DuckDB (embedded, columnar), Parquet snapshots for training |
-| Web | SvelteKit 2, Svelte 5, TypeScript, Tailwind CSS 4.1, **Skeleton** (design system: Skeleton 3 theme and presets, Skeleton Svelte components on Zag.js) with a custom Nightjar theme, Recursive (bundled; Sans for reading, Mono for logs and clocks), Svelte motion built-ins |
+| Web | SvelteKit 2, Svelte 5, TypeScript, Tailwind CSS 4.1, **Skeleton** (design system: Skeleton 3 theme and presets, Skeleton Svelte components on Zag.js) on a custom red-light Nightjar theme, Big Shoulders Display, Manrope and Fira Code (bundled), Svelte motion built-ins |
 | Quality | pytest, Ruff, mypy, svelte-check, ESLint, Vitest, an evaluation harness with 25 gates, GitHub Actions CI |
 
 ## AI and machine learning
@@ -372,21 +372,21 @@ Measured on one laptop with everything running offline (`nats-server`, API, work
 production web build) and the demo clock set to 20 November 2025.
 
 - **Tests:** 556 backend tests (pytest: platform, API, RBAC, tenant isolation, approvals and tokens, clock maths,
-  hunting, seed, pipeline, detection, ML, agents and safety) and 145 web tests (Vitest: API client, clock maths,
-  hold to authorise, untrusted text, hunting, rules, the brief, the shift chart's layout, the shell model, the
-  band primitives and end-to-end flows through the mock API). Ruff,
+  hunting, seed, pipeline, detection, ML, agents and safety) and 157 web tests (Vitest: API client, clock maths,
+  hold to authorise, untrusted text, hunting, rules, the brief, the shift and the watch dial's geometry, the shell
+  model, the plate and lamp primitives and end-to-end flows through the mock API). Ruff,
   mypy, svelte-check and ESLint are clean, and `alembic check` finds no drift.
 - **Layout and contrast crawl on the live stack:** every console, brief and public route, signed in as each of the
-  five roles, in the night and day themes at 1440 px and at 390 px (302 page views): no horizontal overflow. The
-  day theme's teal was darkened to `#087565` where it measured 4.2 : 1, and a re-check (126 page views) found no
-  text below WCAG AA contrast.
+  five roles, in the night and day presentations at 1440 px and at 390 px (301 page views): no text below WCAG AA
+  contrast and no engineering words. The first pass found horizontal overflow at 390 px on two pages (the incident's
+  record tabs and the people register's filters); after the fix a re-check of those pages for two roles (39 page
+  views) found none.
 - **Browser journeys on the live stack:** 52 steps with system Chrome, signed in as each role (the landing replay
   and hold, the watch and ⌘K, the incident replay and step drawer, hold to authorise, self-approval refused, the
   CISO's co-approval on a crown jewel, a NIS2 notice drafted, completed and submitted, the SEC decision, hunting,
   rules, unusual behaviour, the brief and weekly report, settings, the activity log, sign out, and a live event
-  posted through an ingest key showing up on the watch about a second later). Zero console errors, zero failed
-  requests, no horizontal overflow at 390 px and no engineering words, raw ids or hashes in the visible text,
-  with motion on and with reduced motion.
+  posted through an ingest key showing up on the watch about three seconds later). Zero console errors and zero
+  failed requests, no horizontal overflow at 390 px, and no engineering words, raw ids or hashes in the visible text.
 - **Time to triage on the live stack:** a native Sysmon LSASS-dump event posted through an ingest key on five fresh
   hosts reached a recorded triage verdict at **p50 1.15 s, max 1.18 s**. That path runs ingest → NATS → normaliser
   → Sigma → scorer → correlator → incident → the three teammates over A2A with the tool servers.
@@ -426,14 +426,14 @@ All screens use the synthetic Halden Logistics demo with the clock set to late N
 
 | | |
 |---|---|
-| ![The landing page replays a night at Halden Logistics on the shift chart; three alerts become one incident and the NIS2 clock drops onto the time axis](docs/screenshots/landing-replay.jpg) | ![The watch: the night as a shift chart, every incident stepping through triage, investigation, containment and reporting, above the handover sheet](docs/screenshots/the-watch.jpg) |
-| **Landing replay.** One night at the sample company, drawn on the product's own chart, from the first odd sign-in to the regulator clock. | **The watch.** The night across, the response stages down, deadlines at the end of the axis, and the turnover below. |
-| ![An incident's investigation as a baton timeline across the triage, enrichment and response teammates, under the incident header and its tabs](docs/screenshots/incident-baton.jpg) | ![Hold to authorise: withdrawing a leaked cloud access key waits for a person to press and hold, beside the regulator questions for the same incident](docs/screenshots/hold-to-authorise.jpg) |
-| **Baton timeline.** The AI teammates' investigation, replayable step by step; decisions sit directly under the incident header. | **Hold to authorise.** Nothing is switched off until a person holds; crown jewels need two. |
-| ![A NIS2 early-warning draft with a readiness meter and one required field still to confirm](docs/screenshots/nis2-notice-draft.jpg) | ![Unusual behaviour: 14 days of hourly activity per person with the outlier marked](docs/screenshots/unusual-behaviour.jpg) |
-| **Notice draft.** Filled from the evidence; the readiness meter flags the missing fact before submission. | **Unusual behaviour.** Each person and device against their own normal. |
-| ![The CISO's morning brief in its dawn edition, on the same time axis as the watch](docs/screenshots/ciso-morning-brief.jpg) | ![The watch on a phone: response stages and the handover as sections, numbered windows at the bottom](docs/screenshots/phone-watch.jpg) |
-| **Morning brief.** A two-minute read for the CISO, decision first, with the night drawn on the same chart. | **On a phone.** Lanes and handover fold into sections for whoever is on call. |
+| ![The landing page replays a night at Halden Logistics on the 24-hour watch dial; three alerts become one incident and the NIS2 clock drops in beside the chronometer](docs/screenshots/landing-replay.jpg) | ![The watch: the night on a 24-hour dial, every incident moving round the face and inward through the response stages, with the four handover readouts at its corners](docs/screenshots/the-watch.jpg) |
+| **Landing replay.** One night at the sample company, drawn on the product's own dial, from the first odd sign-in to the regulator clock. | **The watch.** The night round a watchman's dial, the response stages as rings, deadlines ahead of the hand, and the turnover in four readouts around it. |
+| ![An incident as one strip, its orders waiting on a person, and the investigation replayable across the triage, enrichment and response teammates](docs/screenshots/incident-baton.jpg) | ![Hold to authorise: withdrawing a leaked cloud access key waits for a person to press and hold, beside the regulator questions for the same incident](docs/screenshots/hold-to-authorise.jpg) |
+| **Strip, orders, log.** The AI teammates' investigation, replayable step by step; decisions sit directly under the incident strip. | **Hold to authorise.** Nothing is switched off until a person holds; crown jewels need two. |
+| ![A NIS2 early-warning draft as a signal form with a pre-send checklist and one required field still to confirm](docs/screenshots/nis2-notice-draft.jpg) | ![Unusual behaviour: 14 days of hourly activity per person with the outlier marked](docs/screenshots/unusual-behaviour.jpg) |
+| **Notice draft.** Filled from the evidence; the pre-send checklist flags the missing fact before submission. | **Unusual behaviour.** Each person and device against their own normal. |
+| ![The CISO's morning brief laid out as a morning report under a first-light horizon](docs/screenshots/ciso-morning-brief.jpg) | ![The watch on a phone: the dial at screen width, the stages and the handover as sections, and a panel button for stations and clocks](docs/screenshots/phone-watch.jpg) |
+| **Morning brief.** A two-minute read for the CISO: the headline, the one decision, and the night on the same dial. | **On a phone.** The dial, the stages and the handover fold into sections for whoever is on call. |
 
 ## Compliance alignment
 
