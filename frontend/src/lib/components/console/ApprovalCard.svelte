@@ -1,5 +1,6 @@
 <script lang="ts">
-	// An approval card (DESIGN.md §6.5): does / why / undo, Hold to authorise, Decline with a reason, Ask Response why.
+	// An approval card (DESIGN.md §6.5): the action and Hold to authorise up front; does / why / undo one click
+	// deeper under Details; Decline (with a reason) and Ask why underneath.
 	import { api, problemMessage } from '$lib/api';
 	import type { ProposalDoc, IdentityDoc } from '$lib/api/types';
 	import { session } from '$lib/stores/session.svelte';
@@ -100,18 +101,21 @@
 		{#if total > 1}<span class="mono faint n">{index} of {total}</span>{/if}
 	</div>
 	<h2 id="ap-{p.id}">{title}</h2>
-	<div class="by">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
-	<dl class="facts">
-		<div><dt>does</dt><dd>{p.expectedEffect}</dd></div>
-		<div><dt>why</dt><dd>{p.rationale} {#if onwhy}<button class="lnk" type="button" onclick={onwhy}>why ↗</button>{/if}</dd></div>
-		<div><dt>undo</dt><dd>{p.undo ?? (p.reversible ? 'Reversible at any time. Logged either way.' : 'Cannot be undone. Logged either way.')}</dd></div>
-		{#if person && p.status === 'pending'}
-			<div><dt>who</dt><dd>{person.displayName} will see:
-				<label class="sr" for="msg-{p.id}">Message {person.displayName} will see</label>
-				<textarea id="msg-{p.id}" class="textarea msg" rows="2" bind:value={message}></textarea></dd></div>
-		{/if}
-		{#if p.crownJewel}<div><dt>rule</dt><dd>Crown jewel: needs a responder and the CISO, two different people.</dd></div>{/if}
-	</dl>
+	{#if p.crownJewel}<p class="cj" title="Crown jewel: needs a responder and the CISO, two different people.">◆ Crown jewel · two people</p>{/if}
+	{#if person && p.status === 'pending'}
+		<label class="who" for="msg-{p.id}"><span class="eng">{person.displayName.split(' ')[0]} will see</span>
+			<textarea id="msg-{p.id}" class="textarea msg" rows="2" bind:value={message}></textarea></label>
+	{/if}
+	<!-- the second layer: what it does, why, and whether it can be undone -->
+	<details class="more">
+		<summary>Details</summary>
+		<div class="by">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
+		<dl class="facts">
+			<div><dt>does</dt><dd>{p.expectedEffect}</dd></div>
+			<div><dt>why</dt><dd>{p.rationale} {#if onwhy}<button class="lnk" type="button" onclick={onwhy}>why ↗</button>{/if}</dd></div>
+			<div><dt>undo</dt><dd>{p.undo ?? (p.reversible ? 'Reversible at any time. Logged either way.' : 'Cannot be undone. Logged either way.')}</dd></div>
+		</dl>
+	</details>
 
 	{#if p.status === 'pending' || doneStamp}
 		<HoldButton
@@ -119,7 +123,7 @@
 			done={doneStamp}
 			disabled={!gate.canHold}
 			disabledReason={gate.reason}
-			hint={gate.canHold ? 'or hold Space for 1.2 s' : gate.reason}
+			hint={gate.canHold ? 'or hold Space' : gate.reason}
 			confirmName={p.target}
 			onconfirm={approve}
 		/>
@@ -127,8 +131,8 @@
 
 	{#if p.status === 'pending' && !declining}
 		<div class="alt">
-			<button class="lnk" type="button" onclick={() => (declining = true)} disabled={!gate.canDecide}>Decline with a reason</button>
-			{#if onwhy}<button class="lnk" type="button" onclick={onwhy}>Ask Response why</button>{/if}
+			<button class="lnk" type="button" onclick={() => (declining = true)} disabled={!gate.canDecide}>Decline</button>
+			{#if onwhy}<button class="lnk" type="button" onclick={onwhy}>Ask why</button>{/if}
 		</div>
 	{:else if p.status === 'pending' && declining}
 		<form class="decline" onsubmit={decline}>
@@ -182,7 +186,7 @@
 		white-space: nowrap;
 	}
 	h2 {
-		margin: 0 0 6px;
+		margin: 0 0 12px;
 		font: 800 25px/1 var(--display);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
@@ -193,8 +197,51 @@
 		color: var(--dim);
 		overflow-wrap: anywhere;
 	}
+	.cj {
+		margin: 0 0 12px;
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+		color: var(--person);
+	}
+	.who {
+		display: grid;
+		gap: 6px;
+		margin: 0 0 14px;
+	}
+	.who .eng {
+		font-size: 12px;
+		color: var(--faint);
+	}
+	.more {
+		margin: 0 0 14px;
+	}
+	.more summary {
+		cursor: pointer;
+		width: max-content;
+		font: 600 13px/1 var(--ui);
+		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+		list-style: none;
+	}
+	.more summary::-webkit-details-marker {
+		display: none;
+	}
+	.more summary::after {
+		content: ' ▸';
+	}
+	.more[open] summary::after {
+		content: ' ▾';
+	}
+	.more summary:hover {
+		color: var(--ink);
+	}
+	.more .by {
+		margin-top: 12px;
+	}
 	.facts {
-		margin: 14px 0 16px;
+		margin: 10px 0 4px;
 		display: grid;
 		gap: 9px;
 	}

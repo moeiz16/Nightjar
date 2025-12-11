@@ -6,7 +6,6 @@
 	import { scale } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { Accordion } from '@skeletonlabs/skeleton-svelte';
 	import type { Deadline, IncidentSummary, ShiftLogEntry } from '$lib/api/types';
 	import { timeOf } from '$lib/time/clock';
 	import { regimeShort } from '$lib/util/labels';
@@ -124,7 +123,6 @@
 				.map((l, i) => `${byLane[i + 1]!.length} open in ${l}`)
 				.join(', ')
 	);
-	let phoneOpen = $state<string[]>(['contain']);
 </script>
 
 <div class="wd" class:compact>
@@ -259,28 +257,6 @@
 			{/each}
 		</ul>
 
-		<!-- phones: the same rings as a list, Contain open first -->
-		<div class="phone">
-			<Accordion value={phoneOpen} onValueChange={(e) => (phoneOpen = e.value)} multiple collapsible spaceY="space-y-0" rounded="rounded-none">
-				{#each LANES.slice(1) as l, i (l)}
-					{@const list = paths.filter((p) => p.lane === i + 1)}
-					<Accordion.Item value={l} controlPadding="py-3 px-4" controlRounded="rounded-none" controlHover="hover:bg-[var(--raised)]" panelPadding="px-4 pb-3" classes="acc">
-						{#snippet control()}<span class="eng">{LANE_LABEL[l]}</span> <span class="faint">· {list.filter((p) => p.open).length} open{list.some((p) => !p.open) ? `, ${list.filter((p) => !p.open).length} finished` : ''}</span>{/snippet}
-						{#snippet panel()}
-							{#each list as p (p.id)}
-								<a class="prow" href={hrefFor(p.reference)}>
-									<span class="mono {tone(p)}">{glyph(p)} {p.reference}</span>
-									<span>{p.title}</span>
-									<span class="mono faint">since {timeOf(p.steps.at(-1)!.at, tz)}{p.open ? '' : ' · finished'}</span>
-								</a>
-							{:else}
-								<p class="faint none">Nothing in {l} on this shift.</p>
-							{/each}
-						{/snippet}
-					</Accordion.Item>
-				{/each}
-			</Accordion>
-		</div>
 	{/if}
 </div>
 
@@ -593,41 +569,10 @@
 		color: var(--faint);
 		font-size: 13.5px;
 	}
-	.phone {
-		display: none;
-		width: 100%;
-	}
-	.phone :global(.acc) {
-		border-top: 1px solid var(--rule);
-		background: var(--plate);
-	}
-	.prow {
-		display: grid;
-		gap: 3px;
-		padding: 9px 0;
-		border-top: 1px solid var(--rule);
-		text-decoration: none;
-		font-size: 14px;
-	}
-	.prow .mono {
-		font-size: 12px;
-	}
-	.prow .hi {
-		color: var(--acc-hi);
-	}
-	.prow .person {
-		color: var(--person);
-	}
 	.compact .dial {
 		padding: 8px 0;
 	}
 	@media (max-width: 760px) {
-		.phone {
-			display: block;
-		}
-		.open {
-			display: none;
-		}
 		.dial {
 			padding: 14px 0;
 		}

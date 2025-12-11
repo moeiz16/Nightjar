@@ -5,7 +5,7 @@
 	import type { Notice, ProposalDoc, IdentityDoc } from '$lib/api/types';
 	import { live } from '$lib/stores/live.svelte';
 	import { session } from '$lib/stores/session.svelte';
-	import { dueLabel, REGIME_TZ, timeOf, clockState } from '$lib/time/clock';
+	import { dueLabel, REGIME_TZ, timeOf } from '$lib/time/clock';
 	import { actionTitle } from '$lib/util/approvals';
 	import { clockLongLabel, noticeHref } from '$lib/util/labels';
 	import type { IncidentBundle } from '$lib/util/incident';
@@ -54,22 +54,15 @@
 {:else}
 	<div class="quiet">
 		<p>Nothing is waiting for {firstName || 'you'}.</p>
-		<p class="faint">New approvals land here, light the Watch lamp and show as ‖ on the dial.</p>
 	</div>
 {/each}
 
 {#if notice && urgent}
 	<section class="notice" aria-label="Draft notice">
-		<div class="hd"><span class="eng">Notice · draft {notice.version}</span><span>due {dueLabel(urgent.dueAt!, live.now, REGIME_TZ[urgent.regime])}</span></div>
-		<h3>{clockLongLabel(urgent)}</h3>
-		<div class="to">To {notice.recipient.name} · {urgent.incidentReference}</div>
-		<ul>
-			{#each notice.sections.filter((s) => s.required) as s (s.key)}
-				<li class:todo={!s.filled}><span class="k mono" aria-hidden="true">{s.filled ? '✓' : '◐'}</span><span>{s.filled ? s.title : `${s.title}: confirm`}<span class="sr">{s.filled ? ' (filled)' : ' (missing)'}</span></span></li>
-			{/each}
-		</ul>
-		<div class="btns"><a class="btn preset-filled-surface-950-50" href={noticeHref(urgent)}>Open the draft</a><a class="btn preset-outlined-surface-300-700" href="{noticeHref(urgent)}&compare=1">Compare with evidence</a></div>
-		{#if missing.length}<p class="miss">◐ {missing.length} required {missing.length === 1 ? 'field' : 'fields'} still missing · {clockState(urgent, live.now) === 'on_track' ? 'on track' : 'due soon'}</p>{/if}
+		<div class="hd"><span class="eng">Notice draft</span><span>due {dueLabel(urgent.dueAt!, live.now, REGIME_TZ[urgent.regime])}</span></div>
+		<h3 title="To {notice.recipient.name} · {urgent.incidentReference}">{clockLongLabel(urgent)}</h3>
+		{#if missing.length}<p class="miss">◐ {missing.length} {missing.length === 1 ? 'field' : 'fields'} to confirm</p>{/if}
+		<div class="btns"><a class="btn preset-filled-surface-950-50" href={noticeHref(urgent)}>Open the draft</a></div>
 	</section>
 {/if}
 
@@ -95,9 +88,6 @@
 	.quiet p {
 		margin: 0 0 6px;
 	}
-	.quiet .faint {
-		font-size: 13px;
-	}
 	.notice {
 		padding: 16px 18px;
 		border-bottom: 1px solid var(--rule);
@@ -121,40 +111,13 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
-	.to {
-		font-size: 13.5px;
-		color: var(--dim);
-	}
-	ul {
-		list-style: none;
-		margin: 12px 0 14px;
-		padding: 0;
-		display: grid;
-		gap: 7px;
-	}
-	li {
-		display: grid;
-		grid-template-columns: 20px 1fr;
-		font-size: 13.5px;
-		color: var(--ink-2);
-	}
-	li .k {
-		color: var(--ok);
-	}
-	li.todo .k {
-		color: var(--soon);
-	}
-	li.todo {
-		color: var(--ink);
-		font-weight: 600;
-	}
 	.btns {
 		display: flex;
 		gap: 8px;
 		flex-wrap: wrap;
 	}
 	.miss {
-		margin: 12px 0 0;
+		margin: 8px 0 12px;
 		font-size: 13px;
 		font-weight: 600;
 		color: var(--soon);

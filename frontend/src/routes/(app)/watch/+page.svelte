@@ -2,7 +2,6 @@
 	// The watch (DESIGN.md §4): a scope with four readouts. The watch dial in the centre (every incident's path
 	// through the response, on a 24-hour face), the turnover's four numbered readouts at its corners.
 	import { page } from '$app/state';
-	import { onDestroy } from 'svelte';
 	import WatchDial from '$lib/components/console/WatchDial.svelte';
 	import Turnover from '$lib/components/console/Turnover.svelte';
 	import { api } from '$lib/api';
@@ -12,7 +11,7 @@
 	import { shift } from '$lib/stores/shift.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { timeOf } from '$lib/time/clock';
-	import { plural } from '$lib/util/labels';
+	import { Popover } from '@skeletonlabs/skeleton-svelte';
 
 	let pending = $state<ProposalDoc[]>([]);
 	$effect(() => {
@@ -32,24 +31,12 @@
 	$effect(() => {
 		ui.scope = focus ? { id: focus.id, reference: focus.reference } : null;
 	});
-	onDestroy(() => (ui.statusNote = ''));
-	$effect(() => {
-		const log = live.shiftLog;
-		if (!log.length) {
-			ui.statusNote = '';
-			return;
-		}
-		const since = log.at(-1)!.at;
-		const incs = log.filter((e) => e.kind === 'incident').length;
-		const contained = live.incidents.filter((i) => i.status === 'monitoring').length;
-		ui.statusNote = `Since ${timeOf(since)}: ${plural(incs, 'incident')}, ${contained} contained, ${pending.length} waiting for you`;
-	});
 	const holdId = $derived(page.url.searchParams.get('hold') ? 'focus-hold' : undefined);
-	const open = $derived(live.incidents.length);
-	const waiting = $derived(live.incidents.filter((i) => i.pendingApprovals > 0).length);
+	// the dial's centre already says how many are open and waiting: the line under the name only dates the shift
 	$effect(() => {
-		ui.setStation(page.url.pathname, 'The watch', `${plural(open, 'open incident')}${waiting ? ` · ${waiting} waiting for a person` : ''} · the shift since ${timeOf(shift.win.start, shift.tz)}`);
+		ui.setStation(page.url.pathname, 'The watch', `Shift since ${timeOf(shift.win.start, shift.tz)}`);
 	});
+	let keyOpen = $state(false);
 </script>
 
 <svelte:head><title>The watch · Nightjar SOC</title></svelte:head>
@@ -58,7 +45,14 @@
 	<Turnover {pending} focusIncidentId={focus?.id ?? null} {holdId}>
 		{#snippet centre()}
 			<WatchDial win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} clocks={live.clocks} max={560} />
-			<p class="legend" aria-hidden="true"><span><i class="hi">━</i> high</span><span><i class="mid">━</i> medium</span><span><i class="pe">━</i> waiting for a person</span><span><i class="ho">┅</i> handover</span><span><i class="hi">▼</i> deadline</span><a class="lnk" href="/brief">The morning brief</a></p>
+			<div class="keyrow">
+				<Popover open={keyOpen} onOpenChange={(e) => (keyOpen = e.open)} positioning={{ placement: 'top' }} triggerBase="keyb" contentBase="nj-pop keypop" triggerAriaLabel="How to read the dial">
+					{#snippet trigger()}Key{/snippet}
+					{#snippet content()}
+						<p class="legend"><span><i class="hi">━</i> high</span><span><i class="mid">━</i> medium</span><span><i class="pe">━</i> waiting for a person</span><span><i class="ho">┅</i> handover</span><span><i class="hi">▼</i> regulator deadline</span><span><i>✉</i> notice sent</span></p>
+					{/snippet}
+				</Popover>
+			</div>
 		{/snippet}
 	</Turnover>
 </div>
@@ -67,14 +61,32 @@
 	.watch {
 		padding-top: 22px;
 	}
-	.legend {
-		margin: 10px 0 0;
+	.keyrow {
 		display: flex;
-		flex-wrap: wrap;
 		justify-content: center;
-		gap: 6px 16px;
-		font: 600 12.5px/1 var(--ui);
+		margin-top: 8px;
+	}
+	.keyrow :global(.keyb) {
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
 		color: var(--faint);
+		padding: 6px 10px;
+		border-radius: 2px;
+		box-shadow: inset 0 0 0 1px var(--rule-2);
+	}
+	.keyrow :global(.keyb:hover) {
+		color: var(--ink);
+	}
+	:global(.keypop) {
+		padding: 12px 14px;
+	}
+	.legend {
+		margin: 0;
+		display: grid;
+		gap: 8px;
+		font: 600 13px/1 var(--ui);
+		color: var(--ink-2);
 	}
 	.legend i {
 		font-style: normal;
@@ -91,10 +103,5 @@
 	}
 	.legend .ho {
 		color: var(--soon);
-	}
-	@media (max-width: 760px) {
-		.legend {
-			display: none;
-		}
 	}
 </style>
