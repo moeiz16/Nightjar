@@ -15,6 +15,7 @@
 		flush = false,
 		bare = false,
 		ticks = false,
+		quiet = false,
 		id,
 		class: cls = ''
 	}: {
@@ -35,6 +36,8 @@
 		bare?: boolean;
 		/** corner ticks, for plates that hold a decision */
 		ticks?: boolean;
+		/** the page's station name already says what this is: the heading is kept for screen readers only */
+		quiet?: boolean;
 		id?: string;
 		class?: string;
 	} = $props();
@@ -42,9 +45,9 @@
 </script>
 
 <section class="plate rack {cls}" class:fill aria-labelledby={label ? undefined : hid} aria-label={label} {id}>
-	<header class="ph">
-		{#if n !== undefined}<span class="n">{n}</span>{:else}<span class="bar" aria-hidden="true"></span>{/if}
-		<h2 id={hid} class="t">{title}</h2>
+	<header class="ph" class:quiet>
+		{#if quiet}{:else if n !== undefined}<span class="n">{n}</span>{:else}<span class="bar" aria-hidden="true"></span>{/if}
+		<h2 id={hid} class="t" class:sr={quiet}>{title}</h2>
 		{#if sub}<span class="sub">{sub}</span>{/if}
 		<span class="sp"></span>
 		{#if actions}<span class="act">{@render actions()}</span>{/if}
@@ -96,6 +99,10 @@
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--ink);
+	}
+	.quiet .sub {
+		font: 500 13px/1 var(--code);
+		color: var(--faint);
 	}
 	.sub {
 		font: 600 14px/1.3 var(--ui);

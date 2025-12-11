@@ -20,7 +20,7 @@
 	import { shift } from '$lib/stores/shift.svelte';
 	import { ui, stationFor, stationLine } from '$lib/stores/ui.svelte';
 	import { clockState, hms, secondsLeft, shortDay, REGIME_TZ, STATE_GLYPH, STATE_WORD, timeOf } from '$lib/time/clock';
-	import { clockLabel, noticeHref } from '$lib/util/labels';
+	import { clockLabel, noticeHref, regimeShort } from '$lib/util/labels';
 	import { watchOf } from '$lib/util/shift';
 
 	let {
@@ -46,7 +46,9 @@
 	const path = $derived(page.url.pathname);
 	const mine = $derived(ui.station && ui.station.path === path ? ui.station : null);
 	const name = $derived(title ?? mine?.title ?? stationFor(path));
-	const line = $derived(sub ?? mine?.sub ?? (stationLine(path) || ui.statusNote));
+	// one short line at most (counts), never a description: what a page is for lives in the name's tooltip
+	const line = $derived(sub ?? mine?.sub ?? '');
+	const about = $derived(stationLine(path) || undefined);
 	const tz = $derived(shift.tz);
 	const t = $derived(timeOf(live.now, tz, true));
 	const watch = $derived(watchOf(live.now, tz));
@@ -62,7 +64,7 @@
 	<div class="plate">
 		<a class="brand" href={home} aria-label="Nightjar SOC, home"><Logo /><span>Nightjar <i>SOC</i></span></a>
 		{#if session.org}<span class="org">{session.org.name}</span>{/if}
-		<h1 class="station">{name}</h1>
+		<h1 class="station" title={about}>{name}</h1>
 		{#if line}<p class="line">{line}</p>{/if}
 		{#if extra}<div class="extra">{@render extra()}</div>{/if}
 	</div>
@@ -83,9 +85,9 @@
 				{#if urgent}
 					{@const st = clockState(urgent, live.now)}
 					{#key urgent.id}
-						<a class="next {st}" href={noticeHref(urgent)} in:fly={{ y: still ? 0 : -18, duration: still ? 0 : 620, easing: backOut }} title={urgent.basis}>
+						<a class="next {st}" href={noticeHref(urgent)} in:fly={{ y: still ? 0 : -18, duration: still ? 0 : 620, easing: backOut }} title="{clockLabel(urgent)} · {urgent.incidentReference}">
 							<span class="g" aria-hidden="true">{STATE_GLYPH[st]}</span>
-							<span class="l">{clockLabel(urgent)} · {urgent.incidentReference}</span>
+							<span class="l">{regimeShort(urgent.regime)}</span><span class="sr"> {clockLabel(urgent)} · {urgent.incidentReference}</span>
 							<span class="v">{st === 'not_started' ? (urgent.decideBy ? `decide by ${shortDay(urgent.decideBy, REGIME_TZ[urgent.regime])}` : 'not started') : st === 'submitted' ? 'sent' : hms(secondsLeft(urgent.dueAt, live.now))}</span>
 							<span class="sr">{STATE_WORD[st]}</span>
 						</a>

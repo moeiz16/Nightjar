@@ -8,11 +8,11 @@ export type Theme = 'dark' | 'light';
 export type SectionKind = 'awaiting' | 'clocks' | 'intake' | 'log' | 'hunt' | 'activity' | 'evidence';
 export const SECTION_LABEL: Record<SectionKind, string> = {
 	awaiting: 'waiting on you',
-	clocks: 'clocks to watch',
-	intake: 'intake, live',
-	log: 'since you last looked',
-	hunt: 'worth a hunt',
-	activity: 'the activity chain',
+	clocks: 'clocks',
+	intake: 'intake',
+	log: 'since you looked',
+	hunt: 'hunt',
+	activity: 'activity chain',
 	evidence: 'evidence'
 };
 /** What each role needs from the handover first (DESIGN.md §0.3). Responders and admins decide; analysts hunt;
