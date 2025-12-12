@@ -22,6 +22,10 @@
 	}: { rows: BatonRow[]; all?: boolean; incident: IncidentSummary; selectedKey?: string | null; compact?: boolean } = $props();
 
 	let playhead = $state(-1); // -1 = settled (everything lit)
+	// the log opens on its first steps; the rest is one click (or the replay) away
+	const CAP = 10;
+	let full = $state(false);
+	const capped = $derived(!compact && !full && playhead < 0 && rows.length > CAP + 2);
 	let playing = $state(false);
 	let speed = $state<1 | 4>(1);
 	let grid = $state<HTMLDivElement | null>(null);
@@ -139,16 +143,16 @@
 		<div class="ln"><span class="who">E</span><span class="nm">enrichment</span></div>
 		<div class="ln"><span class="who">R</span><span class="nm">response</span></div>
 		<div class="ln people"><span class="who">P</span><span class="nm">people</span></div>
-		<div class="hd">what happened, and why</div>
 	</div>
 
-	<div class="rows" bind:this={grid} role="list" aria-label="What happened, step by step. Left and right arrows step through the replay.">
+	<div class="rows" class:capped bind:this={grid} role="list" aria-label="What happened, step by step. Left and right arrows step through the replay.">
 		{#each rows as r, i (r.key)}
 			<div class="brow {r.state}" class:minor={r.minor} class:dim={dim(i)} class:head={playhead >= 0 && i === playhead} class:sel={selectedKey === r.key} role="listitem">
 				<span class="tm mono">{timeOf(r.at, undefined, true)}</span>
-				<button class="card" type="button" onclick={() => (selectedKey = selectedKey === r.key ? null : r.key)} aria-expanded={selectedKey === r.key}>
+				<!-- one line per step; who and why open in the step sheet -->
+				<button class="card" type="button" onclick={() => (selectedKey = selectedKey === r.key ? null : r.key)} aria-expanded={selectedKey === r.key} title="{r.who} · {r.step?.kind === 'verdict' && r.why ? r.why : rowSub(r)}">
 					<b>{#if r.state === 'ok'}<span class="ck" aria-hidden="true">✓</span>{/if}{r.title}</b>
-					<small><span class="whos">{r.who}</span> · {#if r.step?.kind === 'verdict' && r.why}<em>why</em> {r.why}{:else}{rowSub(r)}{/if}</small>
+					<small class="sr">{r.who} · {r.step?.kind === 'verdict' && r.why ? r.why : rowSub(r)}</small>
 				</button>
 			</div>
 		{/each}
@@ -173,6 +177,7 @@
 			<i class="bead" style="offset-path: path('{beadPath}'); offset-distance: {bead.current * 100}%; opacity: {Math.min(1, bead.current * 6, (1 - bead.current) * 6)}"></i>
 		{/if}
 	</div>
+	{#if capped}<button class="all lnk" type="button" onclick={() => (full = true)}>Show all {rows.length} steps</button>{/if}
 </div>
 
 <Sheet kind="sheet" label={selected ? `Step: ${selected.title}` : 'Step'} open={!!selected} onclose={() => (selectedKey = null)}>
@@ -272,18 +277,20 @@
 		box-shadow: inset 0 0 0 1px var(--person);
 		color: var(--person);
 	}
-	.hd {
-		padding-left: 18px;
-		font: 700 13px/1 var(--display);
-		text-transform: uppercase;
-		letter-spacing: 0.16em;
-		color: var(--dim);
-	}
 	.rows {
 		position: relative;
 	}
+	.rows.capped {
+		max-height: 404px;
+		overflow: hidden;
+		mask-image: linear-gradient(180deg, #000 80%, transparent);
+	}
+	.all {
+		display: block;
+		margin: 10px auto 14px;
+	}
 	.brow {
-		min-height: 50px;
+		min-height: 40px;
 		position: relative;
 		transition: opacity 240ms ease-out;
 	}
@@ -321,21 +328,6 @@
 		font-weight: 700;
 		color: var(--ink);
 	}
-	.card small {
-		display: block;
-		margin-top: 3px;
-		font: 500 12.5px/16px var(--ui);
-		color: var(--dim);
-		overflow-wrap: anywhere;
-	}
-	.card small .whos {
-		color: var(--ink-2);
-	}
-	.card small em {
-		font-style: normal;
-		font-weight: 700;
-		color: var(--acc-hi);
-	}
 	.ck {
 		margin-right: 6px;
 		color: var(--ok);
@@ -371,7 +363,6 @@
 	.brow.sel .card b {
 		color: var(--acc-hi);
 	}
-	.brow.wait .card small,
 	.brow.wait .tm {
 		color: var(--person);
 	}
@@ -455,8 +446,7 @@
 		.tm {
 			display: none;
 		}
-		.nm,
-		.hd {
+		.nm {
 			display: none;
 		}
 		.who {

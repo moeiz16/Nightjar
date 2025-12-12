@@ -3,46 +3,51 @@
 	// the first box, the title with who and what, reportability and the count of alerts, then the stage rail and the
 	// ATT&CK chain along the strip's lower edge.
 	import type { Incident, Deadline } from '$lib/api/types';
-	import { SEV_BARS, SEV_WORD, STAGES, STAGE_WORD, STATUS_WORD, regimeShort, plural } from '$lib/util/labels';
+	import { SEV_BARS, SEV_WORD, STAGES, STAGE_WORD, regimeShort, plural } from '$lib/util/labels';
 	import { timeOf } from '$lib/time/clock';
 
 	let { incident, times, clocks = [], pending = 0, compact = false }: { incident: Incident; times: Record<string, string | null>; clocks?: Deadline[]; pending?: number; compact?: boolean } = $props();
 
+	// two words up front ("Reportable" / "NIS2 · SOCI"); where each applies is one hover deeper
 	const reportable = $derived.by(() => {
 		const yes = incident.regimes.filter((r) => r.determination?.applies);
-		if (yes.length) return `Reportable: ${yes.map((r) => `${regimeShort(r.regime)} (${r.jurisdiction})`).join(', ')}`;
+		if (yes.length) return { k: 'Reportable', v: yes.map((r) => regimeShort(r.regime)).join(' · '), why: yes.map((r) => `${regimeShort(r.regime)} (${r.jurisdiction})`).join(', ') };
 		const open = incident.regimes.filter((r) => r.proposal.applies === 'assess' && !r.determination);
-		if (open.length) return `To assess: ${open.map((r) => regimeShort(r.regime)).join(', ')}`;
-		return 'Not reportable';
+		if (open.length) return { k: 'To assess', v: open.map((r) => regimeShort(r.regime)).join(' · '), why: open.map((r) => `${regimeShort(r.regime)} (${r.entityName})`).join(', ') };
+		return { k: 'Reporting', v: 'Not reportable', why: '' };
 	});
+	// who and what: the first two, then a count; the rest in the tooltip
+	const who = $derived([
+		...incident.identitiesDetail.filter((i) => i.kind !== 'service').map((p) => ({ k: '', v: p.displayName, mono: false, more: `${p.department.toLowerCase()}, ${p.jurisdiction === 'EU' ? 'Antwerp' : p.jurisdiction === 'US' ? 'Memphis' : 'Melbourne'}` })),
+		...incident.identitiesDetail.filter((i) => i.kind === 'service').map((s) => ({ k: 'Account', v: s.username, mono: true, more: '' })),
+		...incident.assetsDetail.map((a) => ({ k: a.kind === 'workstation' ? 'Laptop' : a.kind === 'cloud_account' ? 'Cloud' : a.kind === 'server' ? 'Server' : 'Asset', v: a.name, mono: true, more: '' }))
+	]);
+	const SHOWN = 2;
 	const cur = $derived(STAGES.indexOf(incident.stage));
 	const resolved = $derived(incident.status === 'resolved' || incident.status === 'closed');
-	const people = $derived(incident.identitiesDetail.filter((i) => i.kind !== 'service'));
 	const running = $derived(clocks.filter((c) => c.incidentId === incident.id && c.state !== 'submitted').length);
 </script>
 
 <div class="strip sv-{incident.severity}" class:compact>
 	<div class="holder" aria-hidden="true"></div>
 	<div class="box id">
-		<span class="ref mono">{incident.reference}</span>
 		<span class="sev {incident.severity}"><span class="bars" aria-hidden="true">{SEV_BARS[incident.severity]}</span>{SEV_WORD[incident.severity]}</span>
 	</div>
 	<div class="box what">
 		<h2 class="title">{incident.title}</h2>
 		<div class="meta">
-			{#each people as p (p.id)}<span><b>{p.displayName}</b> · {p.department.toLowerCase()}, {p.jurisdiction === 'EU' ? 'Antwerp' : p.jurisdiction === 'US' ? 'Memphis' : 'Melbourne'}</span>{/each}
-			{#each incident.identitiesDetail.filter((i) => i.kind === 'service') as s (s.id)}<span>Account <b class="mono">{s.username}</b></span>{/each}
-			{#each incident.assetsDetail.slice(0, compact ? 2 : 4) as a (a.id)}<span>{a.kind === 'workstation' ? 'Laptop' : a.kind === 'cloud_account' ? 'Cloud' : a.kind === 'server' ? 'Server' : 'Asset'} <b class="mono">{a.name}</b></span>{/each}
+			{#each who.slice(0, SHOWN) as w (w.v)}<span title={w.more || undefined}>{#if w.k}{w.k + ' '}{/if}<b class:mono={w.mono}>{w.v}</b></span>{/each}
+			{#if who.length > SHOWN}<span class="plus" title={who.slice(SHOWN).map((w) => `${w.k} ${w.v}`.trim()).join(', ')}>+{who.length - SHOWN} more</span>{/if}
 			{#if incident.assignee}<span>with <b>{incident.assignee.fullName}</b></span>{/if}
 		</div>
 	</div>
-	<div class="box rep">
-		<span class="k">Reporting</span>
-		<span class="v">{reportable}</span>
+	<div class="box rep" title={reportable.why || undefined}>
+		<span class="k">{reportable.k}</span>
+		<span class="v">{reportable.v}</span>
 	</div>
-	<div class="box cnt">
-		<span class="k">{STATUS_WORD[incident.status]}</span>
-		<span class="v mono">{plural(incident.detectionCount, 'alert')} grouped</span>
+	<div class="box cnt" title="{plural(incident.detectionCount, 'alert')} grouped into this incident">
+		<span class="k">Alerts</span>
+		<span class="v mono">{incident.detectionCount}</span>
 	</div>
 	<ol class="stages" aria-label="Stage">
 		{#each STAGES as s, i (s)}
@@ -61,7 +66,7 @@
 		<div class="attck" aria-label="ATT&CK chain">
 			<span class="k">ATT&amp;CK</span>
 			{#each incident.attack.slice(0, compact ? 3 : 6) as t, i (t.techniqueId)}
-				{#if i > 0}<span class="arr" aria-hidden="true">→</span>{/if}<span class="tq" title={t.tactics.join(', ')}><b class="mono">{t.techniqueId}</b> {t.name}</span>
+				{#if i > 0}<span class="arr" aria-hidden="true">→</span>{/if}<span class="tq" title="{t.name} · {t.tactics.join(', ')}"><b class="mono">{t.techniqueId}</b><span class="sr"> {t.name}</span></span>
 			{/each}
 		</div>
 	{/if}
@@ -100,11 +105,17 @@
 	.box.id {
 		border-left: 0;
 	}
-	.ref {
-		font-size: 22px;
-		font-weight: 500;
+	.plus {
+		color: var(--faint);
+		border-bottom: 1px dotted var(--rule-2);
+		cursor: help;
+	}
+	.cnt .v.mono {
+		font: 400 26px/1 var(--code);
 		color: var(--ink);
-		letter-spacing: -0.01em;
+	}
+	.tq {
+		cursor: help;
 	}
 	.title {
 		margin: 0;

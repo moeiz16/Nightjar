@@ -5,7 +5,6 @@
 	// lists any required field still missing; only then can a person hold to submit.
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
-	import Plate from '$lib/components/ui/Plate.svelte';
 	import { Progress } from '@skeletonlabs/skeleton-svelte';
 	import HoldButton from '$lib/components/console/HoldButton.svelte';
 	import Untrusted from '$lib/components/console/Untrusted.svelte';
@@ -31,6 +30,7 @@
 	let reviewing = $state(false);
 	let saving = $state(false);
 	let lit = $state('');
+	let evOpen = $state(false);
 	let savedAt = $state<string | null>(null);
 
 	async function load() {
@@ -126,12 +126,13 @@
 	}
 	function cite(ref: string) {
 		lit = ref;
+		evOpen = true;
 		document.getElementById('ev-' + ref)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 		setTimeout(() => (lit = ''), 2400);
 	}
 	const finalDue = $derived(notice && notice.type === 'nis2.incident_notification' ? nis2.finalReportDue(new Date(notice.dueAt ?? live.now)) : null);
 	$effect(() => {
-		ui.setStation(page.url.pathname, 'Notice draft', notice ? `${notice.typeLabel} · ${page.params.id}` : `${regimeShort(regime)} · ${page.params.id}`);
+		ui.setStation(page.url.pathname, 'Notice draft'); // the form's own header names the notice and the incident
 	});
 </script>
 
@@ -142,15 +143,19 @@
 		<aside class="check" aria-label="Pre-send checklist">
 			<p class="eng ch">Pre-send checklist</p>
 			<div class="rd">
-				<span class="mono">{filledCount} of {required.length}</span><span>required fields filled</span>
+				<span class="mono">{filledCount} of {required.length}</span><span>filled</span>
 				<Progress value={filledCount} max={Math.max(1, required.length)} height="h-2" meterBg={missing.length ? 'bg-[var(--soon)]' : 'bg-[var(--ok)]'} trackBg="bg-[var(--rule-2)]" rounded="rounded-[0px]" />
 			</div>
-			<ol class="items">
-				{#each required as s, i (s.key)}
-					{@const has = !unfilled(bodies[s.key])}
-					<li class:todo={!has}><button type="button" onclick={() => goField(s.key)}><span class="k mono" aria-hidden="true">{has ? '✓' : '◐'}</span><span class="nn mono">{i + 1}</span><span>{has ? s.title : `Confirm ${s.title.toLowerCase()}`}</span><span class="sr">{has ? ' (filled)' : ' (missing)'}</span></button></li>
-				{/each}
-			</ol>
+			<!-- only what is still to do: the filled fields are ticked in the form itself -->
+			{#if missing.length}
+				<ol class="items">
+					{#each required as s, i (s.key)}
+						{#if unfilled(bodies[s.key])}
+							<li class="todo"><button type="button" onclick={() => goField(s.key)}><span class="k mono" aria-hidden="true">◐</span><span class="nn mono">{i + 1}</span><span>Confirm {s.title.toLowerCase()}</span><span class="sr"> (missing)</span></button></li>
+						{/if}
+					{/each}
+				</ol>
+			{/if}
 			{#if !missing.length}<p class="okb">✓ Ready to review</p>{/if}
 		</aside>
 	{/if}
@@ -160,14 +165,14 @@
 			<div class="pad faint">{deadline?.state === 'not_started' ? 'No clock yet: this notice waits for the materiality decision.' : 'Opening the draft…'}</div>
 		{:else if notice}
 			<div class="hdr">
-				<div class="f to"><span class="eng">To</span><b>{notice.recipient.name}</b><small>from Settings › Regulator contacts</small></div>
-				<div class="f"><span class="eng">From</span><b>{session.org?.name ?? 'Halden Logistics'}</b><small>{session.name}</small></div>
-				<div class="f prec"><span class="eng">Precedence</span><b>{notice.typeLabel}</b><small>{deadline ? clockLongLabel(deadline) : regimeShort(regime)}</small></div>
-				<div class="f due st-{st}"><span class="eng">Due</span>{#if deadline?.dueAt}<b class="mono">{hm(secondsLeft(deadline.dueAt, live.now))}</b><small>{dueBoth(deadline.dueAt, live.now, REGIME_TZ[deadline.regime])} · <span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small>{:else}<b>—</b>{/if}</div>
-				<div class="f"><span class="eng">Ref</span><b class="mono">{page.params.id}</b><small>{notice.status === 'submitted' ? 'submitted' : `draft ${notice.version}`}{savedAt ? ` · saved ${whenShort(savedAt)}` : ''}{notice.approvedBy ? ` · approved by ${notice.approvedBy.fullName}` : ''}</small></div>
+				<div class="f to" title="From Settings › Regulator contacts"><span class="eng">To</span><b>{notice.recipient.name}</b></div>
+				<div class="f" title={session.name}><span class="eng">From</span><b>{session.org?.name ?? 'Halden Logistics'}</b></div>
+				<div class="f prec" title={deadline ? clockLongLabel(deadline) : regimeShort(regime)}><span class="eng">Precedence</span><b>{notice.typeLabel}</b></div>
+				<div class="f due st-{st}"><span class="eng">Due</span>{#if deadline?.dueAt}<b class="mono">{hm(secondsLeft(deadline.dueAt, live.now))}</b><small title={dueBoth(deadline.dueAt, live.now, REGIME_TZ[deadline.regime])}><span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small>{:else}<b>—</b>{/if}</div>
+				<div class="f" title="{savedAt ? `Saved ${whenShort(savedAt)}` : ''}{notice.approvedBy ? ` · approved by ${notice.approvedBy.fullName}` : ''}"><span class="eng">Ref</span><b class="mono">{page.params.id}</b><small>{notice.status === 'submitted' ? 'submitted' : `draft ${notice.version}`}</small></div>
 			</div>
 			<form class="draft" onsubmit={(e) => (e.preventDefault(), save())}>
-				<h2 class="eng sec">Required for {notice.typeLabel.toLowerCase().replace(/^(nis2|soci|sec)\s/i, (m) => m.toUpperCase())}</h2>
+				<h2 class="sr">Required fields</h2>
 				{#each required as s, i (s.key)}
 					{@const has = !unfilled(bodies[s.key])}
 					<div class="req" class:todo={!has}>
@@ -190,16 +195,20 @@
 					</div>
 				{/each}
 				{#each optional as s (s.key)}
-					<h2 class="eng sec">{s.title} <span>editable, plain language</span></h2>
-					<textarea id="f-{s.key}" class="textarea narr" rows="6" bind:value={bodies[s.key]} readonly={!canEdit} aria-label={s.title}></textarea>
-					<span class="refs">{#each s.evidence ?? [] as r (r)}<button type="button" class="ref mono" onclick={() => cite(r)}>[{r}]</button>{/each}</span>
+					<details class="fold">
+						<summary class="eng sec">{s.title}</summary>
+						<textarea id="f-{s.key}" class="textarea narr" rows="6" bind:value={bodies[s.key]} readonly={!canEdit} aria-label={s.title}></textarea>
+						<span class="refs">{#each s.evidence ?? [] as r (r)}<button type="button" class="ref mono" onclick={() => cite(r)}>[{r}]</button>{/each}</span>
+					</details>
 				{/each}
 				{#if next.length || finalDue}
-					<h2 class="eng sec">What comes next</h2>
-					<ul class="next">
-						{#each next as d (d.id)}<li><span class="mono">○</span> {d.noticeLabel} · {d.dueAt ? `due ${dueLabel(d.dueAt, live.now, REGIME_TZ[d.regime])}` : 'not started'}</li>{/each}
-						{#if finalDue}<li><span class="mono">○</span> Final report · within one month of this notification</li>{/if}
-					</ul>
+					<details class="fold">
+						<summary class="eng sec">What comes next</summary>
+						<ul class="next">
+							{#each next as d (d.id)}<li><span class="mono">○</span> {d.noticeLabel} · {d.dueAt ? `due ${dueLabel(d.dueAt, live.now, REGIME_TZ[d.regime])}` : 'not started'}</li>{/each}
+							{#if finalDue}<li><span class="mono">○</span> Final report · within one month of this notification</li>{/if}
+						</ul>
+					</details>
 				{/if}
 				{#if canEdit}<div class="row"><button class="btn preset-outlined-surface-300-700" type="submit" disabled={!dirty || saving}>{saving ? 'Saving…' : dirty ? 'Save draft' : 'Saved'}</button></div>{/if}
 			</form>
@@ -209,16 +218,15 @@
 					<p class="done">✓ Recorded as submitted (demo) {whenShort(notice.submission.submittedAt)} by {notice.submission.submittedBy.fullName} · reference <span class="mono">{notice.submission.receipt}</span> · the clock stopped</p>
 				{:else if !reviewing}
 					<button class="btn preset-filled-primary-500" type="button" onclick={() => (reviewing = true)}>Review and submit</button>
-					<span class="state">{missing.length ? `◐ ${missing.length} required ${missing.length === 1 ? 'field' : 'fields'} missing` : '✓ every required field is filled'}</span>
 				{:else}
 					<div class="review ticks" role="region" aria-label="Review before submitting">
 						{#if missing.length}
 							<p class="miss"><span class="mono">◐</span> Before this can go to {notice.recipient.name}, confirm:</p>
 							<ul>{#each missing as m (m.key)}<li><button type="button" class="lnk" onclick={() => goField(m.key)}>{m.title} →</button></li>{/each}</ul>
 						{:else}
-							<p class="ok"><span class="mono">✓</span> Every required field is filled. Submitting records who, when and what was sent. Nothing is sent to a regulator from this demo.</p>
+							<p class="ok" title="Submitting records who, when and what was sent. Nothing is sent to a regulator from this demo."><span class="mono">✓</span> Ready to submit</p>
 							{#if canSubmit}
-								<div class="holdw"><HoldButton label="Hold to submit (demo)" hint="or hold Space for 1.2 s · recorded, not sent" glyph="↗" onconfirm={submit} /></div>
+								<div class="holdw"><HoldButton label="Hold to submit (demo)" hint="recorded, not sent" glyph="↗" onconfirm={submit} /></div>
 							{:else}
 								<p class="faint">Only the CISO can submit notices. Your draft is saved for Ingrid Vos.</p>
 							{/if}
@@ -230,7 +238,8 @@
 		{/if}
 	</section>
 </div>
-<Plate title="Evidence the draft cites" sub={String(evidence.length)} label="Evidence" bare>
+<details class="evw rack" bind:open={evOpen}>
+	<summary class="eng evs">Evidence <span class="mono">{evidence.length}</span></summary>
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<ol class="ev" id="evidence" tabindex="0" aria-label="Evidence cited by the draft">
 		{#each evidence as e, i (e.eventId + i)}
@@ -244,7 +253,7 @@
 		{/each}
 	</ol>
 	<p class="foot faint">{regimeShort(regime)} facts are designed to support the notice, not legal advice.</p>
-</Plate>
+</details>
 
 <style>
 	.signal {
@@ -387,11 +396,54 @@
 		gap: 10px;
 		align-items: baseline;
 	}
-	.sec span {
-		font: 600 12.5px/1 var(--ui);
-		letter-spacing: 0;
-		text-transform: none;
-		color: var(--dim);
+	.fold > summary {
+		cursor: pointer;
+		list-style: none;
+		width: max-content;
+	}
+	.fold > summary::-webkit-details-marker {
+		display: none;
+	}
+	.fold > summary::after {
+		content: '▸';
+		color: var(--faint);
+	}
+	.fold[open] > summary::after {
+		content: '▾';
+	}
+	.evw {
+		margin: 22px var(--gut) 0;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-top: 2px solid var(--rule-2);
+		padding: 0 20px;
+	}
+	.evs {
+		cursor: pointer;
+		list-style: none;
+		padding: 14px 0;
+		font-size: 15px;
+		color: var(--ink);
+		display: flex;
+		gap: 10px;
+		align-items: baseline;
+	}
+	.evs::-webkit-details-marker {
+		display: none;
+	}
+	.evs::after {
+		content: '▸';
+		color: var(--faint);
+	}
+	.evw[open] .evs::after {
+		content: '▾';
+	}
+	.evs .mono {
+		color: var(--faint);
+		font-size: 13px;
+	}
+	.evw[open] .foot {
+		margin-bottom: 16px;
 	}
 	.req {
 		display: grid;
@@ -462,11 +514,6 @@
 		padding: 16px 22px 20px;
 		border-top: 2px solid var(--rule-2);
 		background: var(--sunk);
-	}
-	.state {
-		font-weight: 600;
-		font-size: 14px;
-		color: var(--soon);
 	}
 	.review {
 		width: 100%;

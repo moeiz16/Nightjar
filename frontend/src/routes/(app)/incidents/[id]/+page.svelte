@@ -24,7 +24,7 @@
 	import { actionTitle } from '$lib/util/approvals';
 	import { buildBaton } from '$lib/util/baton';
 	import { loadIncident, stageTimes, type IncidentBundle } from '$lib/util/incident';
-	import { plural, regimeShort, STATUS_WORD } from '$lib/util/labels';
+	import { regimeShort } from '$lib/util/labels';
 
 	let bundle = $state<IncidentBundle | null>(null);
 	let error = $state('');
@@ -64,7 +64,7 @@
 	});
 	$effect(() => {
 		const i = bundle?.incident;
-		ui.setStation(page.url.pathname, i ? i.reference : 'Incident', i ? `Incident · opened ${timeOf(i.firstSeen)} · ${(STATUS_WORD[i.status] ?? i.status).toLowerCase()}` : undefined);
+		ui.setStation(page.url.pathname, i ? i.reference : 'Incident', i ? `Opened ${timeOf(i.firstSeen)}` : undefined);
 	});
 	$effect(() => {
 		if (holdParam && bundle) tick().then(() => document.getElementById('hold-' + holdParam)?.focus());
@@ -98,21 +98,21 @@
 	<Plate title="Incident" sub={param}><p class="empty faint" aria-live="polite">Opening the incident…</p></Plate>
 {:else}
 	<div class="stripw rack">
-		<div class="back"><a class="lnk" href="/watch">← Back to the watch</a></div>
+		<div class="back"><a class="lnk" href="/watch">← The watch</a></div>
 		<IncidentHeader incident={bundle.incident} times={stageTimes(bundle)} clocks={live.clocks} pending={pending.length} />
 	</div>
 
 	{#if pending.length || open.length}
-		<Plate title="Orders · waiting on you" sub={pending.length ? plural(pending.length, 'decision') : 'a regulator decision'} n="‖" flush class="orders">
+		<Plate title="Waiting on you" sub={String(pending.length + open.length)} n="‖" flush class="orders">
 			<div class="decide" style="--cols:{Math.min(3, pending.length + open.length)}">
 				{#each pending as p, i (p.id)}
 					<div class="col"><ApprovalCard {p} {people} index={i + 1} total={pending.length} holdId={'hold-' + p.id} startDeclining={declineParam === p.id} onwhy={() => why(p)} onchange={onChange} /></div>
 				{/each}
 				{#each open as r (r.regime)}
 					<div class="col assess">
-						<p class="lbl eng"><span aria-hidden="true">◆</span> {regimeShort(r.regime)} · {r.entityName} · to assess</p>
-						<h3>Is this {r.regime === 'sec_8k' ? 'material' : 'reportable'} to {r.entityName}?</h3>
-						<ul>{#each r.proposal.reasons as reason (reason)}<li>{reason}</li>{/each}</ul>
+						<p class="lbl eng"><span aria-hidden="true">◆</span> {regimeShort(r.regime)} · to assess</p>
+						<h3 title={r.entityName}>{r.regime === 'sec_8k' ? 'Material?' : 'Reportable?'}</h3>
+						<details class="why"><summary>Why</summary><ul>{#each r.proposal.reasons as reason (reason)}<li>{reason}</li>{/each}</ul></details>
 						<a class="btn preset-filled-surface-950-50" href="?decide={r.regime}" data-sveltekit-noscroll>Record the decision</a>
 					</div>
 				{/each}
@@ -130,9 +130,9 @@
 			listClasses="tabl"
 		>
 			{#snippet list()}
-				<Tabs.Control value="story" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">what happened, and why <span class="ct">{rows.length}</span></Tabs.Control>
-				<Tabs.Control value="clocks" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">clocks and notices <span class="ct">{deadlines.filter((d) => d.state !== 'not_required').length}</span></Tabs.Control>
-				<Tabs.Control value="decided" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">actions decided <span class="ct">{decided.length}</span></Tabs.Control>
+				<Tabs.Control value="story" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">what happened <span class="ct">{rows.length}</span></Tabs.Control>
+				<Tabs.Control value="clocks" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">clocks <span class="ct">{deadlines.filter((d) => d.state !== 'not_required').length}</span></Tabs.Control>
+				<Tabs.Control value="decided" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">decided <span class="ct">{decided.length}</span></Tabs.Control>
 				<Tabs.Control value="desk" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">service desk <span class="ct">{bundle!.incident.tickets.length}</span></Tabs.Control>
 				{#if session.can('detections:read')}<Tabs.Control value="evidence" base="tabc" padding="" translateX="" labelBase="tabt" stateActive="on" stateInactive="">evidence</Tabs.Control>{/if}
 			{/snippet}
@@ -224,8 +224,29 @@
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
-	.assess ul {
+	.why {
 		margin: 0 0 16px;
+	}
+	.why summary {
+		cursor: pointer;
+		width: max-content;
+		font: 600 13px/1 var(--ui);
+		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+		list-style: none;
+	}
+	.why summary::-webkit-details-marker {
+		display: none;
+	}
+	.why summary::after {
+		content: ' ▸';
+	}
+	.why[open] summary::after {
+		content: ' ▾';
+	}
+	.why ul {
+		margin: 10px 0 0;
 		padding-left: 18px;
 		color: var(--ink-2);
 		font-size: 14px;
