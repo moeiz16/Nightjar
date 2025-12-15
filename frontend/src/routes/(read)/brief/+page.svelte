@@ -13,7 +13,7 @@
 	import { session } from '$lib/stores/session.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
 	import { demoNight, dueLabel, elapsedFraction, hmParts, longDate, NY, REGIME_TZ, sec8k, secondsLeft, shortDay, timeOf, clockState, STATE_GLYPH, STATE_WORD } from '$lib/time/clock';
-	import { briefHeadline, decisionQuestion } from '$lib/util/brief';
+	import { briefHeadline, decisionQuestion, numberWord } from '$lib/util/brief';
 	import { actionTitle } from '$lib/util/approvals';
 	import { clockLongLabel } from '$lib/util/labels';
 
@@ -69,12 +69,16 @@
 	const weekActions = $derived(actions.filter((p) => p.status === 'executed' && +new Date(p.createdAt) >= +night - 7 * 864e5));
 	const prepared = $derived(morning ? timeOf(morning.asOf) : posture ? timeOf(posture.asOf) : '07:58');
 	const secDue = $derived(sec8k.item105Due(at));
-	function lede(): string {
-		const parts = overnight
-			.filter((i) => i.verdict === 'true_positive' && (i.severity === 'high' || i.severity === 'critical'))
-			.slice(0, 2)
-			.map((i) => `At ${timeOf(i.firstSeen)}: ${plainTitle(i.title)}.`);
-		return parts.join(' ');
+	// where the night's real incidents stand, counted from the same list the page shows below (never a blanket claim)
+	function nightState(): string {
+		const real = overnight.filter((i) => i.verdict !== 'benign');
+		const isContained = (i: IncidentSummary) => ['monitoring', 'resolved', 'closed'].includes(i.status);
+		const c = real.filter(isContained).length;
+		const w = real.filter((i) => !isContained(i) && i.pendingApprovals).length;
+		const r = real.filter((i) => !isContained(i) && !i.pendingApprovals).length;
+		const parts = [c && `${numberWord(c)} ${c === 1 ? 'is' : 'are'} contained`, w && `${numberWord(w, !c)} ${w === 1 ? 'waits' : 'wait'} on an approval`, r && `${numberWord(r, !c && !w)} ${r === 1 ? 'is' : 'are'} in review`].filter(Boolean) as string[];
+		const lead = `${head.lead} Of ${numberWord(real.length, false)} real ${real.length === 1 ? 'incident' : 'incidents'} overnight,`;
+		return parts.length ? `${lead} ${parts.join(', ').replace(/, ([^,]*)$/, ' and $1').replace(/^./, (x) => x.toLowerCase())}.` : head.lead;
 	}
 	// incident titles are the plain story ("Cloud access key … used from an unfamiliar network"); the stored
 	// summaries list detections and read like a log
@@ -98,9 +102,8 @@
 		<details class="lede">
 			<summary>The night in a paragraph</summary>
 			<p>
-				{#if head.em}{head.lead}{head.tail.replace(/, and $/, '.')}{/if}
-				{lede()}
-				{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise. <b>No one was woken.</b>{/if}
+				{nightState()}
+				{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise.{/if}
 				{#if clocks[0]} The nearest regulator deadline is the {clockLongLabel(clocks[0]).split(' · ')[0]}, due {dueLabel(clocks[0].dueAt!, at, REGIME_TZ[clocks[0].regime])}.{/if}
 			</p>
 		</details>

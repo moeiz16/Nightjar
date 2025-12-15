@@ -22,7 +22,7 @@
 	// what lights a window: approvals waiting (the watch) and decisions only the CISO can make (the brief)
 	const alarms = $derived<Record<number, { n: number; word: string }>>(items ? {} : {
 		1: { n: live.incidents.reduce((s, i) => s + (i.pendingApprovals || 0), 0), word: 'waiting for a person' },
-		8: { n: live.clocks.filter((c) => c.state === 'not_started').length, word: 'decision to make' }
+		8: { n: live.clocks.filter((c) => c.state === 'not_started').length, word: 'regulator question' }
 	});
 	const nav = $derived(items ? 'Nightjar SOC' : 'Stations');
 </script>
@@ -41,7 +41,7 @@
 			onclick={() => onpick?.()}
 		>
 			<span class="lbl">{w.label}</span>
-			{#if al?.n}<span class="cnt" aria-label="{al.n} {al.word}">▲ {al.n}</span>{/if}
+			{#if al?.n}<span class="cnt" aria-label="{al.n} {al.word}" title="{al.n} {al.word}{al.n === 1 ? '' : 's'}">▲ {al.n}</span>{/if}
 			<span class="n" aria-hidden="true">{w.n}</span>
 		</a>
 	{/each}

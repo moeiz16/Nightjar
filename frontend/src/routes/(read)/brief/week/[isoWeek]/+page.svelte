@@ -54,6 +54,7 @@
 	const dots = $derived(inWeek.map((i) => i));
 	const noiseClosed = $derived(inWeek.filter((i) => i.verdict === 'benign').length);
 	const reportableCount = $derived(inWeek.filter((i) => i.reportable === 'yes').length);
+	const stillOpen = $derived(notable.filter((i) => !contained(i) && !['monitoring', 'resolved', 'closed'].includes(i.status)).length);
 	// the PDF carries everything: open every folded section, then print
 	function printAll() {
 		document.querySelectorAll('main.doc details').forEach((d) => ((d as HTMLDetailsElement).open = true));
@@ -77,7 +78,8 @@
 		<p><a href="/brief/week">Open this week’s report</a></p>
 	{:else if brief && m}
 		<p class="dateline eng" title="Halden Logistics · prepared for the board">Week {week.split('-W')[1]} · {label}</p>
-		<h2 class="headline">{brief.headline}</h2>
+		<!-- the headline counts what the rows below say, so it can never claim more than they do -->
+		<h2 class="headline">{stillOpen ? `${notable.length} serious incidents; ${reportableCount} reportable, ${stillOpen} still open` : brief.headline}</h2>
 		<div class="tools"><button type="button" onclick={printAll}>Save as PDF ⇩</button>
 			{#each list.filter((l) => l.week !== week).slice(0, 3) as l (l.week)}<a href="/brief/week/{l.week}">week {l.week.split('-W')[1]}</a>{/each}
 		</div>
