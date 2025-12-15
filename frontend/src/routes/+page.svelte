@@ -361,7 +361,6 @@
 <footer class="fin">
 	<div class="horizon" aria-hidden="true"></div>
 	<p class="eng fk">08:00 · First light</p>
-	<h2>Take the watch.</h2>
 	<a class="btn btn-lg preset-filled-primary-500" href="/sign-in">Take the watch →</a>
 	<p class="fine" title="For mid-size companies with operations in the EU, US and Australia. Designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; it does not submit anything without a person.">Sample company and data</p>
 </footer>
@@ -728,13 +727,6 @@
 		font-size: 13px;
 		color: #8a1a12;
 	}
-	.fin h2 {
-		margin: 0;
-		font: 800 76px/0.9 var(--display);
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
-		max-width: 16ch;
-	}
 	.fin .btn {
 		background: #b3241a;
 		color: #fff;
@@ -800,10 +792,7 @@
 		.regs {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		.fin h2 {
-			font-size: 48px;
-		}
-		.ticker li {
+			.ticker li {
 			grid-template-columns: 62px 12px minmax(0, 1fr);
 			font-size: 11.5px;
 		}

@@ -39,7 +39,7 @@
 				<thead><tr><th>Rule</th><th>ATT&amp;CK</th><th>Last 7 days</th><th>Likely real</th><th>State</th></tr></thead>
 				<tbody>
 					{#each listed as r (r.id)}
-						<tr class="click {!r.enabled ? '' : noisy(r) ? 'h-soon' : 'h-acc'}" onclick={() => goto(`/rules/${r.id}`)}>
+						<tr class="click {noisy(r) ? 'h-soon' : ''}" onclick={() => goto(`/rules/${r.id}`)}>
 							<td><a class="rowbtn" href="/rules/{r.id}" title="{r.source === 'sigma' ? 'Sigma' : r.source === 'ueba' ? 'behaviour' : 'Nightjar'} · {r.level}">{r.title}</a></td>
 							<td class="m">{r.attack[0]?.techniqueId ?? '—'}</td>
 							<td class="m spk"><span>{r.hits7d.toLocaleString('en-GB')}</span>

@@ -102,7 +102,7 @@
 						<td class="who" class:tm={r.actorType === 'agent'}>{actor(r)}</td>
 						<td>{r.label}</td>
 						{#if !compact}<td class="m">{#if about(r)}<a href="/incidents/{about(r)}">{about(r)}</a>{:else}{TYPE_WORDS[r.resourceType ?? ''] ?? (r.resourceType ? r.resourceType.replace(/_/g, ' ') : '—')}{/if}</td>{/if}
-						<td class="m seal" title="Sealed to the entry before it ({r.hash.slice(0, 4)}); Verify the log checks every seal"><span aria-hidden="true">⛓</span><span class="sr">sealed</span></td>
+						<td class="m seal" title="Sealed to the entry before it ({r.hash.slice(0, 4)}); Verify the log checks every seal"><span class="ok">✓</span><span class="sr">sealed</span></td>
 					</tr>
 				{/each}
 			</tbody>
@@ -110,7 +110,7 @@
 	</div>
 	{#if !compact && rows.length > PAGE}
 		<div class="pager">
-			<span></span>
+			<span class="mono faint">latest {rows.length}</span>
 			<Pagination data={rows} count={rows.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="bg-[var(--acc)] text-[var(--acc-ink)]" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
 		</div>
 	{/if}

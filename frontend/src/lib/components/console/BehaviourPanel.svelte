@@ -111,7 +111,7 @@
 			<div class="acts">
 				{#if ref}<a class="btn preset-outlined-surface-300-700 btn-sm" href="/incidents/{ref}">Open {ref}</a>{:else}<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => ui.toast('Opening an incident by hand needs a person with incident rights; ask the watch lead.', 'info')} disabled={!session.can('incidents:write')}>Open as incident</button>{/if}
 				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => openDraft(a)} title="Drafts a message; nothing is sent until you record it">Ask the manager</button>
-				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Expected</button>
+				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Mark expected</button>
 				<span class="mono faint win">{timeOf(a.windowStart)}–{timeOf(a.windowEnd)}</span>
 			</div>
 			{#if expecting === a.id}

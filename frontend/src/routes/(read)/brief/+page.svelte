@@ -92,11 +92,13 @@
 <main class="report rack">
 	<section class="lead" aria-labelledby="bh">
 		<p class="dateline" title="Prepared {prepared} for {session.name}, {session.role === 'executive' ? 'CISO' : session.roleLabel.toLowerCase()} · a 2-minute read"><b class="eng">{longDate(at)}</b></p>
-		<h2 id="bh" class="headline">{head.lead}{head.tail}{#if head.em}<em>{head.em}</em>{/if}{head.end}</h2>
+		<!-- the headline is the one thing to act on; what was reportable and contained opens beneath it -->
+		<h2 id="bh" class="headline">{#if head.em}<em>{head.em.replace(/^./, (c) => c.toUpperCase())}</em>{head.end}{:else}{head.lead}{/if}</h2>
 		<!-- the story in sentences is one click deeper; the headline and the plates carry the morning -->
 		<details class="lede">
 			<summary>The night in a paragraph</summary>
 			<p>
+				{#if head.em}{head.lead}{head.tail.replace(/, and $/, '.')}{/if}
 				{lede()}
 				{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise. <b>No one was woken.</b>{/if}
 				{#if clocks[0]} The nearest regulator deadline is the {clockLongLabel(clocks[0]).split(' · ')[0]}, due {dueLabel(clocks[0].dueAt!, at, REGIME_TZ[clocks[0].regime])}.{/if}
@@ -111,11 +113,6 @@
 				<h3 id="dq">{decisionQuestion(decision.a, decision.i)}</h3>
 				<details class="view">
 					<summary>Why it is yours · {decision.a.proposal.reasons.length} reasons</summary>
-					{#if decision.a.regime === 'sec_8k'}
-						<p>Halden’s shares are listed in the US, so a cybersecurity incident it judges material must be disclosed within four business days of that decision. The decision belongs to you and the disclosure committee, not to the watch.</p>
-					{:else}
-						<p>The watch cannot decide this for {decision.a.entityName}. It belongs to you, with legal and data protection.</p>
-					{/if}
 					<ul>{#each decision.a.proposal.reasons as r (r)}<li>{r}</li>{/each}</ul>
 				</details>
 				{#if deciding}
@@ -144,13 +141,13 @@
 				{@const st = clockState(c, at)}
 				{@const left = hmParts(secondsLeft(c.dueAt, at))}
 				<div class="clk {st}" style="--elapsed:{elapsedFraction(c.startsAt, c.dueAt, at)}">
-					<div class="what" title="{c.incidentReference} · due {dueLabel(c.dueAt!, at)}{c.regime === 'nis2' ? '' : ` · ${timeOf(c.dueAt!, REGIME_TZ[c.regime])} ${c.regime === 'sec_8k' ? 'New York' : 'Melbourne'}`}"><b>{clockLongLabel(c)}</b></div>
+					<div class="what" title="Due {dueLabel(c.dueAt!, at)}{c.regime === 'nis2' ? '' : ` · ${timeOf(c.dueAt!, REGIME_TZ[c.regime])} ${c.regime === 'sec_8k' ? 'New York' : 'Melbourne'}`}"><b>{clockLongLabel(c).split(' · ')[0]}</b> <span class="mono ref">{c.incidentReference}</span></div>
 					<div class="left"><div class="n mono">{left.h}<span class="u">h</span>{left.m}<span class="u">m</span></div>{#if st !== 'on_track'}<small><span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small>{/if}</div>
 					<i class="bar2" aria-hidden="true"></i>
 				</div>
 			{/each}
 
-			<h3 class="ch" title="Every response action was authorised by a person">Approved</h3>
+			<h3 class="ch" title="Every response action was authorised by a person">Actions</h3>
 			<ul class="acts">
 				{#each approvedOvernight.slice(0, 3) as p (p.id)}<li title="{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}"><span class="okg mono">✓</span><span>{actionTitle(p, people)}</span></li>{/each}
 				{#if approvedOvernight.length > 3}<li class="more">+ {approvedOvernight.length - 3} more, all logged</li>{/if}
@@ -158,10 +155,8 @@
 				{#if !approvedOvernight.length && !pendingNow.length}<li class="faint">Nothing needed a person overnight.</li>{/if}
 			</ul>
 
-			<h3 class="ch" title="With Triage, Enrichment and Response. Next brief tomorrow at 08:00.">On watch</h3>
-			<p class="onw"><b>{responder}</b></p>
 			{#if posture}
-				<div class="posture" title={posture.highlights[0] ?? posture.components[0]?.note}><span class="eng">Posture</span> <b>{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'}</b> <small>{posture.meanTimeToTriage.trend === 'better' ? '▲ better' : '= same'}</small></div>
+				<div class="posture" title={posture.highlights[0] ?? posture.components[0]?.note}><span class="eng">Posture</span> <b>{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'}</b> <small>{posture.meanTimeToTriage.trend === 'better' ? '▲ better' : '= same'}</small><span class="onw" title="With Triage, Enrichment and Response. Next brief tomorrow at 08:00.">On watch: <b>{responder}</b></span></div>
 				{#if posturePts}
 					<svg class="spark" viewBox="0 0 300 46" width="300" height="46" role="img" aria-label="Posture over the last 8 weeks: {posture.scoreBand}"><polyline fill="none" stroke="var(--acc)" stroke-width="1.8" points={posturePts} /><circle cx={lastPt[0]} cy={lastPt[1]} r="3" fill="var(--acc)" /><line x1="0" y1="45" x2="300" y2="45" stroke="var(--rule-2)" /></svg>
 				{/if}
@@ -222,7 +217,7 @@
 	}
 	.headline {
 		margin: 0;
-		font: 800 68px/0.9 var(--display);
+		font: 800 76px/0.9 var(--display);
 		text-transform: uppercase;
 		letter-spacing: 0.015em;
 		color: var(--ink);
@@ -296,6 +291,11 @@
 		line-height: 1;
 		color: var(--ink);
 	}
+	.what .ref {
+		font-size: 12px;
+		color: var(--faint);
+		white-space: nowrap;
+	}
 	.tag {
 		margin-left: 6px;
 		font: 700 12px/1 var(--display);
@@ -341,7 +341,7 @@
 	}
 	.decision h3 {
 		margin: 0 0 12px;
-		font: 800 36px/0.95 var(--display);
+		font: 800 28px/1 var(--display);
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
 	}
@@ -356,9 +356,6 @@
 	}
 	.view[open] {
 		padding-bottom: 4px;
-	}
-	.view p {
-		margin: 12px 0 0;
 	}
 	.view ul {
 		margin: 8px 0 0;
@@ -487,14 +484,21 @@
 		color: var(--dim);
 		font-size: 13.5px !important;
 	}
+	.posture .onw b {
+		font: 700 14px/1 var(--ui);
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--ink);
+	}
 	.onw {
-		margin: 0 0 10px;
-		font-size: 15px;
+		margin: 0 0 0 auto;
+		font-size: 14px;
 		line-height: 1.55;
 		color: var(--ink-2);
 	}
 	.posture {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 10px;
 		margin: 14px 0 6px;

@@ -83,7 +83,7 @@
 		</div>
 
 		<section>
-			<h3 class="sh" title="◆ incident · ● closed as noise">Seven nights</h3>
+			<h3 class="sh">Seven nights <span class="key">◆ incident · ● noise</span></h3>
 			<SevenNights incidents={inWeek} at={range ? range.to : now()} />
 		</section>
 
@@ -95,7 +95,7 @@
 				<details class="story">
 					<summary>
 						<h4><span class="person mono">◆</span> <span class="mono ref">{i.reference}</span> {i.title}</h4>
-						<p class="meta" title="{actionsFor(i.id).length} {actionsFor(i.id).length === 1 ? 'action' : 'actions'} approved by a person">{i.reportable === 'yes' ? `Reportable · ${i.nextDeadline ? regimeShort(i.nextDeadline.regime) : 'notices filed'}` : 'Not reportable'} · {contained(i) ? `contained in ${contained(i)}` : 'no action needed'}</p>
+						<p class="meta" title="{actionsFor(i.id).length} {actionsFor(i.id).length === 1 ? 'action' : 'actions'} approved by a person">{i.reportable === 'yes' ? `Reportable · ${i.nextDeadline ? regimeShort(i.nextDeadline.regime) : 'notices filed'}` : i.reportable === 'assess' ? 'To assess' : 'Not reportable'} · {contained(i) ? `contained in ${contained(i)}` : ['monitoring', 'resolved', 'closed'].includes(i.status) ? 'no action needed' : 'still open'}</p>
 					</summary>
 					<dl>
 						<div><dt>What happened</dt><dd>{incidentShortName(i).replace(/^./, (c) => c.toUpperCase())}, first seen {shortDay(i.firstSeen)} at {timeOf(i.firstSeen)}.</dd></div>
@@ -111,7 +111,7 @@
 		<section class="facts">
 			<h3 class="sh">The numbers</h3>
 			<dl class="stats">
-				<div><dt>Reportable</dt><dd class="mono">{reportableCount}</dd></div>
+				<div><dt>Closed as harmless</dt><dd class="mono">{noiseClosed}</dd></div>
 				<div><dt>Alerts → incidents</dt><dd class="mono">{m.alerts.last7d.toLocaleString('en-GB')} → {m.alerts.incidentsLast7d}</dd></div>
 				<div><dt>First verdict</dt><dd class="mono">{m.meanTimeToTriage.last7dSeconds == null ? '—' : m.meanTimeToTriage.last7dSeconds < 90 ? `${Math.round(m.meanTimeToTriage.last7dSeconds)} s` : `${Math.round(m.meanTimeToTriage.last7dSeconds / 60)} min`}</dd></div>
 			</dl>
@@ -245,9 +245,16 @@
 			grid-template-columns: minmax(0, 1fr);
 		}
 	}
+	.sh .key {
+		margin-left: auto;
+		font: 600 13px/1 var(--ui);
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--dim);
+	}
 	.story h4 {
 		margin: 0 0 6px;
-		font: 800 28px/0.98 var(--display);
+		font: 700 20px/1.1 var(--display);
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
 	}

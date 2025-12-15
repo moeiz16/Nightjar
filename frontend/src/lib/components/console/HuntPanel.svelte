@@ -207,7 +207,7 @@
 
 	{#if result}
 		<div class="sum mono" aria-live="polite" title="{result.searched ? `Searched ${(result.searched / 1e6).toFixed(1)} m events · ` : ''}answered in {Math.max(1, Math.round(result.elapsedMs))} ms">
-			<span><b>{result.totalMatched.toLocaleString('en-GB')}</b> matches{#if grouped} · {result.rows.length} {result.rows.length === 1 ? 'group' : 'groups'}{:else} · {devices} devices · {people} people{/if}</span>
+			<span><b>{result.totalMatched.toLocaleString('en-GB')}</b> matches{#if grouped} · {result.rows.length} {result.rows.length === 1 ? 'group' : 'groups'}{:else} · {devices} {devices === 1 ? 'device' : 'devices'} · {people} {people === 1 ? 'account' : 'accounts'}{/if}</span>
 		</div>
 		{#if grouped}
 			<div class="table-wrap">
@@ -250,7 +250,7 @@
 				{/each}
 			</ol>
 		{/if}
-		{#if !grouped && rows.length > cap}<button class="lnk morer" type="button" onclick={() => (cap += 50)}>Show {Math.min(50, rows.length - cap)} more of {rows.length}</button>{/if}
+		{#if !grouped && rows.length > cap}<button class="lnk morer" type="button" onclick={() => (cap += 50)}>Show {Math.min(50, rows.length - cap)} more</button>{/if}
 		{#if !result.rows.length}<p class="none">Nothing matched. Try fewer filters or a longer time range.</p>{/if}
 	{:else if !busy}
 		<p class="none">Who, which device, what, and when.</p>
