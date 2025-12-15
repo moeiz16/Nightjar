@@ -75,7 +75,7 @@
 
 <svelte:head><title>Members · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="The roster" sub="{members.length} members · {invites.length} invited" bare>
+	<Plate title="The roster" sub="{members.length} members · {invites.length} invited" quiet bare>
 		{#snippet actions()}{#if canManage}<button class="btn preset-filled-surface-950-50 btn-sm" type="button" onclick={() => (inviting = !inviting)}>Invite someone</button>{/if}{/snippet}
 		<SettingsNav />
 		{#if err}<p class="ferr pad">{err}</p>{/if}
@@ -93,7 +93,7 @@
 				<tbody>
 					{#each members as m (m.id)}
 						<tr class={m.role === 'executive' || m.role === 'responder' ? 'h-person' : ''}>
-							<td><b class="nm">{m.user.fullName}</b><small class="mono">{m.user.email}</small></td>
+							<td title={m.user.email}><b class="nm">{m.user.fullName}</b></td>
 							<td>
 								{#if canManage && m.user.id !== session.me?.user.id}
 									<label class="sr" for="role-{m.id}">Role for {m.user.fullName}</label>

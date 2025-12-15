@@ -4,4 +4,4 @@
 </script>
 
 <svelte:head><title>Unusual behaviour · Nightjar SOC</title></svelte:head>
-<Plate title="The tapes" sub="Each person and device against their own normal" bare><BehaviourPanel /></Plate>
+<Plate title="The tapes" quiet bare><BehaviourPanel /></Plate>

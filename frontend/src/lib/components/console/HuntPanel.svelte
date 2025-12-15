@@ -19,6 +19,8 @@
 	let query = $state<HuntQueryDoc | null>(null);
 	let result = $state<HuntResultDoc | null>(null);
 	let view = $state<'list' | 'timeline'>('list');
+	// the first matches, then more on request
+	let cap = $state(25);
 	let suggestions = $state<Suggestion[]>([]);
 	let busy = $state(false);
 	let err = $state('');
@@ -70,6 +72,7 @@
 		busy = true;
 		err = '';
 		try {
+			cap = 25;
 			result = await api.hunting.search({ ...query, filters: chips.map((c) => c.filter) });
 		} catch (x) {
 			err = problemMessage(x);
@@ -80,6 +83,7 @@
 	async function runSaved(s: SavedSearch) {
 		busy = true;
 		try {
+			cap = 25;
 			result = await api.hunting.runSaved(s.id);
 		} catch (x) {
 			err = problemMessage(x);
@@ -183,7 +187,6 @@
 	{/if}
 
 	<div class="filters mono" aria-label="Filters">
-		<span class="eng faint fl">Filters</span>
 		{#each chips as c, i (c.label)}
 			<span class="fchip">{c.label}<button type="button" aria-label="Remove {c.label}" onclick={() => removeChip(i)}>×</button></span>
 		{/each}
@@ -191,7 +194,7 @@
 		{#if fromSaved}<span class="faint">· saved search “{fromSaved.name}”</span>{/if}
 	</div>
 
-	{#if suggestions.length}
+	{#if suggestions.length && !result}
 		<div class="sugg">
 			<span class="eng faint fl">Worth a look</span>
 			{#each suggestions.slice(0, compact ? 2 : 3) as s (s.id)}
@@ -203,9 +206,8 @@
 	{#if err}<p class="ferr" role="alert">{err}</p>{/if}
 
 	{#if result}
-		<div class="sum mono" aria-live="polite">
+		<div class="sum mono" aria-live="polite" title="{result.searched ? `Searched ${(result.searched / 1e6).toFixed(1)} m events · ` : ''}answered in {Math.max(1, Math.round(result.elapsedMs))} ms">
 			<span><b>{result.totalMatched.toLocaleString('en-GB')}</b> matches{#if grouped} · {result.rows.length} {result.rows.length === 1 ? 'group' : 'groups'}{:else} · {devices} devices · {people} people{/if}</span>
-			<span class="faint">{#if result.searched}searched {(result.searched / 1e6).toFixed(1)} m events · {/if}answered in {Math.max(1, Math.round(result.elapsedMs))} ms</span>
 		</div>
 		{#if grouped}
 			<div class="table-wrap">
@@ -223,7 +225,7 @@
 				<table class="table">
 					<thead><tr><th>Time</th><th>Who</th><th>Device</th><th>What</th><th>Incident</th></tr></thead>
 					<tbody>
-						{#each rows as r (r.eventId + r.at)}
+						{#each rows.slice(0, cap) as r (r.eventId + r.at)}
 							<tr class={r.incident ? 'h-acc' : ''}>
 								<td class="m">{whenShort(r.at)}</td>
 								<td>{r.who}</td>
@@ -239,7 +241,7 @@
 			</div>
 		{:else}
 			<ol class="ladder" aria-label="Matches as a minute ladder">
-				{#each rows as r (r.eventId + r.at)}
+				{#each rows.slice(0, cap) as r (r.eventId + r.at)}
 					<li class:inc={!!r.incident}>
 						<span class="t mono">{whenShort(r.at)}<small>{timeOf(r.at, undefined, true).slice(6)}s</small></span>
 						<span class="dot" aria-hidden="true"></span>
@@ -248,13 +250,18 @@
 				{/each}
 			</ol>
 		{/if}
+		{#if !grouped && rows.length > cap}<button class="lnk morer" type="button" onclick={() => (cap += 50)}>Show {Math.min(50, rows.length - cap)} more of {rows.length}</button>{/if}
 		{#if !result.rows.length}<p class="none">Nothing matched. Try fewer filters or a longer time range.</p>{/if}
 	{:else if !busy}
-		<p class="none">Ask in plain words: who, which device, what happened, and when. Field names are optional.</p>
+		<p class="none">Who, which device, what, and when.</p>
 	{/if}
 </div>
 
 <style>
+	.morer {
+		justify-self: center;
+		margin: 12px 0;
+	}
 	.hunt {
 		display: grid;
 		align-content: start;

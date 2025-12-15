@@ -76,14 +76,14 @@
 
 <div class="act" class:compact>
 	<div class="top">
-		<span class="mono">{total.toLocaleString('en-GB')} recent entries</span>
+		<span class="mono">{total.toLocaleString('en-GB')} entries</span>
 		<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={doVerify} disabled={busy}>{busy ? 'Checking…' : 'Verify the log'}</button>
 		{#if verify}
-			<span class="mono res" class:bad={!verify.valid} role="status">
-				{verify.valid ? `✓ Chain intact · checked ${verify.checked.toLocaleString('en-GB')} entries · ${verifiedAt ? timeOf(verifiedAt) : ''}` : `● Chain broken at entry ${verify.brokenAt}`}
+			<span class="mono res" class:bad={!verify.valid} role="status" title={verify.valid ? `Checked ${verify.checked.toLocaleString('en-GB')} entries${verifiedAt ? ` at ${timeOf(verifiedAt)}` : ''}` : undefined}>
+				{verify.valid ? '✓ Chain intact' : `● Chain broken at entry ${verify.brokenAt}`}<span class="sr">{verify.valid ? ` · checked ${verify.checked} entries` : ''}</span>
 			</span>
 		{/if}
-		{#if !compact}<button class="btn preset-outlined-surface-300-700 btn-sm right" type="button" onclick={exportPack}>Export evidence pack</button>{/if}
+		{#if !compact}<button class="btn preset-outlined-surface-300-700 btn-sm right" type="button" onclick={exportPack} title="Download the log and its seals as an evidence pack">Export</button>{/if}
 	</div>
 	<div class="filters mono" role="group" aria-label="Filters">
 		<Choice label="Who" value={who || 'all'} options={[{ value: 'all', label: 'all' }, { value: 'user', label: 'people' }, { value: 'agent', label: 'teammates' }, { value: 'system', label: 'system' }]} onchange={(v) => ((who = v === 'all' ? '' : (v as typeof who)), (pageNo = 1))} />
@@ -102,7 +102,7 @@
 						<td class="who" class:tm={r.actorType === 'agent'}>{actor(r)}</td>
 						<td>{r.label}</td>
 						{#if !compact}<td class="m">{#if about(r)}<a href="/incidents/{about(r)}">{about(r)}</a>{:else}{TYPE_WORDS[r.resourceType ?? ''] ?? (r.resourceType ? r.resourceType.replace(/_/g, ' ') : '—')}{/if}</td>{/if}
-						<td class="m seal" title="Sealed to the entry before it; Verify the log checks every seal"><span aria-hidden="true">⛓</span> {r.hash.slice(0, 4)}</td>
+						<td class="m seal" title="Sealed to the entry before it ({r.hash.slice(0, 4)}); Verify the log checks every seal"><span aria-hidden="true">⛓</span><span class="sr">sealed</span></td>
 					</tr>
 				{/each}
 			</tbody>
@@ -110,7 +110,7 @@
 	</div>
 	{#if !compact && rows.length > PAGE}
 		<div class="pager">
-			<span class="mono faint">{(pageNo - 1) * PAGE + 1}–{Math.min(rows.length, pageNo * PAGE)} of the latest {rows.length}</span>
+			<span></span>
 			<Pagination data={rows} count={rows.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="bg-[var(--acc)] text-[var(--acc-ink)]" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
 		</div>
 	{/if}

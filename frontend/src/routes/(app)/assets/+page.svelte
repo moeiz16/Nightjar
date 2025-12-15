@@ -32,7 +32,7 @@
 
 <svelte:head><title>Assets · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="The register" sub="{shown.length} of {assets.length}" bare>
+	<Plate title="The register" sub="{shown.length} of {assets.length}" quiet bare>
 		{#snippet actions()}
 			<Choice label="Kind" bind:value={kind} options={[{ value: 'workstation', label: 'laptops' }, { value: 'server', label: 'servers' }, { value: 'cloud', label: 'cloud' }, { value: 'all', label: 'all' }]} />
 			<label class="sr" for="site">Site</label>
@@ -41,14 +41,12 @@
 		{#if err}<p class="ferr">{err}</p>{/if}
 		<div class="table-wrap">
 			<table class="table">
-				<thead><tr><th>Name</th><th>What it does</th><th>Where</th><th>Owner</th><th>Known weakness</th><th>State</th></tr></thead>
+				<thead><tr><th>Name</th><th>What it does</th><th>Weakness</th><th>State</th></tr></thead>
 				<tbody>
 					{#each shown as a (a.id)}
 						<tr class:sel={selected === a.name} class={a.isolated ? 'h-person' : incidentsFor(a.name).length ? 'h-acc' : a.vulnerabilities.length ? 'h-soon' : ''}>
 							<td><button class="rowbtn mono" type="button" onclick={() => (selected = selected === a.name ? null : a.name)} aria-expanded={selected === a.name}>{a.name}</button></td>
 							<td>{role(a)}{#if a.criticality === 'crown_jewel'} <span class="cj">◆ crown jewel</span>{/if}</td>
-							<td>{a.site}</td>
-							<td>{a.owner ?? '—'}</td>
 							<td class="m">{#if a.vulnerabilities.length}<span class="alarm">▲</span> {a.vulnerabilities.length} exploited{:else}—{/if}</td>
 							<td class="m">{#if a.isolated}<span class="person">‖ isolated</span>{:else if incidentsFor(a.name).length}<span class="acc">▸ in {incidentsFor(a.name).map((i) => i.reference).join(', ')}</span>{:else}✓ normal{/if}</td>
 						</tr>

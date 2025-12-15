@@ -95,21 +95,19 @@
 <svelte:window onkeydown={key} />
 <svelte:head><title>{rule?.title ?? 'Rule'} · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="The rule plate" sub={rule?.attack.map((a) => a.techniqueId).join(' · ') ?? ''} ticks>
+	<Plate title="The rule plate" quiet ticks>
 		{#snippet actions()}<a class="lnk" href="/rules">All rules</a>{/snippet}
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		{#if rule && s}
 			<div class="body">
 				<h2 class="rt">{rule.title}</h2>
-				<Choice label="View" size="md" bind:value={view} options={[{ value: 'readable', label: 'Readable' }, { value: 'source', label: 'Source (Sigma)' }]} />
-				<span class="faint kb">Press <kbd>S</kbd> to switch</span>
+				<span class="kb" title="Press S to switch"><Choice label="View" size="md" bind:value={view} options={[{ value: 'readable', label: 'Readable' }, { value: 'source', label: 'Source' }]} /></span>
 				{#if view === 'readable'}
 					<dl class="sentence">
 						<div><dt>When</dt><dd>{s.when}{#each s.clauses as c, i (i)}<span class="and">and</span><b>{c}</b>{/each}</dd></div>
 						{#if s.unless.length}<div><dt>Unless</dt><dd>{#each s.unless as c, i (i)}{#if i}<span class="and">or</span>{/if}<b>{c}</b>{/each}</dd></div>{/if}
 						{#if s.count}<div><dt>Only if</dt><dd><b>{s.count}</b></dd></div>{/if}
-						<div><dt>Group</dt><dd>alerts for the same person within 30 minutes into one incident</dd></div>
-						<div><dt>Maps to</dt><dd>{rule.attack.map((a) => `${a.techniqueId} ${a.name}`).join(' · ')}</dd></div>
+						<div title="Alerts for the same person within 30 minutes group into one incident"><dt>Maps to</dt><dd>{#each rule.attack as a, i (a.techniqueId)}{i ? ' · ' : ''}<span class="mono" title={a.name}>{a.techniqueId}</span>{/each}</dd></div>
 					</dl>
 				{:else}
 					<pre class="src mono" aria-label="Sigma source">{yaml}</pre>
@@ -119,7 +117,7 @@
 					<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={test}>Test on last 7 days ▶</button>
 					{#if tested}<span class="mono" role="status">→ {tested.matches} matches · {tested.confirmed} confirmed · {tested.noise} noise</span>{/if}
 				</div>
-				<p class="meta">{rule.hits7d.toLocaleString('en-GB')} {rule.hits7d === 1 ? 'alert' : 'alerts'} in 7 days · {rule.origin} · {rule.enabled ? '● on' : '○ off'} · {exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}</p>
+				<p class="meta" title={rule.origin}>{rule.hits7d.toLocaleString('en-GB')} {rule.hits7d === 1 ? 'alert' : 'alerts'} in 7 days · {rule.enabled ? '● on' : '○ off'}{exceptions.length ? ` · ${exceptions.length === 1 ? '1 exception' : `${exceptions.length} exceptions`}` : ''}</p>
 				{#if exceptions.length}
 					<ul class="excs" aria-label="Exceptions">
 						{#each exceptions as x (x.id)}
@@ -132,9 +130,9 @@
 					</ul>
 				{/if}
 				<div class="acts">
-					<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => (lowering = !lowering)} disabled={!canManage}>Lower the noise…</button>
+					<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => (lowering = !lowering)} disabled={!canManage}>Lower the noise</button>
 					{#if rule.enabled}
-						<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => (turningOff = !turningOff)} disabled={!canManage}>Turn off (with reason)</button>
+						<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => (turningOff = !turningOff)} disabled={!canManage} title="You give a reason; it is kept in the activity log">Turn off</button>
 					{:else}
 						<button class="btn preset-outlined-surface-300-700" type="button" onclick={() => setEnabled(true)} disabled={!canManage}>Turn on</button>
 					{/if}
@@ -194,7 +192,7 @@
 	}
 	.kb {
 		font-size: 12.5px;
-		margin-top: -8px;
+		display: block;
 	}
 	.excs {
 		list-style: none;

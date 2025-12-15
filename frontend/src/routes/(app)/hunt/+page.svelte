@@ -20,7 +20,7 @@
 		<button class="lnk" type="button" onclick={() => (ui.scope = null)}>Clear</button>
 	</div>
 {/if}
-<Plate title="The plot" sub={saved ? 'A saved search' : ask ? 'Asked the watch' : 'Ask in plain words'} flush>
+<Plate title="The plot" sub={saved ? 'Saved search' : ''} quiet flush>
 	{#snippet actions()}<a class="lnk" href="/hunt/saved">Saved searches</a>{/snippet}
 	{#key ask + saved}<HuntPanel initial={ask} savedId={saved} />{/key}
 </Plate>

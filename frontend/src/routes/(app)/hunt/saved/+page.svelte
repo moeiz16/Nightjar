@@ -37,16 +37,16 @@
 
 <svelte:head><title>Saved searches · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="The bay" sub="{list.length} named searches" bare>
-		{#snippet actions()}<a class="btn preset-outlined-surface-300-700 btn-sm" href="/hunt">New search</a><span class="hide-s">⌘K › “saved”</span>{/snippet}
+	<Plate title="The bay" sub="{list.length} searches" quiet bare>
+		{#snippet actions()}<a class="btn preset-outlined-surface-300-700 btn-sm" href="/hunt">New search</a>{/snippet}
 		{#if err}<p class="ferr">{err}</p>{/if}
 		<div class="table-wrap">
 			<table class="table">
-				<thead><tr><th>Name</th><th>Owner</th><th>Runs</th><th>Last result</th><th>Alert me</th><th><span class="sr">Actions</span></th></tr></thead>
+				<thead><tr><th>Name</th><th>Owner</th><th>Runs</th><th>Last result</th><th title="Runs the search again every 15 minutes; a search with matches is marked ◇.">Alert me</th><th><span class="sr">Actions</span></th></tr></thead>
 				<tbody>
 					{#each list as s (s.id)}
 						<tr class={s.alert ? ((s.lastCount ?? 0) > 0 ? 'h-soon' : 'h-acc') : ''}>
-							<td><a class="rowbtn" href="/hunt?saved={s.id}">▸ {s.name}</a><small class="note">{s.description}</small></td>
+							<td><a class="rowbtn" href="/hunt?saved={s.id}" title={s.description}>▸ {s.name}</a></td>
 							<td>{s.createdBy.fullName}</td>
 							<td class="m">{s.schedule ?? 'on demand'}</td>
 							<td class="m">{s.lastCount ?? '—'}{s.lastRunAt ? ` · ${whenShort(s.lastRunAt)}` : ''}{(s.lastCount ?? 0) > 0 && s.alert ? ' ◇' : ''}</td>
@@ -59,7 +59,6 @@
 				</tbody>
 			</table>
 		</div>
-		<p class="foot faint">“Alert me” runs the search again every 15 minutes; a search with matches is marked ◇.</p>
 	</Plate>
 </div>
 
@@ -115,12 +114,6 @@
 		text-decoration: underline;
 		text-decoration-color: var(--acc);
 	}
-	.note {
-		display: block;
-		margin-top: 3px;
-		font-size: 12px;
-		color: var(--dim);
-	}
 	.tg {
 		font: inherit;
 		color: var(--dim);
@@ -128,9 +121,5 @@
 	.tg[aria-pressed='true'] {
 		color: var(--ok);
 		font-weight: 600;
-	}
-	.foot {
-		margin: 14px 0 0;
-		font-size: 13px;
 	}
 </style>

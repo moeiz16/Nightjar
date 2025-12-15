@@ -16,6 +16,10 @@
 	const shown = $derived(rules.filter((r) => !q || (r.title + r.attack.map((a) => a.techniqueId).join(' ')).toLowerCase().includes(q.toLowerCase())));
 	const on = $derived(rules.filter((r) => r.enabled).length);
 	const noisyCount = $derived(rules.filter(noisy).length);
+	// rules that fired this week come first; the quiet ones are one click away (a filter always searches all)
+	let showQuiet = $state(false);
+	const quiet = $derived(shown.filter((r) => !r.hits7d));
+	const listed = $derived(q || showQuiet ? shown : shown.filter((r) => r.hits7d));
 	function spark(days: number[] | undefined): string {
 		if (!days?.length) return '';
 		const max = Math.max(1, ...days);
@@ -25,7 +29,7 @@
 
 <svelte:head><title>Rules · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="The bay" sub="{on} on · {noisyCount} noisy this week" bare>
+	<Plate title="The bay" sub="{on} on · {noisyCount} noisy" quiet bare>
 		{#snippet actions()}
 			<label class="sr" for="rq">Filter rules</label><input id="rq" class="input f" bind:value={q} placeholder="filter…" />
 		{/snippet}
@@ -34,9 +38,9 @@
 			<table class="table">
 				<thead><tr><th>Rule</th><th>ATT&amp;CK</th><th>Last 7 days</th><th>Likely real</th><th>State</th></tr></thead>
 				<tbody>
-					{#each shown as r (r.id)}
+					{#each listed as r (r.id)}
 						<tr class="click {!r.enabled ? '' : noisy(r) ? 'h-soon' : 'h-acc'}" onclick={() => goto(`/rules/${r.id}`)}>
-							<td><a class="rowbtn" href="/rules/{r.id}">{r.title}</a><small class="mono src">{r.source === 'sigma' ? 'Sigma' : r.source === 'ueba' ? 'behaviour' : 'Nightjar'} · {r.level}</small></td>
+							<td><a class="rowbtn" href="/rules/{r.id}" title="{r.source === 'sigma' ? 'Sigma' : r.source === 'ueba' ? 'behaviour' : 'Nightjar'} · {r.level}">{r.title}</a></td>
 							<td class="m">{r.attack[0]?.techniqueId ?? '—'}</td>
 							<td class="m spk"><span>{r.hits7d.toLocaleString('en-GB')}</span>
 								{#if r.hits7dDaily}<svg viewBox="0 0 56 20" width="56" height="20" aria-hidden="true"><polyline points={spark(r.hits7dDaily)} /></svg>{/if}
@@ -48,6 +52,7 @@
 				</tbody>
 			</table>
 		</div>
+		{#if !q && !showQuiet && quiet.length}<button class="lnk morer" type="button" onclick={() => (showQuiet = true)}>Show {quiet.length} quiet rules</button>{/if}
 	</Plate>
 </div>
 
@@ -75,11 +80,9 @@
 		color: var(--ink);
 		font-weight: 700;
 	}
-	.src {
+	.morer {
 		display: block;
-		margin-top: 3px;
-		font-size: 12px;
-		color: var(--faint);
+		margin: 14px auto 0;
 	}
 	.spk {
 		display: flex;

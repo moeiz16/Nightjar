@@ -29,23 +29,22 @@
 
 <svelte:head><title>People · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="The register" sub="{persons} people · {people.length - persons} service accounts" bare>
+	<Plate title="The register" sub="{persons} people · {people.length - persons} accounts" quiet bare>
 		{#snippet actions()}
-			<Choice label="Kind" bind:value={kind} options={[{ value: 'person', label: 'people' }, { value: 'service', label: 'service accounts' }, { value: 'all', label: 'all' }]} />
+			<Choice label="Kind" bind:value={kind} options={[{ value: 'person', label: 'people' }, { value: 'service', label: 'accounts' }, { value: 'all', label: 'all' }]} />
 			<label class="sr" for="iq">Filter people</label><input id="iq" class="input f" bind:value={q} placeholder="filter…" />
 		{/snippet}
 		{#if err}<p class="ferr">{err}</p>{/if}
 		<div class="table-wrap">
 			<table class="table">
-				<thead><tr><th>Person</th><th>Team · site</th><th>Normal sign-in</th><th>Unusual (14 d)</th><th>Access</th></tr></thead>
+				<thead><tr><th>Person</th><th>Team</th><th title="Unusual in the last 14 days">Unusual</th><th>Access</th></tr></thead>
 				<tbody>
 					{#each shown as p (p.id)}
 						{@const u = unusual(p.username)}
 						<tr class={p.disabled ? 'h-person' : u.length ? 'h-soon' : ''}>
-							<td><b class="nm">{p.displayName}</b><small class="mono">{p.username}</small></td>
-							<td>{p.department} · {SITE[p.jurisdiction] ?? p.jurisdiction}</td>
-							<td class="m">{p.kind === 'service' ? 'machine sign-in only' : `${p.usualCountries.join(', ') || '—'} · ${MFA_WORDS[p.mfa] ?? p.mfa}`}</td>
-							<td class="m">{#if u.length}<span class="soon">◇ {u.length}</span> <span class="faint">{u[0]?.headline?.slice(0, 40)}…</span>{:else}—{/if}</td>
+							<td title="{p.username} · {p.kind === 'service' ? 'machine sign-in only' : `signs in from ${p.usualCountries.join(', ') || '—'} with ${MFA_WORDS[p.mfa] ?? p.mfa}`}"><b class="nm">{p.displayName}</b></td>
+							<td title={SITE[p.jurisdiction] ?? p.jurisdiction}>{p.department}</td>
+							<td class="m">{#if u.length}<span class="soon" title={u[0]?.headline}>◇ {u.length}</span>{:else}—{/if}</td>
 							<td class="m">{#if p.disabled}<span class="person">turned off</span>{:else if p.privileged}<span>◆ privileged</span>{:else}normal{/if}</td>
 						</tr>
 					{/each}
@@ -73,13 +72,8 @@
 		overflow-x: auto;
 	}
 	.nm {
-		display: block;
 		color: var(--ink);
 		font-weight: 700;
-	}
-	small {
-		font-size: 12px;
-		color: var(--faint);
 	}
 	@media (max-width: 760px) {
 		.tiles :global(.ph .seg) {

@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head><title>Activity log · Nightjar SOC</title></svelte:head>
-<Plate title="The log book" sub="Every sensitive action, newest first, each sealed to the one before" bare>
+<Plate title="The log book" quiet bare>
 	{#if session.can('audit:read')}
 		<ActivityPanel autoVerify={page.url.searchParams.has('verify')} autoExport={page.url.searchParams.has('export')} />
 	{:else}

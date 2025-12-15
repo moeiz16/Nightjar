@@ -54,13 +54,11 @@
 
 <svelte:head><title>Regime contacts · Nightjar SOC</title></svelte:head>
 <div class="tiles">
-	<Plate title="Which rules apply" sub="From your company profile" bare>
+	<Plate title="Which rules apply" sub="From your company profile" quiet bare>
 		{#snippet actions()}{#if can}<button class="btn preset-filled-surface-950-50 btn-sm" type="button" onclick={save} disabled={!dirty || busy}>{busy ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</button>{:else}<span>read only</span>{/if}{/snippet}
 		<SettingsNav />
 		{#if err}<p class="ferr pad">{err}</p>{/if}
 		<div class="body">
-			<h2 class="q">Which rules apply to Halden Logistics?</h2>
-			<p class="faint sub">Nothing here files anything; it decides who is asked and who submits.</p>
 			{#each ORDER as r (r)}
 				{@const c = contacts[r]}
 				{#if c}
@@ -68,7 +66,7 @@
 						<div class="h">
 							<h3 id="r-{r}"><span class="ok mono">●</span> {title[r]} · {c.jurisdiction}</h3>
 							<span class="why">{why(r)}</span>
-							<span class="faint auth">Authority: {c.authorityName}</span>
+							<span class="faint auth" title="Nothing here files anything; it decides who is asked and who submits.">{c.authorityName}</span>
 						</div>
 						<div class="grid">
 							<label class="label"><span>Owner (submits)</span>
@@ -85,7 +83,6 @@
 					</section>
 				{/if}
 			{/each}
-			<p class="add faint">○ Add a regime · ask your administrator to extend the company profile</p>
 		</div>
 	</Plate>
 </div>
@@ -103,16 +100,6 @@
 	.body {
 		padding: 0;
 		max-width: 1180px;
-	}
-	.q {
-		margin: 0;
-		font: 800 44px/0.92 var(--display);
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
-	}
-	.sub {
-		margin: 8px 0 20px;
-		font-size: 14px;
 	}
 	.reg {
 		padding: 18px 20px 20px;
@@ -152,10 +139,6 @@
 		font-size: 13px;
 		font-weight: 700;
 		color: var(--ok);
-	}
-	.add {
-		padding-top: 14px;
-		font-size: 13.5px;
 	}
 	@media (max-width: 760px) {
 		.body {

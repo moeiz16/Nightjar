@@ -79,9 +79,8 @@
 
 <div class="beh" class:compact>
 	<div class="top">
-		<span class="eng faint">Last 14 days</span>
 		<Choice label="Show" bind:value={kind} options={[{ value: 'user', label: 'people' }, { value: 'host', label: 'devices' }]} />
-		<span class="faint sort">Sorted by most unusual first</span>
+		<span class="eng faint" title="Sorted by most unusual first">Last 14 days</span>
 	</div>
 	{#if err}<p class="ferr">{err}</p>{/if}
 	{#each items as a (a.id)}
@@ -103,14 +102,16 @@
 					{/each}
 				</div>
 			{/if}
-			<ul class="reasons">
-				<li class="eng faint">Why</li>
-				{#each a.reasons as r, i (i)}<li class:lower={r.contribution < 0}>{r.text}{i < a.reasons.length - 1 ? ' ·' : ''}</li>{/each}
-			</ul>
+			<details class="why">
+				<summary>Why · {a.reasons.length}</summary>
+				<ul class="reasons">
+					{#each a.reasons as r, i (i)}<li class:lower={r.contribution < 0}>{r.text}</li>{/each}
+				</ul>
+			</details>
 			<div class="acts">
 				{#if ref}<a class="btn preset-outlined-surface-300-700 btn-sm" href="/incidents/{ref}">Open {ref}</a>{:else}<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => ui.toast('Opening an incident by hand needs a person with incident rights; ask the watch lead.', 'info')} disabled={!session.can('incidents:write')}>Open as incident</button>{/if}
-				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => openDraft(a)}>Ask the manager (draft)</button>
-				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Mark as expected</button>
+				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => openDraft(a)} title="Drafts a message; nothing is sent until you record it">Ask the manager</button>
+				<button class="btn preset-outlined-surface-300-700 btn-sm" type="button" onclick={() => (expecting = expecting === a.id ? null : a.id)} disabled={!session.can('rules:manage')} title={session.can('rules:manage') ? undefined : 'Analysts mark behaviour as expected'}>Expected</button>
 				<span class="mono faint win">{timeOf(a.windowStart)}–{timeOf(a.windowEnd)}</span>
 			</div>
 			{#if expecting === a.id}
@@ -145,8 +146,26 @@
 	.top .eng {
 		font-size: 13px;
 	}
-	.sort {
-		margin-left: auto;
+	.why summary {
+		cursor: pointer;
+		list-style: none;
+		width: max-content;
+		font: 600 13px/1 var(--ui);
+		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+	}
+	.why summary::-webkit-details-marker {
+		display: none;
+	}
+	.why summary::after {
+		content: ' ▸';
+	}
+	.why[open] summary::after {
+		content: ' ▾';
+	}
+	.why summary:hover {
+		color: var(--ink);
 	}
 	/* one tape per person or device: who and why on the left, their fortnight punched on the right */
 	.who {
@@ -258,10 +277,6 @@
 		font-size: 14px;
 		color: var(--ink-2);
 		align-items: baseline;
-	}
-	.reasons .eng {
-		font-size: 12px;
-		margin-right: 4px;
 	}
 	.reasons .lower {
 		color: var(--dim);
