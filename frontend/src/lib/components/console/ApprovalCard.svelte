@@ -44,6 +44,8 @@
 	$effect(() => {
 		if (person && !message) message = `Your account is paused for a security check. IT will contact you within the hour.`;
 	});
+	// phones have no Space bar: the hint says what a finger does
+	const touch = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches;
 	const REASONS = ['Wrong target', 'Business-critical right now', 'False positive', 'Other'];
 
 	async function approve() {
@@ -106,14 +108,17 @@
 		<label class="who" for="msg-{p.id}"><span class="eng">{person.displayName.split(' ')[0]} will see</span>
 			<textarea id="msg-{p.id}" class="textarea msg" rows="2" bind:value={message}></textarea></label>
 	{/if}
-	<!-- the second layer: what it does, why, and whether it can be undone -->
+	<!-- whether it can be undone is said up front, before the hold; what it does and why are one click deeper -->
+	<div class="irrev">
+		<span class="cq" class:hard={!p.reversible}>{p.reversible ? '↺ Reversible' : '✕ Cannot be undone'}</span>
+	</div>
 	<details class="more">
 		<summary>Details</summary>
-		<div class="by">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
+		<div class="by">{p.kind.startsWith('quarantine') || p.targetType === 'message' || p.targetType === 'email' ? 'the phishing email' : p.target} · proposed by {p.proposedBy.name.replace(/\s*(colleague|agent)$/i, '')} at {timeOf(p.createdAt)} · {p.incidentReference}</div>
 		<dl class="facts">
 			<div><dt>does</dt><dd>{p.expectedEffect}</dd></div>
 			<div><dt>why</dt><dd>{p.rationale} {#if onwhy}<button class="lnk" type="button" onclick={onwhy}>why ↗</button>{/if}</dd></div>
-			<div><dt>undo</dt><dd>{p.undo ?? (p.reversible ? 'Reversible at any time. Logged either way.' : 'Cannot be undone. Logged either way.')}</dd></div>
+			{#if p.undo}<div><dt>undo</dt><dd>{p.undo}</dd></div>{/if}
 		</dl>
 	</details>
 
@@ -123,7 +128,7 @@
 			done={doneStamp}
 			disabled={!gate.canHold}
 			disabledReason={gate.reason}
-			hint={gate.canHold ? 'or hold Space' : gate.reason}
+			hint={gate.canHold ? (touch ? 'press and hold' : 'or hold Space') : gate.reason}
 			confirmName={p.target}
 			onconfirm={approve}
 		/>
@@ -212,6 +217,21 @@
 	.who .eng {
 		font-size: 12px;
 		color: var(--faint);
+	}
+	.irrev {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin: 0 0 10px;
+	}
+	.cq {
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--dim);
+	}
+	.cq.hard {
+		color: var(--soon);
 	}
 	.more {
 		margin: 0 0 14px;

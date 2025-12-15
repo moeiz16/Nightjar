@@ -253,7 +253,7 @@ describe('ApprovalCard', () => {
 		createdAt: '2025-11-20T01:04:00Z',
 		expiresAt: '2025-11-20T09:04:00Z'
 	};
-	it('shows the action and the hold first, with does, why and undo folded under Details', () => {
+	it('shows the action, whether it can be undone and the hold first, with what it does and why under Details', () => {
 		const { container } = render(ApprovalCard, { props: { p: proposal } });
 		expect(screen.getByRole('heading', { level: 2 }).textContent).toMatch(/key/i);
 		expect(screen.getByRole('button', { name: /Hold to authorise/i })).toBeTruthy();
@@ -262,7 +262,9 @@ describe('ApprovalCard', () => {
 		expect(more.open).toBe(false);
 		expect(more.querySelector('summary')?.textContent).toBe('Details');
 		expect(more.textContent).toContain(proposal.expectedEffect);
-		expect(more.textContent).toContain('Cannot be undone');
+		expect(more.textContent).toContain(proposal.rationale);
+		expect(container.querySelector('.cq')?.textContent).toBe('✕ Cannot be undone');
+		expect(more.textContent).not.toContain('Cannot be undone');
 	});
 	it('names a crown jewel in a few words, with the rule in its tooltip', () => {
 		const { container } = render(ApprovalCard, { props: { p: { ...proposal, crownJewel: true } } });

@@ -23,7 +23,7 @@
 
 	let playhead = $state(-1); // -1 = settled (everything lit)
 	// the log opens on its first steps; the rest is one click (or the replay) away
-	const CAP = 10;
+	const CAP = 6;
 	let full = $state(false);
 	const capped = $derived(!compact && !full && playhead < 0 && rows.length > CAP + 2);
 	let playing = $state(false);
@@ -281,7 +281,7 @@
 		position: relative;
 	}
 	.rows.capped {
-		max-height: 404px;
+		max-height: 244px;
 		overflow: hidden;
 		mask-image: linear-gradient(180deg, #000 80%, transparent);
 	}

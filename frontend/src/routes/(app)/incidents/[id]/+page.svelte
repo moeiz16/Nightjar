@@ -76,6 +76,7 @@
 	const deadlines = $derived(bundle?.reporting?.deadlines ?? []);
 	const open = $derived((bundle?.incident.regimes ?? []).filter((r) => r.proposal.applies === 'assess' && !r.determination));
 	const deciding = $derived(open.find((r) => r.regime === decideParam) ?? null);
+	const canAssess = $derived(session.can('reporting:assess'));
 	function why(p: ProposalDoc) {
 		const s = bundle?.runs.flatMap((r) => r.steps.map((st) => ({ key: `${r.id}:${st.seq}`, st }))).filter((x) => x.st.kind === 'proposal' && Math.abs(+new Date(x.st.startedAt) - +new Date(p.createdAt)) < 90_000).at(-1);
 		tab = 'story';
@@ -99,23 +100,32 @@
 {:else}
 	<div class="stripw rack">
 		<div class="back"><a class="lnk" href="/watch">← The watch</a></div>
-		<IncidentHeader incident={bundle.incident} times={stageTimes(bundle)} clocks={live.clocks} pending={pending.length} />
+		<IncidentHeader incident={bundle.incident} times={stageTimes(bundle)} pending={pending.length} />
 	</div>
 
 	{#if pending.length || open.length}
-		<Plate title="Waiting on you" sub={String(pending.length + open.length)} n="‖" flush class="orders">
-			<div class="decide" style="--cols:{Math.min(3, pending.length + open.length)}">
+		<!-- what this person can act on; regulator questions only the CISO records fold into one row for everyone else -->
+		<Plate title={pending.length ? 'Waiting on you' : 'To assess'} sub={pending.length ? String(pending.length) : ''} n="‖" flush class="orders">
+			<div class="decide" style="--cols:{Math.min(3, pending.length + (canAssess ? open.length : open.length ? 1 : 0))}">
 				{#each pending as p, i (p.id)}
 					<div class="col"><ApprovalCard {p} {people} index={i + 1} total={pending.length} holdId={'hold-' + p.id} startDeclining={declineParam === p.id} onwhy={() => why(p)} onchange={onChange} /></div>
 				{/each}
-				{#each open as r (r.regime)}
+				{#if canAssess}
+					{#each open as r (r.regime)}
+						<div class="col assess">
+							<p class="lbl eng"><span aria-hidden="true">◆</span> {regimeShort(r.regime)} · to assess</p>
+							<h3 title={r.entityName}>{r.regime === 'sec_8k' ? 'Material?' : 'Reportable?'}</h3>
+							<details class="why"><summary>Why</summary><ul>{#each r.proposal.reasons as reason (reason)}<li>{reason}</li>{/each}</ul></details>
+							<a class="btn preset-filled-surface-950-50" href="?decide={r.regime}" data-sveltekit-noscroll>Record the decision</a>
+						</div>
+					{/each}
+				{:else if open.length}
 					<div class="col assess">
-						<p class="lbl eng"><span aria-hidden="true">◆</span> {regimeShort(r.regime)} · to assess</p>
-						<h3 title={r.entityName}>{r.regime === 'sec_8k' ? 'Material?' : 'Reportable?'}</h3>
-						<details class="why"><summary>Why</summary><ul>{#each r.proposal.reasons as reason (reason)}<li>{reason}</li>{/each}</ul></details>
-						<a class="btn preset-filled-surface-950-50" href="?decide={r.regime}" data-sveltekit-noscroll>Record the decision</a>
+						<p class="lbl eng"><span aria-hidden="true">◆</span> With the CISO</p>
+						<h3>{open.length} {open.length === 1 ? 'question' : 'questions'}</h3>
+						<details class="why"><summary>Why</summary><ul>{#each open as r (r.regime)}{#each r.proposal.reasons as reason (reason)}<li>{regimeShort(r.regime)}: {reason}</li>{/each}{/each}</ul></details>
 					</div>
-				{/each}
+				{/if}
 			</div>
 		</Plate>
 	{/if}

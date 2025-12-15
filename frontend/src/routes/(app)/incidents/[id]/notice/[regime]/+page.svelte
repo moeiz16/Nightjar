@@ -177,7 +177,7 @@
 					{@const has = !unfilled(bodies[s.key])}
 					<div class="req" class:todo={!has}>
 						<span class="k mono" aria-hidden="true">{i + 1}</span>
-						<label class="lbl" for="f-{s.key}">{s.title}{#if !has}<span class="miss1"> ◐ confirm</span><span class="sr"> (missing)</span>{/if}</label>
+						<label class="lbl" for="f-{s.key}">{s.title}{#if !has}<span class="miss1" aria-hidden="true"> ◐</span><span class="sr"> (missing)</span>{/if}</label>
 						<div class="val">
 							{#if s.key === 'contact' && regimeContacts.length && canEdit}
 								<select id="f-{s.key}" class="select" bind:value={bodies[s.key]}>
@@ -186,7 +186,8 @@
 									{#each regimeContacts as c (c.email)}<option value="{c.name}, {c.role.toLowerCase()}, {c.phone}">{c.name} · {c.role}</option>{/each}
 								</select>
 							{:else if canEdit}
-								<input id="f-{s.key}" class="input" bind:value={bodies[s.key]} placeholder={has ? '' : (s.hint ?? 'confirm…')} />
+								<!-- a field grows with its sentence, so what the regulator reads is never cut off -->
+								<textarea id="f-{s.key}" class="textarea fld" rows={Math.max(1, Math.ceil((bodies[s.key]?.length ?? 0) / 84))} bind:value={bodies[s.key]} placeholder={has ? '' : (s.hint ?? 'confirm…')}></textarea>
 							{:else}
 								<span id="f-{s.key}">{bodies[s.key] || '—'}</span>
 							{/if}
@@ -475,6 +476,12 @@
 	.miss1 {
 		font-weight: 700;
 		color: var(--soon);
+	}
+	.fld {
+		width: 100%;
+		resize: vertical;
+		min-height: 0;
+		line-height: 1.45;
 	}
 	.val :global(.input),
 	.val :global(.select) {

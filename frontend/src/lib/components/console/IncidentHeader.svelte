@@ -2,11 +2,11 @@
 	// The incident as one flight strip (DESIGN.md §4): a holder edge for severity, the reference and the severity in
 	// the first box, the title with who and what, reportability and the count of alerts, then the stage rail and the
 	// ATT&CK chain along the strip's lower edge.
-	import type { Incident, Deadline } from '$lib/api/types';
+	import type { Incident } from '$lib/api/types';
 	import { SEV_BARS, SEV_WORD, STAGES, STAGE_WORD, regimeShort, plural } from '$lib/util/labels';
 	import { timeOf } from '$lib/time/clock';
 
-	let { incident, times, clocks = [], pending = 0, compact = false }: { incident: Incident; times: Record<string, string | null>; clocks?: Deadline[]; pending?: number; compact?: boolean } = $props();
+	let { incident, times, pending = 0, compact = false }: { incident: Incident; times: Record<string, string | null>; pending?: number; compact?: boolean } = $props();
 
 	// two words up front ("Reportable" / "NIS2 · SOCI"); where each applies is one hover deeper
 	const reportable = $derived.by(() => {
@@ -25,7 +25,6 @@
 	const SHOWN = 2;
 	const cur = $derived(STAGES.indexOf(incident.stage));
 	const resolved = $derived(incident.status === 'resolved' || incident.status === 'closed');
-	const running = $derived(clocks.filter((c) => c.incidentId === incident.id && c.state !== 'submitted').length);
 </script>
 
 <div class="strip sv-{incident.severity}" class:compact>
@@ -56,9 +55,9 @@
 			<li class="stg" class:done class:now class:wait={now && pending > 0} aria-current={now ? 'step' : undefined}>
 				<span class="g" aria-hidden="true">{done ? '✓' : now && pending > 0 ? '‖' : now ? '●' : '○'}</span>
 				<span class="nm">{STAGE_WORD[s]}</span>
-				<small>
-					{#if done && s !== 'report' && times[s]}{timeOf(times[s]!)}{:else if now && pending > 0}{plural(pending, 'approval')} waiting{:else if s === 'report'}{running ? plural(running, 'clock') : now ? 'nothing to file' : ''}{/if}
-				</small>
+				<!-- the stage rail says where the incident is; who is waiting and which clocks run live in the orders and the tabs -->
+				<small>{#if done && s !== 'report' && times[s]}{timeOf(times[s]!)}{/if}</small>
+				{#if now && pending > 0}<span class="sr">, {plural(pending, 'approval')} waiting</span>{/if}
 			</li>
 		{/each}
 	</ol>
@@ -295,6 +294,11 @@
 			border-top: 1px solid var(--rule);
 		}
 		.stg small {
+			display: none;
+		}
+		/* phones: the action comes sooner; the technique chain and the alert count are on the desktop strip and in the evidence */
+		.attck,
+		.cnt {
 			display: none;
 		}
 		.tq {
