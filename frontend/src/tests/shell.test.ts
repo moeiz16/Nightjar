@@ -1,20 +1,24 @@
 // The shell's model and its primitives: turnover readouts by role, the lamp panel's windows, station names, toasts
-// through the Skeleton toaster, and the Plate, ClockList, WatchDial and LampPanel components.
+// through the Skeleton toaster, and the Plate, ClockList, WatchDial, LampPanel and ApprovalCard components. The
+// layering rules are tested too: labels of three words at most, and detail one click deeper than the action.
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-import { sectionsFor, SECTIONS, stationFor, stationLine, toaster, ui, WINDOWS, windowFor } from '$lib/stores/ui.svelte';
+import { sectionsFor, SECTIONS, SECTION_LABEL, stationFor, stationLine, toaster, ui, WINDOWS, windowFor } from '$lib/stores/ui.svelte';
 import { createRawSnippet } from 'svelte';
 import Plate from '$lib/components/ui/Plate.svelte';
 import ClockList from '$lib/components/console/ClockList.svelte';
 import WatchDial from '$lib/components/console/WatchDial.svelte';
 import LampPanel from '$lib/components/shell/LampPanel.svelte';
-import type { Deadline, IncidentSummary } from '$lib/api/types';
+import ApprovalCard from '$lib/components/console/ApprovalCard.svelte';
+import type { Deadline, IncidentSummary, ProposalDoc } from '$lib/api/types';
 import { shiftWindow } from '$lib/util/shift';
 
 // LampPanel reads the current page and the live watch; neither exists outside the browser app.
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/watch') } }));
 vi.mock('$lib/stores/live.svelte', () => ({ live: { incidents: [], clocks: [] } }));
-vi.mock('$lib/stores/session.svelte', () => ({ session: { can: () => true } }));
+vi.mock('$lib/stores/session.svelte', () => ({ session: { can: () => true, me: { user: { id: 'u-marcus' }, membership: { permissions: ['actions:approve'] } }, role: 'responder', name: 'Marcus Bell' } }));
+// the approval card talks to the API only when someone holds or declines
+vi.mock('$lib/api', () => ({ api: {}, problemMessage: (e: unknown) => String(e) }));
 
 const text = (t: string) => createRawSnippet(() => ({ render: () => `<p>${t}</p>` }));
 
@@ -33,6 +37,9 @@ describe('turnover sections', () => {
 	it('falls back to the responder turnover for the CISO and before sign-in', () => {
 		expect(sectionsFor('executive')).toEqual(SECTIONS.responder);
 		expect(sectionsFor(null)).toEqual(SECTIONS.responder);
+	});
+	it('labels every readout in three words or fewer', () => {
+		for (const label of Object.values(SECTION_LABEL)) expect(label.split(/\s+/).length).toBeLessThanOrEqual(3);
 	});
 	it('returns a copy, so a preset cannot be edited in place', () => {
 		const a = sectionsFor('analyst');
@@ -70,7 +77,7 @@ describe('station names', () => {
 		expect(stationFor('/brief/week/2025-W47')).toBe('Weekly report');
 		expect(stationFor('/brief')).toBe('Morning brief');
 	});
-	it('gives registers a plain line under the name, and the watch none of its own', () => {
+	it('keeps what a register is for as a plain sentence (the name’s tooltip), and the watch none of its own', () => {
 		expect(stationLine('/assets')).toMatch(/server, laptop and cloud account/);
 		expect(stationLine('/hunt/saved')).toMatch(/^Searches worth repeating/);
 		expect(stationLine('/watch')).toBe('');
@@ -127,6 +134,14 @@ describe('Plate', () => {
 	it('takes an explicit label over the title', () => {
 		render(Plate, { props: { title: 'notice', label: 'Notice draft', children: text('x') } });
 		expect(screen.getByRole('region', { name: 'Notice draft' })).toBeTruthy();
+	});
+	it('keeps a quiet plate’s heading for screen readers only, so the page has one visible title', () => {
+		const { container } = render(Plate, { props: { title: 'The register', sub: '18 of 18', quiet: true, children: text('rows') } });
+		const h = screen.getByRole('heading', { name: 'The register' });
+		expect(h.classList.contains('sr')).toBe(true);
+		expect(screen.getByRole('region', { name: 'The register' })).toBeTruthy();
+		expect(container.querySelector('.bar')).toBeNull();
+		expect(container.querySelector('.sub')?.textContent).toBe('18 of 18');
 	});
 	it('marks the plates that hold a decision with corner ticks', () => {
 		const { container } = render(Plate, { props: { title: 'rule', ticks: true, children: text('x') } });
@@ -211,5 +226,48 @@ describe('WatchDial', () => {
 	it('links somewhere else when asked (the landing sends people to sign in)', () => {
 		render(WatchDial, { props: { win, incidents: [inc('a', 'NJ-1038')], log: [], tz: 'Europe/Brussels', hrefFor: () => '/sign-in' } });
 		for (const a of screen.getAllByRole('link', { name: /NJ-1038/ })) expect(a.getAttribute('href')).toBe('/sign-in');
+	});
+});
+
+describe('ApprovalCard', () => {
+	const proposal: ProposalDoc = {
+		id: 'p-1',
+		incidentId: 'i-1',
+		incidentReference: 'NJ-1038',
+		runId: null,
+		kind: 'revoke_access_key',
+		kindLabel: 'Withdraw a cloud access key',
+		target: 'AKIAEXAMPLEHALDEN01',
+		targetType: 'access_key',
+		rationale: 'The key is public and being used by someone else.',
+		expectedEffect: 'Anything using this key stops working until a new key is issued.',
+		reversible: false,
+		destructive: true,
+		crownJewel: false,
+		proposedBy: { type: 'agent', name: 'Response colleague' },
+		status: 'pending',
+		requiredRoles: ['responder'],
+		approvals: [],
+		rejection: null,
+		result: null,
+		createdAt: '2025-11-20T01:04:00Z',
+		expiresAt: '2025-11-20T09:04:00Z'
+	};
+	it('shows the action and the hold first, with does, why and undo folded under Details', () => {
+		const { container } = render(ApprovalCard, { props: { p: proposal } });
+		expect(screen.getByRole('heading', { level: 2 }).textContent).toMatch(/key/i);
+		expect(screen.getByRole('button', { name: /Hold to authorise/i })).toBeTruthy();
+		const more = container.querySelector('details.more') as HTMLDetailsElement;
+		expect(more).toBeTruthy();
+		expect(more.open).toBe(false);
+		expect(more.querySelector('summary')?.textContent).toBe('Details');
+		expect(more.textContent).toContain(proposal.expectedEffect);
+		expect(more.textContent).toContain('Cannot be undone');
+	});
+	it('names a crown jewel in a few words, with the rule in its tooltip', () => {
+		const { container } = render(ApprovalCard, { props: { p: { ...proposal, crownJewel: true } } });
+		const cj = container.querySelector('.cj');
+		expect(cj?.textContent).toBe('◆ Crown jewel · two people');
+		expect(cj?.getAttribute('title')).toMatch(/responder and the CISO/);
 	});
 });
