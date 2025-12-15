@@ -38,7 +38,9 @@
 	const inWeek = $derived(range ? all.filter((i) => +new Date(i.firstSeen) >= +range.from && +new Date(i.firstSeen) <= +range.to) : []);
 	const notable = $derived(inWeek.filter((i) => i.reportable === 'yes' || i.severity === 'critical' || i.severity === 'high'));
 	$effect(() => {
-		for (const i of notable) if (!stories[i.id]) api.incidents.timeline(i.id, 'executive').then((t) => (stories[i.id] = t)).catch(() => undefined);
+		for (const i of notable) if (!stories[i.id]) api.incidents.timeline(i.id, 'executive').then((t) => {
+					stories[i.id] = t;
+				}).catch(() => undefined);
 	});
 	const actionsFor = (id: string) => actions.filter((p) => p.incidentId === id && (p.status === 'executed' || p.status === 'approved'));
 	const contained = (i: IncidentSummary) => {
@@ -52,6 +54,11 @@
 	const dots = $derived(inWeek.map((i) => i));
 	const noiseClosed = $derived(inWeek.filter((i) => i.verdict === 'benign').length);
 	const reportableCount = $derived(inWeek.filter((i) => i.reportable === 'yes').length);
+	// the PDF carries everything: open every folded section, then print
+	function printAll() {
+		document.querySelectorAll('main.doc details').forEach((d) => ((d as HTMLDetailsElement).open = true));
+		setTimeout(() => window.print(), 50);
+	}
 	/** 137.6 s → "about 2 minutes", 1,369 s → "about 23 minutes", 5,400 s → "about 1.5 hours". */
 	function duration(seconds: number | null | undefined): string {
 		if (seconds === null || seconds === undefined) return 'no time recorded';
@@ -69,37 +76,46 @@
 		<p class="err">{err}</p>
 		<p><a href="/brief/week">Open this week’s report</a></p>
 	{:else if brief && m}
-		<p class="dateline eng">Week {week.split('-W')[1]} · {label} · Halden Logistics · prepared for the board</p>
+		<p class="dateline eng" title="Halden Logistics · prepared for the board">Week {week.split('-W')[1]} · {label}</p>
 		<h2 class="headline">{brief.headline}</h2>
-		<div class="tools"><button type="button" onclick={() => window.print()}>Save as PDF ⇩</button>
+		<div class="tools"><button type="button" onclick={printAll}>Save as PDF ⇩</button>
 			{#each list.filter((l) => l.week !== week).slice(0, 3) as l (l.week)}<a href="/brief/week/{l.week}">week {l.week.split('-W')[1]}</a>{/each}
 		</div>
 
 		<section>
-			<h3 class="sh">Seven nights <span>◆ incident · ● closed as noise</span></h3>
+			<h3 class="sh" title="◆ incident · ● closed as noise">Seven nights</h3>
 			<SevenNights incidents={inWeek} at={range ? range.to : now()} />
 		</section>
 
 		<section>
-			<h3 class="sh">Incidents, as told by their replays</h3>
+			<h3 class="sh">Incidents</h3>
+			<!-- one line per incident; what happened, what we did and what changed open on click -->
 			{#each notable as i (i.id)}
 				{@const st = stories[i.id] ?? []}
-				<article class="story">
-					<h4><span class="person mono">◆</span> <span class="mono ref">{i.reference}</span> {i.title}</h4>
-					<p class="meta">{i.reportable === 'yes' ? `reportable · ${i.nextDeadline ? regimeShort(i.nextDeadline.regime) : 'notices filed'}` : 'not reportable'} · {contained(i) ? `contained in ${contained(i)}` : 'no action needed'} · {actionsFor(i.id).length} {actionsFor(i.id).length === 1 ? 'action' : 'actions'} approved by a person</p>
+				<details class="story">
+					<summary>
+						<h4><span class="person mono">◆</span> <span class="mono ref">{i.reference}</span> {i.title}</h4>
+						<p class="meta" title="{actionsFor(i.id).length} {actionsFor(i.id).length === 1 ? 'action' : 'actions'} approved by a person">{i.reportable === 'yes' ? `Reportable · ${i.nextDeadline ? regimeShort(i.nextDeadline.regime) : 'notices filed'}` : 'Not reportable'} · {contained(i) ? `contained in ${contained(i)}` : 'no action needed'}</p>
+					</summary>
 					<dl>
 						<div><dt>What happened</dt><dd>{incidentShortName(i).replace(/^./, (c) => c.toUpperCase())}, first seen {shortDay(i.firstSeen)} at {timeOf(i.firstSeen)}.</dd></div>
 						<div><dt>What we did</dt><dd>{st.length ? st.slice(0, 4).map((e) => `${timeOf(e.at)} ${e.title.replace(/ · /g, ', ')}`).join('. ') + '.' : 'The watch triaged and grouped the alerts.'}</dd></div>
 						<div><dt>What we changed</dt><dd>{i.kind === 'ransomware_precursor' ? 'Patched the remote-access gateway and reset its sessions; service accounts now need two people to re-enable.' : i.kind === 'credential_misuse' ? 'Blocked the look-alike domain and added a rule for outside forwarding.' : i.kind === 'cloud_credential_exposure' ? 'Deploy keys move to short-lived credentials; public-code scanning now alerts within minutes.' : 'Tuned the rule that fired.'}</dd></div>
 					</dl>
-				</article>
+				</details>
 			{:else}
 				<p class="dim">No incident this week needed more than the watch.</p>
 			{/each}
 		</section>
 
 		<section class="facts">
-			<h3 class="sh">The numbers, in sentences</h3>
+			<h3 class="sh">The numbers</h3>
+			<dl class="stats">
+				<div><dt>Reportable</dt><dd class="mono">{reportableCount}</dd></div>
+				<div><dt>Alerts → incidents</dt><dd class="mono">{m.alerts.last7d.toLocaleString('en-GB')} → {m.alerts.incidentsLast7d}</dd></div>
+				<div><dt>First verdict</dt><dd class="mono">{m.meanTimeToTriage.last7dSeconds == null ? '—' : m.meanTimeToTriage.last7dSeconds < 90 ? `${Math.round(m.meanTimeToTriage.last7dSeconds)} s` : `${Math.round(m.meanTimeToTriage.last7dSeconds / 60)} min`}</dd></div>
+			</dl>
+			<details class="more"><summary>In sentences</summary>
 			<p><b>Clocks:</b> {#if reportableCount}{reportableCount} reportable {reportableCount === 1 ? 'incident' : 'incidents'}; every notice due this week went out on time, recorded with who submitted it.{:else}no incident this week needed a regulator notice.{/if}</p>
 			<p><b>Noise:</b> {m.alerts.last7d.toLocaleString('en-GB')} alerts became {m.alerts.incidentsLast7d} {m.alerts.incidentsLast7d === 1 ? 'incident' : 'incidents'} ({m.alerts.reductionPct}% fewer things to look at than rules alone){#if m.alerts.suppressedAsNoise}; triage set {m.alerts.suppressedAsNoise.toLocaleString('en-GB')} aside as noise{/if}, and {noiseClosed} {noiseClosed === 1 ? 'incident was' : 'incidents were'} closed as harmless.</p>
 			<p><b>Speed:</b> the first verdict on an incident took {duration(m.meanTimeToTriage.last7dSeconds)} on average ({duration(m.meanTimeToTriage.last30dSeconds)} over 30 days); containment followed in {duration(m.meanTimeToContain.last7dSeconds)}.</p>
@@ -109,8 +125,9 @@
 				{#each dots as i, k (i.id)}{@const c = contained(i)}{#if c && c.endsWith('min')}<circle cx={Math.min(620, parseInt(c) * 10 + 10)} cy={30 - (k % 3) * 6 + 6} r="5" fill="var(--acc)" opacity=".8"><title>{i.reference}: {c}</title></circle>{/if}{/each}
 			</svg>
 			<p><b>Next week:</b> {m.components[0]?.note ?? ''} The NIS2 final report for the dispatch incident is due one month after its incident notification.</p>
+			</details>
 		</section>
-		<p class="foot">Sample company and data · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; not legal advice.</p>
+		<p class="foot" title="Designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; not legal advice.">Sample company and data · not legal advice</p>
 	{:else}
 		<p class="dim">Assembling the week…</p>
 	{/if}
@@ -165,15 +182,68 @@
 		letter-spacing: 0.1em;
 		color: var(--ink);
 	}
-	.sh span {
-		font: 600 13px/1 var(--ui);
-		letter-spacing: 0;
-		text-transform: none;
-		color: var(--dim);
-	}
 	.story {
-		padding: 20px 0;
+		padding: 16px 0;
 		border-top: 1px solid var(--rule);
+	}
+	.story summary,
+	.more summary {
+		cursor: pointer;
+		list-style: none;
+	}
+	.story summary::-webkit-details-marker,
+	.more summary::-webkit-details-marker {
+		display: none;
+	}
+	.story[open] summary {
+		margin-bottom: 12px;
+	}
+	.story summary:hover h4 {
+		text-decoration: underline;
+		text-decoration-color: var(--acc);
+		text-decoration-thickness: 2px;
+	}
+	.more summary {
+		width: max-content;
+		font: 600 14px/1 var(--ui);
+		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+		margin-top: 14px;
+	}
+	.more summary::after {
+		content: ' ▸';
+	}
+	.more[open] summary::after {
+		content: ' ▾';
+	}
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+		margin: 14px 0 0;
+	}
+	.stats div {
+		display: block;
+		padding: 12px 14px;
+		background: var(--raised);
+	}
+	.stats dt {
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--faint);
+	}
+	.stats dd {
+		margin: 8px 0 0;
+		font-size: 30px;
+		line-height: 1;
+		color: var(--ink);
+	}
+	@media (max-width: 760px) {
+		.stats {
+			grid-template-columns: minmax(0, 1fr);
+		}
 	}
 	.story h4 {
 		margin: 0 0 6px;

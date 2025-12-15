@@ -1,7 +1,6 @@
 <script lang="ts">
-	// Sign on to the watch (DESIGN.md §4): the watch bill. The idle dial shows the time on the left; on the right a
-	// shift starts with a sign-on that says which watch you are joining, then the roster of demo roles (role, who,
-	// what they do, Take), then your own account.
+	// Sign on to the watch (DESIGN.md §4): the watch bill. The idle dial shows the time on the left; on the right
+	// the roster of demo roles (station, who, a two-word note, Take). Your own account is folded under it.
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
@@ -17,10 +16,10 @@
 
 	const DEMO_PASSWORD = 'Nightjar-demo-2025!';
 	const ROLES = [
-		{ key: 'analyst', label: 'Analyst', name: 'Lukas Peeters', email: 'lukas.peeters@halden.example', note: 'hunts, tunes rules and reads every investigation' },
-		{ key: 'responder', label: 'Responder', name: 'Marcus Bell', email: 'marcus.bell@halden.example', note: 'holds to authorise containment and works the night' },
-		{ key: 'ciso', label: 'CISO', name: 'Ingrid Vos', email: 'ingrid.vos@halden.example', note: 'lands on the morning brief and owns the regulator decisions' },
-		{ key: 'auditor', label: 'Auditor', name: 'Samira Haddad', email: 'samira.haddad@halden.example', note: 'reads everything and checks the sealed activity log' }
+		{ key: 'analyst', label: 'Analyst', name: 'Lukas Peeters', email: 'lukas.peeters@halden.example', note: 'hunts and tunes rules' },
+		{ key: 'responder', label: 'Responder', name: 'Marcus Bell', email: 'marcus.bell@halden.example', note: 'holds to authorise' },
+		{ key: 'ciso', label: 'CISO', name: 'Ingrid Vos', email: 'ingrid.vos@halden.example', note: 'reads the brief' },
+		{ key: 'auditor', label: 'Auditor', name: 'Samira Haddad', email: 'samira.haddad@halden.example', note: 'checks the log' }
 	] as const;
 	const win = $derived(shiftWindow(live.now, BRUSSELS));
 	const watch = $derived(watchOf(live.now, BRUSSELS));
@@ -73,12 +72,11 @@
 <svelte:head><title>Take the watch · Nightjar SOC</title></svelte:head>
 
 <div class="page">
-	<StationHead title="Sign on" sub="Halden Logistics demo · sample company and data" home="/">
+	<StationHead title="Sign on" sub="Demo company" home="/">
 		{#snippet panel()}<LampPanel items={PUBLIC} />{/snippet}
 		{#snippet right()}
 			<div class="pr">
-				<span class="t mono">{timeOf(live.now, BRUSSELS)}</span>
-				<span class="eng d">{watch.label} watch · Antwerp</span>
+				<span class="t mono" title="{watch.label} watch · Antwerp">{timeOf(live.now, BRUSSELS)}</span>
 				<a class="lnk" href="/">↺ Replay the night</a>
 			</div>
 		{/snippet}
@@ -88,13 +86,11 @@
 			<WatchDial {win} incidents={[]} log={[]} tz={BRUSSELS} compact max={460} />
 		</div>
 		<section class="on" aria-labelledby="t">
-			<p class="eng kicker">The watch bill · {longDate(live.now, BRUSSELS)}</p>
-			<h2 id="t" class="when">You take the watch at <span class="mono">{timeOf(live.now, BRUSSELS)}</span></h2>
-			<p class="lede">Three teammates are on shift: Triage, Enrichment and Response. Nothing is switched off until a person holds to authorise it.</p>
+			<h2 id="t" class="eng kicker" title="The watch bill · {longDate(live.now, BRUSSELS)}">Pick a station</h2>
 
 			<table class="roster">
 				<caption class="sr">Demo roles</caption>
-				<thead><tr><th scope="col">Station</th><th scope="col">On watch</th><th scope="col">Does</th><th scope="col"><span class="sr">Sign on</span></th></tr></thead>
+				<thead class="sr"><tr><th scope="col">Station</th><th scope="col">On watch</th><th scope="col">Does</th><th scope="col">Sign on</th></tr></thead>
 				<tbody>
 					{#each ROLES as r (r.key)}
 						<tr>
@@ -111,16 +107,15 @@
 				</tbody>
 			</table>
 
-			<div class="own">
-				<p class="eng step">Or with your own account</p>
+			<details class="own" open={!!err}>
+				<summary class="step">Your own account</summary>
 				<form onsubmit={submit} novalidate>
 					<label class="label"><span>Work email</span><input class="input" type="email" autocomplete="username" bind:value={email} placeholder="marcus.bell@halden.example" aria-invalid={!!fieldErr.email} /></label>
-					<label class="label"><span>Password</span><input class="input" type="password" autocomplete="current-password" bind:value={password} aria-invalid={!!fieldErr.password} /></label>
+					<label class="label" title="Forgot it? Ask your administrator."><span>Password</span><input class="input" type="password" autocomplete="current-password" bind:value={password} aria-invalid={!!fieldErr.password} /></label>
 					<button class="btn preset-filled-surface-950-50" type="submit" disabled={!!busy}>{busy === 'form' ? 'Taking the watch…' : 'Take the watch →'}</button>
 				</form>
-				{#if err}<p class="ferr" role="alert">{err}</p>{/if}
-			</div>
-			<p class="fine">Forgot your password? Ask your administrator · Sample company and data</p>
+			</details>
+			{#if err}<p class="ferr" role="alert">{err}</p>{/if}
 		</section>
 	</main>
 </div>
@@ -140,10 +135,6 @@
 		font-size: 40px;
 		color: var(--ink);
 	}
-	.pr .d {
-		font-size: 12.5px;
-		color: var(--acc-hi);
-	}
 	.bill {
 		display: grid;
 		grid-template-columns: minmax(300px, 520px) minmax(0, 760px);
@@ -156,43 +147,19 @@
 		position: sticky;
 		top: 24px;
 	}
+	.on {
+		align-self: center;
+	}
 	.kicker {
-		margin: 0 0 14px;
-		font-size: 13px;
+		margin: 0 0 10px;
+		font-size: 15px;
+		font-weight: 700;
 		color: var(--acc-hi);
-	}
-	.when {
-		margin: 0;
-		font: 800 76px/0.9 var(--display);
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
-	}
-	.when .mono {
-		font-size: 0.78em;
-		font-weight: 400;
-		letter-spacing: -0.02em;
-		color: var(--acc-hi);
-		white-space: nowrap;
-	}
-	.lede {
-		margin: 18px 0 26px;
-		max-width: 56ch;
-		font-size: 17px;
-		line-height: 1.55;
-		color: var(--ink-2);
 	}
 	.roster {
 		width: 100%;
 		border-collapse: separate;
 		border-spacing: 0 5px;
-	}
-	.roster thead th {
-		font: 700 12px/1 var(--display);
-		text-transform: uppercase;
-		letter-spacing: 0.16em;
-		color: var(--faint);
-		text-align: left;
-		padding: 0 14px 4px;
 	}
 	.roster tbody th,
 	.roster td {
@@ -230,25 +197,42 @@
 		background: var(--raised);
 	}
 	.own {
-		margin-top: 30px;
-		padding-top: 22px;
+		margin-top: 24px;
+		padding-top: 18px;
 		border-top: 1px solid var(--rule);
 	}
 	.step {
-		margin: 0 0 12px;
-		font-size: 13px;
+		cursor: pointer;
+		width: max-content;
+		font: 600 14px/1 var(--ui);
 		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+		list-style: none;
+	}
+	.step::-webkit-details-marker {
+		display: none;
+	}
+	.step::after {
+		content: ' ▸';
+	}
+	.own[open] .step {
+		margin-bottom: 14px;
+	}
+	.own[open] .step::after {
+		content: ' ▾';
+	}
+	.step:hover {
+		color: var(--ink);
+	}
+	.ferr {
+		margin: 12px 0 0;
 	}
 	form {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
 		gap: 12px;
 		align-items: end;
-	}
-	.fine {
-		margin: 26px 0 0;
-		font-size: 13px;
-		color: var(--faint);
 	}
 	@media (max-width: 1100px) {
 		.bill {
@@ -267,12 +251,6 @@
 			padding: 20px var(--gut) 40px;
 		}
 		.dialw {
-			display: none;
-		}
-		.when {
-			font-size: 46px;
-		}
-		.roster thead {
 			display: none;
 		}
 		.roster tr {

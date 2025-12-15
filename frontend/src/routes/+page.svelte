@@ -250,7 +250,18 @@
 		{ n: 3, href: '#clocks', label: 'The clocks' },
 		{ n: 4, href: '/sign-in', label: 'Sign on' }
 	];
-	const shownLog = $derived(done ? log.slice(-4) : log);
+	const ROUND = [
+		{ t: '22:00', label: 'The watch begins', line: 'Every event, all night.', more: 'Nightjar SOC takes in your security events as they happen: sign-ins, mail, endpoints, firewalls and cloud services across every office. It writes each one in plain words and folds away the routine, so the few that matter stand out. One minute at Halden Logistics: 1,284 events, 2 worth a look.' },
+		{ t: '01:30', label: 'A false-alarm storm', line: '146 alerts. One note.', more: 'One backup update set off 146 alerts. Nightjar SOC groups related alerts into one incident, learns each person’s and laptop’s normal rhythm, and scores every alert for how likely it is to be real. It shows its reasons, so your team can disagree with it.' },
+		{ t: '03:12', label: 'Reportable', line: 'The clock is ready first.', lit: true, more: 'Nightjar SOC checks each incident against where you operate and what happened, proposes which clocks apply, and drafts each notice with the required facts filled in from the evidence. A person decides, reviews and submits.' },
+		{ t: '08:00', label: 'First light', line: 'One decision for the CISO.', more: 'The night watch hands over in plain words: what happened, which clocks are running, what was approved and by whom, and the one thing that needs the CISO today.' }
+	];
+	const REGIMES = [
+		{ name: 'NIS2 · EU', clock: '24 h · 72 h', what: 'Early warning, notification', tone: 'h-acc', more: 'Early warning within 24 hours of becoming aware of a significant incident, notification within 72 hours, a final report within a month.' },
+		{ name: 'SEC 8-K · US', clock: '4 days', what: 'After the materiality call', tone: 'h-person', more: 'Form 8-K Item 1.05, four business days after you decide an incident is material.' },
+		{ name: 'SOCI · AU', clock: '12 h · 72 h', what: 'Significant · relevant', tone: 'h-soon', more: 'Report to the Australian Signals Directorate’s ACSC: 12 hours for a significant impact, 72 hours for a relevant one.' }
+	];
+	const shownLog = $derived(done ? log.slice(-2) : log);
 </script>
 
 <svelte:head>
@@ -275,7 +286,7 @@
 	</div>
 
 	<div class="logcol">
-		<p class="kicker eng"><span class="rec" aria-hidden="true">●</span> Replay · Halden Logistics · the night of {nightOf}</p>
+		<p class="kicker eng" title="The night of {nightOf}"><span class="rec" aria-hidden="true">●</span> Replay · Halden Logistics</p>
 		<div class="chrono">
 			<div class="bigclock mono" aria-hidden="true"><Tick value={hm} fast={!done} /><span class="sec"><Tick value={ss} fast={!done} /></span></div>
 			<span class="eng wt">{watch.label} watch</span>
@@ -299,7 +310,7 @@
 		{#if asking && !done}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="askbox ticks" in:fly={{ y: 6, duration: reduced ? 0 : 380 }} onpointerdown={() => (userHeld = true)} onkeydown={() => (userHeld = true)}>
-				<p class="lbl eng">‖ Waiting on a person · proposed by Response · reversible · logged</p>
+				<p class="lbl eng" title="Proposed by Response · reversible · logged">‖ Waiting on a person</p>
 				<p class="q">Turn off Joy’s account and sign her out everywhere</p>
 				<HoldButton bind:this={hold} hint="try it · or hold Space" done={authorised && done ? { label: `Authorised · ${fmt(authorised.at)}`, sub: `by ${authorised.by}` } : null} onconfirm={confirmHold} />
 				<p class="try">{authorised ? 'Logged with who, when and why.' : 'If you don’t, Marcus on call will.'}</p>
@@ -308,7 +319,7 @@
 		{#if done}
 			<div class="final" in:fly={{ y: 10, duration: reduced ? 0 : 600 }}>
 				<h1>Someone is always on watch.</h1>
-				<p>Nightjar SOC watches your company’s security through the night, separates real threats from noise, investigates with three AI teammates, starts the regulator’s clock and drafts the notice. Nothing is switched off or locked out until a person says so.</p>
+				<p title="Nightjar SOC watches your company’s security through the night, separates real threats from noise, investigates with three AI teammates, starts the regulator’s clock and drafts the notice. Nothing is switched off or locked out until a person says so.">Threats found, regulator clocks kept, and a person decides.</p>
 				<div class="ctas"><a class="btn btn-lg preset-filled-primary-500" href="/sign-in">Take the watch →</a><button class="btn btn-lg preset-outlined-surface-300-700" type="button" onclick={replay}>↺ Replay the night</button></div>
 			</div>
 		{:else}
@@ -318,52 +329,41 @@
 </section>
 
 <main class="round" id="round">
-	<header class="sh"><span class="bar" aria-hidden="true"></span><h2>The round</h2><span class="sub">One night, four stations</span></header>
+	<h2 class="sr">The round: one night, four stations</h2>
+	<!-- each station is one line; the paragraph behind it opens on click -->
 	<div class="stations">
-		<article class="stn" id="t2200">
-			<p class="when"><span class="mono">22:00</span><span class="eng">The watch begins</span></p>
-			<h3>Every sign-in, email, laptop and cloud account, all night.</h3>
-			<p class="lede">Nightjar SOC takes in your security events as they happen: sign-ins, mail, endpoints, firewalls and cloud services across every office. It writes each one in plain words and folds away the routine, so the few that matter stand out.</p>
-			<div class="noise" aria-hidden="true">{#each noise as k, i (i)}<i class:k></i>{/each}</div>
-			<p class="cap">One minute at Halden Logistics: 1,284 events · 1,282 routine, folded · ◇ 2 worth a look</p>
-		</article>
-		<article class="stn" id="t0130">
-			<p class="when"><span class="mono">01:30</span><span class="eng">A false-alarm storm</span></p>
-			<h3>146 alerts from one backup update. One note, not 146 pages.</h3>
-			<p class="lede">Rules match patterns; patterns are noisy. Nightjar SOC groups related alerts into one incident, learns each person’s and laptop’s normal rhythm, and scores every alert for how likely it is to be real. It shows its reasons, so your team can disagree with it.</p>
-		</article>
-		<article class="stn lit" id="t0312">
-			<p class="when"><span class="mono">03:12</span><span class="eng">Reportable</span></p>
-			<h3>When an incident may be reportable, the clock is ready before you are.</h3>
-			<p class="lede">Nightjar SOC checks each incident against where you operate and what happened, proposes which clocks apply, and drafts each notice with the required facts filled in from the evidence. A person decides, reviews and submits.</p>
-		</article>
-		<article class="stn" id="t0800">
-			<p class="when"><span class="mono">08:00</span><span class="eng">First light</span></p>
-			<h3>One incident from overnight is reportable. It is contained, and one decision is yours.</h3>
-			<p class="lede">The night watch hands over in plain words: what happened, which clocks are running, what was approved and by whom, and the one thing that needs the CISO today.</p>
-		</article>
+		{#each ROUND as st (st.t)}
+			<details class="stn" class:lit={st.lit} id="t{st.t.replace(':', '')}">
+				<summary>
+					<span class="when"><span class="mono">{st.t}</span><span class="eng">{st.label}</span></span>
+					<span class="big">{st.line}</span>
+					{#if st.t === '22:00'}<span class="noise" aria-hidden="true">{#each noise as k, i (i)}<i class:k></i>{/each}</span>{/if}
+					<span class="more">More</span>
+				</summary>
+				<p class="lede">{st.more}</p>
+			</details>
+		{/each}
 	</div>
 
 	<section class="clocksband" id="clocks" aria-labelledby="ck">
-		<header class="sh"><span class="bar" aria-hidden="true"></span><h2 id="ck">The clocks it keeps</h2><span class="sub">Designed to support each regime’s reporting</span></header>
-		<div class="table-wrap">
-			<table class="table">
-				<thead><tr><th>Regime</th><th>What is due</th><th>Clock</th><th>Counts from</th></tr></thead>
-				<tbody>
-					<tr class="h-acc"><td><b>NIS2 · EU</b></td><td>Early warning, then full notification, then a final report</td><td class="m">24 h · 72 h</td><td>Becoming aware of a significant incident; final report within a month</td></tr>
-					<tr class="h-person"><td><b>SEC Form 8-K · US</b></td><td>Item 1.05, once you decide an incident is material</td><td class="m">4 business days</td><td>The materiality decision</td></tr>
-					<tr class="h-soon"><td><b>SOCI · Australia</b></td><td>Report to the Australian Signals Directorate’s ACSC</td><td class="m">12 h · 72 h</td><td>Significant · relevant impact</td></tr>
-				</tbody>
-			</table>
+		<h2 id="ck" class="sr">The clocks it keeps</h2>
+		<div class="regs">
+			{#each REGIMES as r (r.name)}
+				<div class="reg {r.tone}" title={r.more}>
+					<span class="eng">{r.name}</span>
+					<b class="mono">{r.clock}</b>
+					<span class="faint">{r.what}</span>
+				</div>
+			{/each}
 		</div>
 	</section>
 </main>
 <footer class="fin">
 	<div class="horizon" aria-hidden="true"></div>
 	<p class="eng fk">08:00 · First light</p>
-	<h2>Take the watch at Halden Logistics.</h2>
+	<h2>Take the watch.</h2>
 	<a class="btn btn-lg preset-filled-primary-500" href="/sign-in">Take the watch →</a>
-	<p class="fine">Sample company and data · For mid-size companies with operations in the EU, US and Australia · designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; it does not submit anything without a person.</p>
+	<p class="fine" title="For mid-size companies with operations in the EU, US and Australia. Designed to support NIS2, SEC Form 8-K Item 1.05 and SOCI reporting; it does not submit anything without a person.">Sample company and data</p>
 </footer>
 
 <style>
@@ -584,28 +584,6 @@
 		padding: 40px var(--gut) 56px;
 		border-top: 1px solid var(--rule);
 	}
-	.sh {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 8px 14px;
-		margin-bottom: 18px;
-	}
-	.sh .bar {
-		width: 5px;
-		height: 30px;
-		background: var(--acc);
-	}
-	.sh h2 {
-		margin: 0;
-		font: 800 44px/1 var(--display);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-	}
-	.sh .sub {
-		font-weight: 600;
-		color: var(--dim);
-	}
 	.stations {
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -630,7 +608,6 @@
 		display: flex;
 		align-items: baseline;
 		gap: 12px;
-		margin: 0 0 14px;
 	}
 	.when .mono {
 		font-size: 34px;
@@ -640,14 +617,39 @@
 		font-size: 13px;
 		color: var(--acc-hi);
 	}
-	.stn h3 {
-		margin: 0 0 12px;
-		font: 800 27px/1 var(--display);
+	.stn summary {
+		display: grid;
+		gap: 12px;
+		cursor: pointer;
+		list-style: none;
+	}
+	.stn summary::-webkit-details-marker {
+		display: none;
+	}
+	.stn .big {
+		font: 800 30px/1 var(--display);
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
+		color: var(--ink);
+	}
+	.stn .more {
+		width: max-content;
+		font: 600 13px/1 var(--ui);
+		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+	}
+	.stn .more::after {
+		content: ' ▸';
+	}
+	.stn[open] .more::after {
+		content: ' ▾';
+	}
+	.stn summary:hover .more {
+		color: var(--ink);
 	}
 	.stn .lede {
-		margin: 0;
+		margin: 14px 0 0;
 		font-size: 15px;
 		line-height: 1.55;
 		color: var(--ink-2);
@@ -656,7 +658,7 @@
 		display: grid;
 		grid-template-columns: repeat(30, 1fr);
 		gap: 2px;
-		margin: 18px 0 8px;
+		margin: 2px 0;
 	}
 	.noise i {
 		height: 9px;
@@ -667,20 +669,40 @@
 		background: var(--soon);
 		opacity: 1;
 	}
-	.cap {
-		margin: 0;
-		font: 500 12px/1.4 var(--code);
-		color: var(--faint);
-	}
 	.clocksband {
-		margin-top: 48px;
+		margin-top: 6px;
 		scroll-margin-top: 20px;
 	}
-	.table-wrap {
-		overflow-x: auto;
+	.regs {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
 	}
-	.table {
-		width: 100%;
+	.reg {
+		display: grid;
+		gap: 10px;
+		padding: 18px 22px 20px;
+		background: var(--plate);
+		border: 1px solid var(--rule);
+		border-left: 4px solid var(--acc);
+		cursor: help;
+	}
+	.reg.h-person {
+		border-left-color: var(--person);
+	}
+	.reg.h-soon {
+		border-left-color: var(--soon);
+	}
+	.reg .eng {
+		font-size: 15px;
+		color: var(--ink-2);
+	}
+	.reg b {
+		font: 400 34px/1 var(--code);
+		color: var(--ink);
+	}
+	.reg .faint {
+		font-size: 13.5px;
 	}
 	.fin {
 		position: relative;
@@ -775,8 +797,8 @@
 		.stations {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		.sh h2 {
-			font-size: 34px;
+		.regs {
+			grid-template-columns: minmax(0, 1fr);
 		}
 		.fin h2 {
 			font-size: 48px;

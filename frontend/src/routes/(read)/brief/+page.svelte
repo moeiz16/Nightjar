@@ -91,28 +91,33 @@
 
 <main class="report rack">
 	<section class="lead" aria-labelledby="bh">
-		<p class="dateline"><b class="eng">{longDate(at)}</b><span>Prepared {prepared} for {session.name}, {session.role === 'executive' ? 'CISO' : session.roleLabel.toLowerCase()} · a 2-minute read</span></p>
+		<p class="dateline" title="Prepared {prepared} for {session.name}, {session.role === 'executive' ? 'CISO' : session.roleLabel.toLowerCase()} · a 2-minute read"><b class="eng">{longDate(at)}</b></p>
 		<h2 id="bh" class="headline">{head.lead}{head.tail}{#if head.em}<em>{head.em}</em>{/if}{head.end}</h2>
-		<p class="lede">
-			{lede()}
-			{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise. <b>No one was woken.</b>{/if}
-			{#if clocks[0]} The nearest regulator deadline is the {clockLongLabel(clocks[0]).split(' · ')[0]}, due {dueLabel(clocks[0].dueAt!, at, REGIME_TZ[clocks[0].regime])}.{/if}
-		</p>
+		<!-- the story in sentences is one click deeper; the headline and the plates carry the morning -->
+		<details class="lede">
+			<summary>The night in a paragraph</summary>
+			<p>
+				{lede()}
+				{#if benign.length} A software update set off {benign.reduce((n, i) => n + i.detectionCount, 0)} alerts; the watch grouped them into one note and closed it as noise. <b>No one was woken.</b>{/if}
+				{#if clocks[0]} The nearest regulator deadline is the {clockLongLabel(clocks[0]).split(' · ')[0]}, due {dueLabel(clocks[0].dueAt!, at, REGIME_TZ[clocks[0].regime])}.{/if}
+			</p>
+		</details>
 	</section>
 
 	<div class="cols">
 		{#if decision}
 			<section class="decision ticks" aria-labelledby="dq">
-				<div class="lbl eng">◆ Needs your decision · {decision.a.regime === 'sec_8k' ? 'SEC Form 8-K, Item 1.05' : decision.a.regimeLabel}</div>
+				<div class="lbl eng" title={decision.a.regime === 'sec_8k' ? 'SEC Form 8-K, Item 1.05' : decision.a.regimeLabel}>◆ Your decision · {decision.a.regime === 'sec_8k' ? 'SEC 8-K' : decision.a.regimeLabel}</div>
 				<h3 id="dq">{decisionQuestion(decision.a, decision.i)}</h3>
-				{#if decision.a.regime === 'sec_8k'}
-					<p>Halden’s shares are listed in the US, so a cybersecurity incident it judges material must be disclosed within four business days of that decision. The decision belongs to you and the disclosure committee, not to the watch.</p>
-				{:else}
-					<p>The watch cannot decide this for {decision.a.entityName}. It belongs to you, with legal and data protection.</p>
-				{/if}
-				<div class="view"><span class="eng">The watch’s view · {decision.a.proposal.reasons.length} reasons</span>
+				<details class="view">
+					<summary>Why it is yours · {decision.a.proposal.reasons.length} reasons</summary>
+					{#if decision.a.regime === 'sec_8k'}
+						<p>Halden’s shares are listed in the US, so a cybersecurity incident it judges material must be disclosed within four business days of that decision. The decision belongs to you and the disclosure committee, not to the watch.</p>
+					{:else}
+						<p>The watch cannot decide this for {decision.a.entityName}. It belongs to you, with legal and data protection.</p>
+					{/if}
 					<ul>{#each decision.a.proposal.reasons as r (r)}<li>{r}</li>{/each}</ul>
-				</div>
+				</details>
 				{#if deciding}
 					<DecisionSheet incidentId={decision.i.id} reference={decision.i.reference} a={decision.a} tone="brief" onrecorded={() => ((deciding = false), load(), live.loadClocks())} oncancel={() => (deciding = false)} />
 				{:else}
@@ -123,65 +128,67 @@
 					{#if decision.a.regime === 'sec_8k'}<p class="if">If material: 8-K due <b class="mono">{shortDay(secDue, NY)}</b></p>{/if}
 				{/if}
 				{#if others.length}
-					<p class="also">Also yours: {#each others as o, k (o.i.id + o.a.regime)}{k ? ' · ' : ''}<a href="/incidents/{o.i.reference}?decide={o.a.regime}">{decisionQuestion(o.a, o.i).replace(/\?$/, '')}</a>{/each}.</p>
+					<details class="view also"><summary>Also yours · {others.length}</summary><ul>{#each others as o (o.i.id + o.a.regime)}<li><a href="/incidents/{o.i.reference}?decide={o.a.regime}">{decisionQuestion(o.a, o.i)}</a></li>{/each}</ul></details>
 				{/if}
 			</section>
 		{/if}
 
 		<section class="col nightcol" aria-labelledby="nb">
-			<h3 id="nb" class="ch">The night the watch saw</h3>
-			<p class="cs">Each line is an incident moving inward through the response; the hand is now.</p>
+			<h3 id="nb" class="ch" title="Each line is an incident moving inward through the response; the hand is now.">The night</h3>
 			<WatchDial win={shift.win} incidents={shift.incidents} log={shift.log} intake={shift.intake} tz={shift.tz} clocks={live.clocks} compact max={400} />
 		</section>
 
 		<section class="col" aria-label="The handover">
-			<h3 id="ck" class="ch">Clocks running <span>{clocks.length} · {clocks.length ? (allOnTrack ? 'all on track' : 'one needs attention') : 'none'}</span></h3>
+			<h3 id="ck" class="ch">Clocks <span>{clocks.length ? (allOnTrack ? 'all on track' : 'one needs attention') : 'none'}</span></h3>
 			{#each clocks as c (c.id)}
 				{@const st = clockState(c, at)}
 				{@const left = hmParts(secondsLeft(c.dueAt, at))}
 				<div class="clk {st}" style="--elapsed:{elapsedFraction(c.startsAt, c.dueAt, at)}">
-					<div class="what"><b>{clockLongLabel(c)}</b><small>{c.incidentReference} · due {dueLabel(c.dueAt!, at)}{c.regime === 'nis2' ? '' : ` · ${timeOf(c.dueAt!, REGIME_TZ[c.regime])} ${c.regime === 'sec_8k' ? 'New York' : 'Melbourne'}`}</small></div>
-					<div class="left"><div class="n mono">{left.h}<span class="u">h</span>{left.m}<span class="u">m</span></div><small><span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small></div>
+					<div class="what" title="{c.incidentReference} · due {dueLabel(c.dueAt!, at)}{c.regime === 'nis2' ? '' : ` · ${timeOf(c.dueAt!, REGIME_TZ[c.regime])} ${c.regime === 'sec_8k' ? 'New York' : 'Melbourne'}`}"><b>{clockLongLabel(c)}</b></div>
+					<div class="left"><div class="n mono">{left.h}<span class="u">h</span>{left.m}<span class="u">m</span></div>{#if st !== 'on_track'}<small><span class="g">{STATE_GLYPH[st]}</span> {STATE_WORD[st]}</small>{/if}</div>
 					<i class="bar2" aria-hidden="true"></i>
 				</div>
 			{/each}
 
-			<h3 class="ch">Approved overnight · by a person</h3>
+			<h3 class="ch" title="Every response action was authorised by a person">Approved</h3>
 			<ul class="acts">
-				{#each approvedOvernight.slice(0, 4) as p (p.id)}<li><span class="okg mono">✓</span><span>{actionTitle(p, people)}<small>{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}</small></span></li>{/each}
-				{#if approvedOvernight.length > 4}<li class="more">+ {approvedOvernight.length - 4} more, all logged</li>{/if}
-				{#each pendingNow as p (p.id)}<li><span class="wait mono">‖</span><span>{actionTitle(p, people)}<small>waiting for {p.requiredRoles.includes('executive') ? 'you and a responder' : responder}</small></span></li>{/each}
+				{#each approvedOvernight.slice(0, 3) as p (p.id)}<li title="{p.approvals.map((a) => a.name).join(' + ')} · {timeOf(p.approvals.at(-1)!.decidedAt)}"><span class="okg mono">✓</span><span>{actionTitle(p, people)}</span></li>{/each}
+				{#if approvedOvernight.length > 3}<li class="more">+ {approvedOvernight.length - 3} more, all logged</li>{/if}
+				{#each pendingNow as p (p.id)}<li title="Waiting for {p.requiredRoles.includes('executive') ? 'you and a responder' : responder}"><span class="wait mono">‖</span><span>{actionTitle(p, people)}</span></li>{/each}
 				{#if !approvedOvernight.length && !pendingNow.length}<li class="faint">Nothing needed a person overnight.</li>{/if}
 			</ul>
 
-			<h3 class="ch">On watch now</h3>
-			<p class="onw">{responder}, responder, with Triage, Enrichment and Response. Next brief tomorrow at 08:00.</p>
+			<h3 class="ch" title="With Triage, Enrichment and Response. Next brief tomorrow at 08:00.">On watch</h3>
+			<p class="onw"><b>{responder}</b></p>
 			{#if posture}
-				<div class="posture"><span class="eng">Posture</span> <b>{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'}</b> <small>{posture.meanTimeToTriage.trend === 'better' ? 'better than last week' : 'same as last week'}</small></div>
+				<div class="posture" title={posture.highlights[0] ?? posture.components[0]?.note}><span class="eng">Posture</span> <b>{posture.scoreBand === 'steady' ? 'Steady' : posture.scoreBand === 'watch' ? 'Watch' : 'Strained'}</b> <small>{posture.meanTimeToTriage.trend === 'better' ? '▲ better' : '= same'}</small></div>
 				{#if posturePts}
 					<svg class="spark" viewBox="0 0 300 46" width="300" height="46" role="img" aria-label="Posture over the last 8 weeks: {posture.scoreBand}"><polyline fill="none" stroke="var(--acc)" stroke-width="1.8" points={posturePts} /><circle cx={lastPt[0]} cy={lastPt[1]} r="3" fill="var(--acc)" /><line x1="0" y1="45" x2="300" y2="45" stroke="var(--rule-2)" /></svg>
 				{/if}
-				<p class="onw">{posture.highlights[0] ?? posture.components[0]?.note}</p>
 			{/if}
 		</section>
 	</div>
 
 	<div class="two">
 		<section class="col" aria-labelledby="ov">
-			<h3 id="ov" class="ch big">Overnight, in plain words</h3>
+			<h3 id="ov" class="ch big">Overnight</h3>
 			<ol class="night">
 				{#each overnight as i (i.id)}
-					<li><span class="t mono">{timeOf(i.firstSeen)}</span><p>{plainTitle(i.title).replace(/^./, (c) => c.toUpperCase())}. {#if i.verdict === 'benign'}<b>Closed as noise.</b>{:else if i.status === 'monitoring' || i.status === 'resolved'}<b>Contained.</b>{:else if i.pendingApprovals}Response is waiting for a person to authorise the next step.{:else if i.verdict === 'needs_review'}A person is looking at it this morning.{/if}</p></li>
+					<li><span class="t mono">{timeOf(i.firstSeen)}</span><p><a href="/incidents/{i.reference}">{plainTitle(i.title).replace(/^./, (c) => c.toUpperCase())}</a> {#if i.verdict === 'benign'}<b class="tag">Noise</b>{:else if i.status === 'monitoring' || i.status === 'resolved'}<b class="tag ok">Contained</b>{:else if i.pendingApprovals}<b class="tag per">‖ Waiting</b>{:else if i.verdict === 'needs_review'}<b class="tag">In review</b>{/if}</p></li>
 				{/each}
 			</ol>
-			<p class="sign">— the night watch: Triage, Enrichment and Response, with {responder} on call</p>
 		</section>
 
 		<section class="col" aria-labelledby="wk">
-			<h3 id="wk" class="ch big">Seven nights <span>18:00 to 08:00 · ◆ incident · ● closed as noise</span></h3>
+			<h3 id="wk" class="ch big" title="18:00 to 08:00 · ◆ incident · ● closed as noise">Seven nights</h3>
 			<SevenNights incidents={week} {at} />
 			{#if posture}
-				<p class="facts">This week the watch looked closely at <b>{posture.alerts.last7d.toLocaleString('en-GB')}</b> alerts and opened <b>{week.length}</b> incidents, <b>{week.filter((i) => i.reportable === 'yes').length}</b> of them reportable. It closed <b>{posture.alerts.suppressedAsNoise.toLocaleString('en-GB')}</b> alerts as noise. Median time to a triage verdict was <b>{posture.meanTimeToTriage.last7dSeconds} s</b>; median time to contain after a person approved was <b>{Math.round(posture.meanTimeToContain.last7dSeconds / 60)} min</b>. Every one of the <b>{weekActions.length}</b> response actions was authorised by a person.</p>
+				<dl class="stats">
+					<div><dt>Alerts looked at</dt><dd class="mono">{posture.alerts.last7d.toLocaleString('en-GB')}</dd></div>
+					<div><dt>Incidents</dt><dd class="mono">{week.length}</dd></div>
+					<div><dt>Closed as noise</dt><dd class="mono">{posture.alerts.suppressedAsNoise.toLocaleString('en-GB')}</dd></div>
+				</dl>
+				<details class="lede"><summary>The week in a paragraph</summary><p class="facts">This week the watch looked closely at <b>{posture.alerts.last7d.toLocaleString('en-GB')}</b> alerts and opened <b>{week.length}</b> incidents, <b>{week.filter((i) => i.reportable === 'yes').length}</b> of them reportable. It closed <b>{posture.alerts.suppressedAsNoise.toLocaleString('en-GB')}</b> alerts as noise. Median time to a triage verdict was <b>{posture.meanTimeToTriage.last7dSeconds} s</b>; median time to contain after a person approved was <b>{Math.round(posture.meanTimeToContain.last7dSeconds / 60)} min</b>. Every one of the <b>{weekActions.length}</b> response actions was authorised by a person.</p></details>
 			{/if}
 		</section>
 	</div>
@@ -226,7 +233,38 @@
 		color: var(--acc);
 	}
 	.lede {
-		margin: 0;
+		margin: 14px 0 0;
+		grid-column: 1 / -1;
+	}
+	.lede summary,
+	.view summary {
+		cursor: pointer;
+		list-style: none;
+		width: max-content;
+		max-width: 100%;
+		font: 600 14px/1.2 var(--ui);
+		color: var(--dim);
+		border-bottom: 1px solid var(--rule-2);
+		padding-bottom: 2px;
+	}
+	.lede summary::-webkit-details-marker,
+	.view summary::-webkit-details-marker {
+		display: none;
+	}
+	.lede summary::after,
+	.view summary::after {
+		content: ' ▸';
+	}
+	.lede[open] summary::after,
+	.view[open] summary::after {
+		content: ' ▾';
+	}
+	.lede summary:hover,
+	.view summary:hover {
+		color: var(--ink);
+	}
+	.lede p {
+		margin: 12px 0 0;
 		padding-left: 18px;
 		border-left: 3px solid var(--acc);
 		font-size: 17px;
@@ -235,6 +273,50 @@
 	}
 	.lede b {
 		color: var(--ink);
+	}
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 6px;
+		margin: 18px 0 14px;
+	}
+	.stats div {
+		padding: 12px 14px;
+		background: var(--raised);
+	}
+	.stats dt {
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--faint);
+	}
+	.stats dd {
+		margin: 8px 0 0;
+		font-size: 30px;
+		line-height: 1;
+		color: var(--ink);
+	}
+	.tag {
+		margin-left: 6px;
+		font: 700 12px/1 var(--display);
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+		color: var(--dim);
+		white-space: nowrap;
+	}
+	.tag.ok {
+		color: var(--ok);
+	}
+	.tag.per {
+		color: var(--person);
+	}
+	.night a {
+		text-decoration: none;
+		color: inherit;
+	}
+	.night a:hover {
+		text-decoration: underline;
+		text-decoration-color: var(--acc);
 	}
 	.cols {
 		display: grid;
@@ -271,12 +353,12 @@
 	}
 	.view {
 		margin: 4px 0 18px;
-		padding: 12px 14px;
-		background: var(--raised);
 	}
-	.view .eng {
-		font-size: 12px;
-		color: var(--dim);
+	.view[open] {
+		padding-bottom: 4px;
+	}
+	.view p {
+		margin: 12px 0 0;
 	}
 	.view ul {
 		margin: 8px 0 0;
@@ -331,11 +413,6 @@
 	.ch.big {
 		font-size: 26px;
 	}
-	.cs {
-		margin: 0;
-		font-size: 14px;
-		color: var(--dim);
-	}
 	.nightcol :global(.wd) {
 		margin-top: 4px;
 	}
@@ -352,12 +429,6 @@
 		display: block;
 		font-weight: 700;
 		font-size: 15px;
-	}
-	.what small {
-		display: block;
-		margin-top: 3px;
-		font-size: 13px;
-		color: var(--dim);
 	}
 	.left {
 		text-align: right;
@@ -403,11 +474,6 @@
 		padding: 9px 0;
 		border-bottom: 1px solid var(--rule);
 		font-size: 15px;
-	}
-	.acts small {
-		display: block;
-		font-size: 13px;
-		color: var(--dim);
 	}
 	.okg {
 		color: var(--ok);
@@ -479,12 +545,6 @@
 		margin: 0;
 		font-size: 16.5px;
 		line-height: 1.55;
-	}
-	.sign {
-		margin: 14px 0 0;
-		font-size: 14px;
-		font-style: italic;
-		color: var(--dim);
 	}
 	.facts {
 		margin: 16px 0 0;
