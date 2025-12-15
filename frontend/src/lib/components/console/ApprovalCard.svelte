@@ -97,8 +97,9 @@
 			<span class="badge st okb">✓ {p.status === 'executed' ? 'Done' : 'Authorised'}</span>
 		{:else if p.approvals.length && p.requiredRoles.length > 1}
 			<span class="badge st per">‖ {p.approvals.length} of {p.requiredRoles.length} held · waiting for a second person</span>
-		{:else}
-			<span class="badge st per">‖ Awaiting {gate.canHold ? 'your' : 'a person’s'} approval</span>
+		{:else if !gate.canHold}
+			<!-- "waiting on you" is already said by the plate around the card; only someone else's turn needs a badge -->
+			<span class="badge st per">‖ Awaiting a person’s approval</span>
 		{/if}
 		{#if total > 1}<span class="mono faint n">{index} of {total}</span>{/if}
 	</div>

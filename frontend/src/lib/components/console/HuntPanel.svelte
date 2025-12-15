@@ -160,6 +160,21 @@
 	const COL_WORDS: Record<string, string> = { 'user.name': 'person', 'host.name': 'device', 'source.ip': 'from address', 'destination.ip': 'to address', 'cloud.accessKeyId': 'access key', 'process.name': 'program', action: 'what happened', dataset: 'source', bucket: 'when', count: 'events', outcome: 'outcome' };
 	const colWord = (c: string) => COL_WORDS[c] ?? (c.startsWith('distinct ') ? `different ${COL_WORDS[c.slice(9)] ?? c.slice(9)}` : c.replace(/[._]/g, ' '));
 	const cell = (c: string, v: unknown) => (v === null || v === undefined || v === '' ? '—' : c === 'bucket' ? whenShort(String(v)) : c === 'user.name' ? (names[String(v)] ?? String(v)) : typeof v === 'number' ? v.toLocaleString('en-GB') : String(v));
+	// the first layer of an event search: matches grouped by device and incident; the raw events are one click deeper
+	const groups = $derived.by(() => {
+		const m: Record<string, { device: string; incident: string | null; n: number; who: string[]; first: string; last: string }> = {};
+		for (const r of rows) {
+			const k = `${r.device}|${r.incident ?? ''}`;
+			const g = (m[k] ??= { device: r.device, incident: r.incident, n: 0, who: [], first: r.at, last: r.at });
+			g.n++;
+			if (!g.who.includes(r.who)) g.who.push(r.who);
+			if (r.at < g.first) g.first = r.at;
+			if (r.at > g.last) g.last = r.at;
+		}
+		return Object.values(m).sort((a, b) => b.n - a.n).slice(0, 5);
+	});
+	// a short answer opens straight onto its events; a long one opens on the groups (a click still toggles it)
+	let evOpen = $derived(rows.length <= 10);
 	const devices = $derived(new Set(rows.map((r) => r.device)).size);
 	const people = $derived(new Set(rows.map((r) => r.who)).size);
 	const addTarget = $derived(ui.scope?.reference ?? live.incidents[0]?.reference ?? null);
@@ -221,6 +236,19 @@
 				</table>
 			</div>
 		{:else if view === 'list'}
+			{#if rows.length > 10}
+				<ul class="groups" aria-label="Matches by device">
+					{#each groups as g (g.device + (g.incident ?? ''))}
+						<li class:inc={!!g.incident}>
+							<span class="mono dv">{g.device}</span>
+							<b class="mono">{g.n.toLocaleString('en-GB')}</b><span class="faint">events · {g.who.length} {g.who.length === 1 ? 'account' : 'accounts'} · {whenShort(g.first)}–{whenShort(g.last).slice(-5)}</span>
+							{#if g.incident}<a class="mono" href="/incidents/{g.incident}">→ {g.incident}</a>{/if}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			<details class="evs" open={evOpen} ontoggle={(e) => (evOpen = e.currentTarget.open)}>
+			<summary class="lnk">Events</summary>
 			<div class="table-wrap">
 				<table class="table">
 					<thead><tr><th>Time</th><th>Who</th><th>Device</th><th>What</th><th>Incident</th></tr></thead>
@@ -239,6 +267,7 @@
 					</tbody>
 				</table>
 			</div>
+			</details>
 		{:else}
 			<ol class="ladder" aria-label="Matches as a minute ladder">
 				{#each rows.slice(0, cap) as r (r.eventId + r.at)}
@@ -250,7 +279,7 @@
 				{/each}
 			</ol>
 		{/if}
-		{#if !grouped && rows.length > cap}<button class="lnk morer" type="button" onclick={() => (cap += 50)}>Show {Math.min(50, rows.length - cap)} more</button>{/if}
+		{#if !grouped && rows.length > cap && (view !== 'list' || evOpen)}<button class="lnk morer" type="button" onclick={() => (cap += 50)}>Show {Math.min(50, rows.length - cap)} more</button>{/if}
 		{#if !result.rows.length}<p class="none">Nothing matched. Try fewer filters or a longer time range.</p>{/if}
 	{:else if !busy}
 		<p class="none">Who, which device, what, and when.</p>
@@ -258,6 +287,54 @@
 </div>
 
 <style>
+	.groups {
+		list-style: none;
+		margin: 0;
+		padding: 0 0 6px;
+		display: grid;
+		gap: 4px;
+	}
+	.groups li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 6px 12px;
+		padding: 12px 16px;
+		background: var(--raised);
+		border-left: 4px solid var(--rule-2);
+		font-size: 14px;
+	}
+	.groups li.inc {
+		border-left-color: var(--acc);
+	}
+	.groups .dv {
+		min-width: 12ch;
+		color: var(--ink);
+	}
+	.groups b {
+		font: 400 22px/1 var(--code);
+		color: var(--ink);
+	}
+	.groups a {
+		margin-left: auto;
+		color: var(--acc-hi);
+		text-decoration: none;
+	}
+	.evs > summary {
+		cursor: pointer;
+		list-style: none;
+		width: max-content;
+		margin: 6px 16px 10px;
+	}
+	.evs > summary::-webkit-details-marker {
+		display: none;
+	}
+	.evs > summary::after {
+		content: ' ▸';
+	}
+	.evs[open] > summary::after {
+		content: ' ▾';
+	}
 	.morer {
 		justify-self: center;
 		margin: 12px 0;

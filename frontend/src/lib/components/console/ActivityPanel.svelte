@@ -18,7 +18,12 @@
 	let err = $state('');
 	const PAGE = 20;
 	let pageNo = $state(1);
-	const paged = $derived(compact ? rows.slice(0, 12) : rows.slice((pageNo - 1) * PAGE, pageNo * PAGE));
+	// sign-ins are most of the log and the least of what an auditor checks: they fold into one row
+	let showSignins = $state(false);
+	const isSignin = (r: AuditEntry) => r.action.startsWith('auth.');
+	const signins = $derived(rows.filter(isSignin).length);
+	const visible = $derived(showSignins ? rows : rows.filter((r) => !isSignin(r)));
+	const paged = $derived(compact ? visible.slice(0, 12) : visible.slice((pageNo - 1) * PAGE, pageNo * PAGE));
 
 	async function load() {
 		try {
@@ -92,6 +97,7 @@
 		{/if}
 	</div>
 	{#if err}<p class="ferr">{err}</p>{/if}
+	{#if signins}<button class="lnk sgn" type="button" onclick={() => ((showSignins = !showSignins), (pageNo = 1))} aria-pressed={showSignins}>{showSignins ? `Hide ${signins} sign-ins` : `Show ${signins} sign-ins`}</button>{/if}
 	<div class="table-wrap">
 		<table class="table">
 			<thead><tr><th>Time</th><th>Who</th><th>Did</th>{#if !compact}<th>About</th>{/if}<th>Seal</th></tr></thead>
@@ -108,15 +114,20 @@
 			</tbody>
 		</table>
 	</div>
-	{#if !compact && rows.length > PAGE}
+	{#if !compact && visible.length > PAGE}
 		<div class="pager">
 			<span class="mono faint">latest {rows.length}</span>
-			<Pagination data={rows} count={rows.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="bg-[var(--acc)] text-[var(--acc-ink)]" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
+			<Pagination data={visible} count={visible.length} pageSize={PAGE} page={pageNo} onPageChange={(e) => (pageNo = e.page)} siblingCount={1} buttonActive="bg-[var(--acc)] text-[var(--acc-ink)]" buttonInactive="preset-outlined-surface-300-700" buttonHover="hover:bg-[var(--raised)]" gap="gap-1" padding="p-0" background="" border="" classes="pg" />
 		</div>
 	{/if}
 </div>
 
 <style>
+	.sgn {
+		display: inline-block;
+		margin: 0 0 10px;
+		font-size: 13px;
+	}
 	.top {
 		display: flex;
 		align-items: center;

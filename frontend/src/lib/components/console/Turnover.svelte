@@ -34,7 +34,7 @@
 	/** One readout: a number, what it counts, and the one line worth reading first. */
 	interface Read { n: string; unit: string; line: string; tone?: 'person' | 'soon' | 'quiet' }
 	const read = (k: SectionKind): Read => {
-		if (k === 'awaiting') return pending.length ? { n: String(pending.length), unit: pending.length === 1 ? 'decision' : 'decisions', line: actionTitle(oldest!), tone: 'person' } : { n: '0', unit: 'decisions', line: 'Nothing waiting', tone: 'quiet' };
+		if (k === 'awaiting') return pending.length ? { n: String(pending.length), unit: pending.length === 1 ? 'approval' : 'approvals', line: actionTitle(oldest!), tone: 'person' } : { n: '0', unit: 'approvals', line: 'Nothing waiting', tone: 'quiet' };
 		if (k === 'clocks') {
 			if (!urgent) return { n: '0', unit: 'running', line: 'No clocks running', tone: 'quiet' };
 			const st = clockState(urgent, live.now);
@@ -52,6 +52,15 @@
 		return { n: '', unit: '', line: 'What the detections cited' };
 	};
 
+	const byIncident = $derived.by(() => {
+		const m: Record<string, { key: string; last: (typeof live.shiftLog)[number]; n: number }> = {};
+		live.shiftLog.forEach((e, i) => {
+			const key = e.refId ?? `x${i}`;
+			if (m[key]) m[key].n++;
+			else m[key] = { key, last: e, n: 1 };
+		});
+		return Object.values(m);
+	});
 	let opened = $state<SectionKind | null>(null);
 	// ?hold=… arrives from the lamp and ⌘K: open the decisions straight away so the hold can take focus
 	$effect(() => {
@@ -67,11 +76,13 @@
 	{:else if k === 'intake'}
 		<EventRiver />
 	{:else if k === 'log'}
+		<!-- one line per incident (its latest change and how many there were); the full story is on the incident -->
 		<ol class="log">
-			{#each live.shiftLog as e, i (e.at + i)}
+			{#each byIncident as g (g.key)}
 				<li>
-					<span class="mono t">{timeOf(e.at)}</span>
-					{#if refOf(e.refId)}<a href="/incidents/{refOf(e.refId)}">{e.text}</a>{:else}<span>{e.text}</span>{/if}
+					<span class="mono t">{timeOf(g.last.at)}</span>
+					{#if refOf(g.last.refId)}<a href="/incidents/{refOf(g.last.refId)}"><b class="mono">{refOf(g.last.refId)}</b> {g.last.text.replace(/^NJ-\d+:\s*/, '')}</a>{:else}<span>{g.last.text}</span>{/if}
+					{#if g.n > 1}<span class="mono faint n2">+{g.n - 1}</span>{/if}
 				</li>
 			{:else}
 				<li class="faint">Nothing new since you last looked.</li>
@@ -257,7 +268,7 @@
 	}
 	.log li {
 		display: grid;
-		grid-template-columns: 46px minmax(0, 1fr);
+		grid-template-columns: 46px minmax(0, 1fr) auto;
 		gap: 10px;
 		padding: 9px 0;
 		border-top: 1px solid var(--rule);
@@ -274,6 +285,15 @@
 	}
 	.log a {
 		text-decoration: none;
+	}
+	.log a b {
+		font-weight: 500;
+		font-size: 12.5px;
+		color: var(--acc-hi);
+		margin-right: 4px;
+	}
+	.n2 {
+		font-size: 12px;
 	}
 	.log a:hover {
 		color: var(--ink);
