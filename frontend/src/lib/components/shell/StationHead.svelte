@@ -52,8 +52,10 @@
 	const tz = $derived(shift.tz);
 	const t = $derived(timeOf(live.now, tz, true));
 	const watch = $derived(watchOf(live.now, tz));
-	const clocks = $derived(live.clocks.filter((c) => c.state !== 'not_required'));
-	const urgent = $derived(clocks.find((c) => c.state !== 'not_started' && c.state !== 'submitted') ?? clocks[0] ?? null);
+	// one meaning of "clock" everywhere: a regulator timer that has started and is still running (an open
+	// assessment is a decision, and lives with the incident and the brief)
+	const clocks = $derived(live.clocks.filter((c) => c.state !== 'not_required' && c.state !== 'not_started' && c.state !== 'submitted'));
+	const urgent = $derived(clocks[0] ?? null);
 	const still = $derived(prefersReducedMotion.current);
 	let me = $state(false);
 	let clocksOpen = $state(false);
@@ -95,7 +97,7 @@
 					{#if clocks.length > 1}
 						<Popover open={clocksOpen} onOpenChange={(e) => (clocksOpen = e.open)} positioning={{ placement: 'bottom-end' }} triggerBase="more" contentBase="nj-pop clockpop" triggerAriaLabel="All {clocks.length} regulator clocks">
 							{#snippet trigger()}+{clocks.length - 1} clocks{/snippet}
-							{#snippet content()}<div class="cp"><ClockList clocks={live.clocks} now={live.now} /></div>{/snippet}
+							{#snippet content()}<div class="cp"><ClockList {clocks} now={live.now} /></div>{/snippet}
 						</Popover>
 					{/if}
 				{:else}
@@ -141,7 +143,7 @@
 			<p class="eng mh">Stations</p>
 			<LampPanel cols={2} onpick={() => (panelOpen = false)} />
 			<p class="eng mh">Regulator clocks</p>
-			<div class="mclk"><ClockList clocks={live.clocks} now={live.now} /></div>
+			<div class="mclk"><ClockList {clocks} now={live.now} /></div>
 			<button class="btn preset-outlined-surface-300-700 w-full" type="button" onclick={() => ((panelOpen = false), ui.openPalette())}>Find anything</button>
 			<div class="youm">{@render you(() => (panelOpen = false))}</div>
 		</div>

@@ -22,7 +22,8 @@
 	let { pending, focusIncidentId, holdId, centre }: { pending: ProposalDoc[]; focusIncidentId: string | null; holdId?: string; centre?: Snippet } = $props();
 
 	const refOf = (id: string | null) => live.incidents.find((i) => i.id === id)?.reference ?? null;
-	const running = $derived(live.clocks.filter((c) => c.state !== 'not_required' && c.state !== 'submitted'));
+	// the same "running" the chronometer counts: started, not yet submitted
+	const running = $derived(live.clocks.filter((c) => c.state !== 'not_required' && c.state !== 'not_started' && c.state !== 'submitted'));
 	const RANK: Record<string, number> = { overdue: 0, due_soon: 1, on_track: 2, not_started: 3 };
 	const urgent = $derived(
 		[...running].sort((a, b) => (RANK[clockState(a, live.now)] ?? 9) - (RANK[clockState(b, live.now)] ?? 9) || (a.dueAt ?? '9').localeCompare(b.dueAt ?? '9'))[0] ?? null
@@ -38,12 +39,13 @@
 			if (!urgent) return { n: '0', unit: 'running', line: 'No clocks running', tone: 'quiet' };
 			const st = clockState(urgent, live.now);
 			const left = st === 'on_track' || st === 'due_soon' ? hm(secondsLeft(urgent.dueAt, live.now)) : st === 'not_started' ? 'to decide' : 'overdue';
-			return { n: String(running.length), unit: 'running', line: `${STATE_GLYPH[st]} ${clockLongLabel(urgent).split(' · ')[0]} · ${left}`, tone: st === 'due_soon' || st === 'overdue' ? 'soon' : undefined };
+			return { n: String(running.length), unit: 'running', line: `${STATE_GLYPH[st]} ${clockLongLabel(urgent).split(' · ')[0]} · ${urgent.incidentReference} · ${left}`, tone: st === 'due_soon' || st === 'overdue' ? 'soon' : undefined };
 		}
-		if (k === 'intake') return { n: Math.round(live.eventsPerMinute || 0).toLocaleString('en-GB'), unit: 'a minute', line: notable ? `◇ ${notable.text}` : 'All routine', tone: notable ? 'soon' : 'quiet' };
+		if (k === 'intake') return { n: Math.round(live.eventsPerMinute || 0).toLocaleString('en-GB'), unit: '/ min', line: notable ? `◇ ${notable.text}` : 'All routine', tone: notable ? 'soon' : 'quiet' };
 		if (k === 'log') {
 			const last = live.shiftLog[0];
-			return { n: String(live.shiftLog.length), unit: 'new', line: last ? `${timeOf(last.at)} · ${last.text}` : 'Nothing new', tone: last ? undefined : 'quiet' };
+			const moved = new Set(live.shiftLog.map((e) => e.refId).filter(Boolean)).size;
+			return { n: String(live.shiftLog.length), unit: 'new', line: last ? `${moved} ${moved === 1 ? 'incident' : 'incidents'} moved · latest ${timeOf(last.at)}` : 'Nothing new', tone: last ? undefined : 'quiet' };
 		}
 		if (k === 'hunt') return { n: '', unit: '', line: 'Ask in plain words' };
 		if (k === 'activity') return { n: '', unit: '', line: 'Sealed, newest first' };
@@ -61,7 +63,7 @@
 	{#if k === 'awaiting'}
 		<AwaitingTile bundle={null} {holdId} />
 	{:else if k === 'clocks'}
-		<div class="pad"><ClockList clocks={live.clocks} now={live.now} /></div>
+		<div class="pad"><ClockList clocks={running} now={live.now} /></div>
 	{:else if k === 'intake'}
 		<EventRiver />
 	{:else if k === 'log'}
