@@ -3,9 +3,10 @@
 The console, the landing page, sign-in and the CISO brief, built to `DESIGN.md` ("red light"): an operations room
 on night watch, lit red. Every page opens with the station head (the page name in tall stencil capitals, the lamp
 panel that is the navigation, and the chronometer with the most urgent regulator clock). The watch is a 24-hour
-**watch dial** with the turnover's four readouts at its corners; registers are strips racked in bays; an incident is
+**watch dial** with the turnover's four readouts at its corners (a count and the top item each; the rest opens in a sheet); registers are strips racked in bays; an incident is
 one flight strip with its orders and its replayable watch log; a notice is a signal form; the CISO's brief is the
-morning report under a first-light horizon.
+morning report under a first-light horizon. Text is layered: one title per screen, short labels, and every paragraph one
+click deeper (`DESIGN.md` §11).
 
 - Node 21.7 (`.nvmrc`), exact pins (`.npmrc save-exact`), Tailwind 4.1 via `@tailwindcss/vite`.
 - Component system: **Skeleton** (`@skeletonlabs/skeleton` 3.2.2 + `@skeletonlabs/skeleton-svelte` 1.5.3) on the
